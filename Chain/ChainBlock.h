@@ -50,12 +50,6 @@ public:
     ~ChainBlock(){delete[] chainArray;}
     
     /*!
-     * \brief isFull checks if there are remaining chain steps available in the block
-     * \return True if there are still steps open, false otherwise
-     */
-    bool isFull(){return (firstEmptyStep >= BlockSize);}
-    
-    /*!
      * \brief storeWalker transfers a walkers point into the chain storage, undefined behavior if the block is full
      * \param walkerNum index of the walker to transfer
      * \param walkerData array of data representing the walker's parameters and auxilliary data
