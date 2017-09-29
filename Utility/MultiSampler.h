@@ -81,9 +81,9 @@ public:
      */
     long long getOffSetLongLong(long long offset, long long max){return ((engine()%(max-offset))+offset);}
 private:
-    std::mt19937_64 engine;
-    std::uniform_real_distribution<ParamType> realDist;
-    CustomDistribution customDist;
+    std::mt19937_64 engine;///<The base random number generator engine that is used for everything
+    std::uniform_real_distribution<ParamType> realDist;///<The adapter that gives real numbers between 0 and 1
+    CustomDistribution customDist;///<The CDF inversion class that takes a number from 0 to 1 and converts it to a custom distribution
 };
 
 }
