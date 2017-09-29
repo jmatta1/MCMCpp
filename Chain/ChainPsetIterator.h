@@ -82,6 +82,9 @@ public:
     /*!
      * \brief operator* Dereference the iterator to get a pointer to the walker parameter array for this walker parameter set
      * \return A pointer into the walker parameter array, pointed to the beginning of the current walker's parameter set
+     * 
+     * @remark This function will let you dereference an invalid iterator, this
+     * is undefined behaviour.
      */
     ParamType* operator*(){return (curr->chainArray + index*(curr->cellsPerWalker));}
     
