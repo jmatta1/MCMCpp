@@ -24,9 +24,9 @@ namespace Chain
 {
 
 /**
- * @class ChainStepIterator
+ * @class ChainPsetIterator
  * @ingroup Chain
- * @brief In iterator to access all the parameter sets of a group of walkers simultaneously
+ * @brief In iterator to access a single parameter set from a single walker at a time
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.

@@ -26,7 +26,7 @@ namespace Chain
 /**
  * @class ChainStepIterator
  * @ingroup Chain
- * @brief In iterator to access all the parameter sets of a group of walkers simultaneously
+ * @brief In iterator to access all the parameter sets of the set of walkers simultaneously
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
@@ -80,6 +80,9 @@ public:
     /*!
      * \brief operator* Dereference the iterator to get a pointer to the walker parameter array for this step
      * \return A pointer into the walker parameter array, pointed to the beginning of this step
+     * 
+     * @remark This function will let you dereference an invalid iterator, this
+     * is undefined behaviour.
      */
     ParamType* operator*(){return (curr->chainArray + stepIndex*(curr->cellsPerStep));}
     
