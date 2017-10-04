@@ -39,10 +39,21 @@ template <class ParamType, int BlockSize, class CustomDistribution, class Likeli
 class Walker
 {
 public:
-    Walker(Chain::Chain<ParamType, BlockSize>* chain, int walkerIndex, int numParam, int numCell):
-        markovChain(chain), walkerNumber(walkerIndex), numParams(numParam), numCells(numCell)
-    {    currState = new ParamType[numCells];}
-    ~Walker(){delete[] currState;}
+    /*!
+     * \brief Walker Constructs a default instance of Walker with all values set to nullptr or zero
+     */
+    Walker(){}
+    ~Walker(){if(currState != nullptr) delete[] currState;}
+    
+    /*!
+     * \brief init Initializes the walker in question so that it can be used
+     * \param chain A pointer to the chain that will store parameter sets
+     * \param walkerIndex The index of the current walker
+     * \param numParam The number of parameters in the spaces to be walked
+     * \param numCell The number of cells to be stored per walker in the chain
+     */
+    void init(Chain::Chain<ParamType, BlockSize>* chain, int walkerIndex, int numParam, int numCell)
+    {markovChain = chain; walkerNumber = walkerIndex; numParams = numParam; numCells = numCell; currState = new ParamType[numCells];}
     
     /*!
      * \brief setFirstPoint Initializes the walker with its very first point (which is counted as an accepted step (and a normal step))
@@ -77,13 +88,14 @@ public:
      */
     int getAcceptedProposals(){return acceptedSteps;}
     
+    friend class StretchMover;
 private:
-    Chain::Chain<ParamType, BlockSize>* markovChain; ///<Holds a reference to the chain that stores the points of the walker
+    Chain::Chain<ParamType, BlockSize>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
     ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the likelihood for that position when written to the chain
-    ParamType currLikelihood; ///< holds the current likelihood (transfered into currState prior to dump to chain)
-    int walkerNumber; ///<Holds the integer index of the walker
-    int numParams; ///<holds the number of parameters for the likelihood function
-    int numCells; ///<holds the number of cells in the currState array
+    ParamType currLikelihood = 0.0; ///< holds the current likelihood (transfered into currState prior to dump to chain)
+    int walkerNumber = 0; ///<Holds the integer index of the walker
+    int numParams = 0; ///<holds the number of parameters for the likelihood function
+    int numCells = 0; ///<holds the number of cells in the currState array
     int acceptedSteps = 0; ///< holds the number of times that a new parameter set was accepted
     int totalSteps = 0; ///< holds the number of times that a new parameter set was proposed
 };
