@@ -42,7 +42,7 @@ public:
      * \brief MultiSampler Constructs a multisampler with a given seed
      * \param seed The 64 bit integer that will serve the engine as a seed
      */
-    MultiSampler(long long seed):engine(seed),realDist(){}
+    MultiSampler(long long seed):engine(seed),realDist(), normDist(){}
     ~MultiSampler(){}
     
     /*!
@@ -52,9 +52,15 @@ public:
     ParamType getCustomSample(){return customDist(realDist(engine));}
     /*!
      * \brief getUniformReal returns a sample from the flat probability distribution between 0 and 1
-     * \return ParamType floating point draw from the flat distribution between 0 and 1
+     * \return ParamType floating point drawn from the flat distribution between 0 and 1
      */
     ParamType getUniformReal(){return realDist(engine);}
+    
+    /*!
+     * \brief getNormalReal returns a sample from the normal probability distribution centered at 0 and with variance 1
+     * \return ParamType floating point drawn from the normal distribution centered at 0 and with variance 1
+     */
+    ParamType getNormalReal(){return normDist(engine);}
     
     /*!
      * \brief getNonOffSetInt Gets a random integer in the range [0, max)
@@ -82,7 +88,8 @@ public:
     long long getOffSetLongLong(long long offset, long long max){return ((engine()%(max-offset))+offset);}
 private:
     std::mt19937_64 engine;///<The base random number generator engine that is used for everything
-    std::uniform_real_distribution<ParamType> realDist;///<The adapter that gives real numbers between 0 and 1
+    std::uniform_real_distribution<ParamType> realDist;///<The adapter that gives uniform real numbers between 0 and 1
+    std::normal_distribution<ParamType> normDist;///<The adapter that gives normally distributed real numbers with mean 0 and variance 1
     CustomDistribution customDist;///<The CDF inversion class that takes a number from 0 to 1 and converts it to a custom distribution
 };
 
