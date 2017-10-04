@@ -21,7 +21,8 @@
 
 namespace MarkovChainMonteCarlo
 {
-
+namespace Walker
+{
 /**
  * @class Walker
  * @ingroup Walker
@@ -38,7 +39,7 @@ template <class ParamType, int BlockSize, class CustomDistribution, class Likeli
 class Walker
 {
 public:
-    Walker(Chain::Chain<ParamType, BlockSize>& chain, int walkerIndex, int numParam, int numCell):
+    Walker(Chain::Chain<ParamType, BlockSize>* chain, int walkerIndex, int numParam, int numCell):
         markovChain(chain), walkerNumber(walkerIndex), numParams(numParam), numCells(numCell)
     {    currState = new ParamType[numCells];}
     ~Walker(){delete[] currState;}
@@ -62,7 +63,7 @@ public:
     /*!
      * \brief saveFinalPoint Places the point currently stored on the walker into the chain without testing a new one.
      */
-    void saveFinalPoint(){currState[numParams] = currLikelihood; markovChain.storeWalker(walkerNumber, currState);}
+    void saveFinalPoint(){currState[numParams] = currLikelihood; markovChain->storeWalker(walkerNumber, currState);}
     
     /*!
      * \brief getTotalSteps Gets the total number of steps taken (Number of proposals + 1 because setting the walker initial state counts as a step)
@@ -77,8 +78,8 @@ public:
     int getAcceptedProposals(){return acceptedSteps;}
     
 private:
-    Chain::Chain<ParamType, BlockSize>& markovChain; ///<Holds a reference to the chain that stores the points of the walker
-    ParamType* currState; ///<Holds the current position, should have at least one extra cell to hold the likelihood for that position when written to the chain
+    Chain::Chain<ParamType, BlockSize>* markovChain; ///<Holds a reference to the chain that stores the points of the walker
+    ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the likelihood for that position when written to the chain
     ParamType currLikelihood; ///< holds the current likelihood (transfered into currState prior to dump to chain)
     int walkerNumber; ///<Holds the integer index of the walker
     int numParams; ///<holds the number of parameters for the likelihood function
@@ -103,7 +104,7 @@ template <class ParamType, int BlockSize, class CustomDistribution, class Likeli
 void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::proposePoint(ParamType* newPos, const MarkovChainMonteCarlo::ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<CustomDistribution>& prng)
 {
     currState[numParams] = currLikelihood;
-    markovChain.storeWalker(walkerNumber, currState);
+    markovChain->storeWalker(walkerNumber, currState);
     ParamType newLikelihood = calc.CalculateLogLikelihood(newPos);
     ParamType ratio = ratioScale*(newLikelihood/currLikelihood);
     if(prng.getUniformReal() < ratio)
@@ -118,5 +119,6 @@ void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::pro
     ++totalSteps;
 }
 
+}
 }
 #endif  //MCMC_WALKER_WALKER_H
