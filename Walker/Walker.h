@@ -69,7 +69,7 @@ public:
      * \param calc The likelihood calculator, this is passed instead of stored so that a thread can pass its local copy
      * \param prng The pseudorandom number generator sampler, passed instead of stored so that a thread can pass its local copy
      */
-    void proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<CustomDistribution>& prng);
+    void proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<ParamType, CustomDistribution>& prng);
     
     /*!
      * \brief saveFinalPoint Places the point currently stored on the walker into the chain without testing a new one.
@@ -113,7 +113,7 @@ void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::set
 }
 
 template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
-void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::proposePoint(ParamType* newPos, const MarkovChainMonteCarlo::ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<CustomDistribution>& prng)
+void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::proposePoint(ParamType* newPos, const MarkovChainMonteCarlo::ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<MarkovChainMonteCarlo::Walker::ParamType, MarkovChainMonteCarlo::Walker::CustomDistribution>& prng)
 {
     currState[numParams] = currLikelihood;
     markovChain->storeWalker(walkerNumber, currState);
