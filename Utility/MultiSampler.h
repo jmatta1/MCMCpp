@@ -29,12 +29,12 @@ namespace Utility
  * @brief The class used to generate all kinds of pseudo random numbers needed for MCMC, ints, uniform floating point [0...1], non-uniform floating point
  * @author James Till Matta
  * 
- * \tparam CustomDistribution The class that performs the cdf inversion to generate a custom distributed floating point
  * \tparam ParamType The floating point type returned in the uniform and non-uniform floating point distributions
+ * \tparam CustomDistribution The class that performs the cdf inversion to generate a custom distributed floating point
  * 
  * This class manages the c++ PRNG underlying these and draws samples as needed from that PRNG
  */
-template <class CustomDistribution, class ParamType>
+template <class ParamType, class CustomDistribution>
 class MultiSampler
 {
 public:
