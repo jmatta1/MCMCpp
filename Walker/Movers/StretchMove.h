@@ -26,7 +26,7 @@ namespace Walker
  * @class StretchMove
  * @ingroup Walker
  * @ingroup Movers
- * @brief A functor object that calculates the next proposed step for a walker using the stretch move algorithm
+ * @brief An object that calculates the next proposed step for a walker using the stretch move algorithm
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
@@ -34,6 +34,7 @@ namespace Walker
  * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
  * \tparam LikelihoodCalculator The class that calculates the log likelihood
  * 
+ * A fast, efficient Affine Invariant move algorithm functor that uses minimal resources and can yield good autocorrelation times
  */
 template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
 class StretchMove
@@ -51,7 +52,7 @@ public:
      * \param prng The pseudo random number generator to first select another walker for the calculation and to generate the scaling factor
      * \return The scaling factor for the likelihood ratio to be constructed for determining if the move should be taken
      */
-    ParamType getProposal(ParamType* proposal, int numParams, WalkType& currWalker, WalkType* walkerSet, int numWalkers, Utility::MultiSampler<CustomDistribution>& prng)
+    ParamType getProposal(ParamType* proposal, int numParams, WalkType& currWalker, WalkType* walkerSet, int numWalkers, Utility::MultiSampler<ParamType, CustomDistribution>& prng)
     {
         WalkType& selWalker = walkerSet[prng.getNonOffSetInt(numWalkers);]
         ParamType scalingFactor = prng.getCustomSample();
