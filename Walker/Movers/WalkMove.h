@@ -9,8 +9,8 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_MOVERS_STRETCHMOVE_H
-#define MCMC_WALKER_MOVERS_STRETCHMOVE_H
+#ifndef MCMC_WALKER_MOVERS_WALKMOVE_H
+#define MCMC_WALKER_MOVERS_WALKMOVE_H
 // includes for C system headers
 // includes for C++ system headers
 // includes from other libraries
@@ -40,8 +40,13 @@ template <class ParamType, int BlockSize, class CustomDistribution, class Likeli
 class WalkMove
 {
 public:
+    /*!
+     * \brief WalkMove Constructs the walk move object
+     * \param numPts The number of points to select to generate the proposal from
+     */
     WalkMove(int numPts):numPoints(numPts),ptCount(static_cast<ParamType>(numPts)){selectedWalkers = new int[numPoints]; randoms = new ParamType[numPoints];}
     ~WalkMove(){delete[] selectedWalkers; delete[] randoms;}
+    
     typedef Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator> WalkType;
     
     /*!
@@ -89,10 +94,16 @@ public:
     }
 
 private:
+    /*!
+     * \brief selectWalkers chooses a set of walkers to calculate the point proposal
+     * \param numWalkers The number of walkers available to choose from
+     * \param prng The random number generator, to get integers
+     */
     void selectWalkers(int numWalkers, Utility::MultiSampler<CustomDistribution>& prng)
     {
+        int limit = (numPoints <= numWalkers) ? numPoints : numWalkers; //probably unnecessary, but safety first
         int i=0;
-        while(i < numWalkers)
+        while(i < numPoints)
         {
             walkerIndices[i] = prng.getNonOffSetInt(numWalkers);
             bool noRepeats = true;
@@ -107,12 +118,12 @@ private:
         }
     }
     
-    int numPoints;
-    ParamType ptCount;
-    ParamType intermediates[3];
-    ParamType* randoms;
-    int* walkerIndices;
+    int numPoints; ///<Number of points to sample from to generate the point proposal
+    ParamType ptCount; ///<Number of points to sample from to generate the point proposal stored as a double
+    ParamType intermediates[3]; ///<Intermediate values for use in calculating the point proposal
+    ParamType* randoms; ///<Storage for the random number selectect in calculating the first parameter in the point proposal
+    int* walkerIndices; ///<Storage for the indices of the randomly selected walkers
 };
 }
 }
-#endif  //MCMC_WALKER_MOVERS_STRETCHMOVE_H
+#endif  //MCMC_WALKER_MOVERS_WALKMOVE_H
