@@ -88,7 +88,8 @@ public:
      */
     int getAcceptedProposals(){return acceptedSteps;}
     
-    friend class StretchMover;
+    friend class StretchMove;
+    friend class WalkMove;
 private:
     Chain::Chain<ParamType, BlockSize>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
     ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the likelihood for that position when written to the chain
@@ -107,7 +108,7 @@ void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::set
     {
         currState[i] = init[i];
     }
-    currLikelihood = calc.CalculateLogLikelihood(init);
+    currLikelihood = calc.CalcLogPostProb(init);
     ++acceptedSteps;
     ++totalSteps;
 }
@@ -117,7 +118,7 @@ void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::pro
 {
     currState[numParams] = currLikelihood;
     markovChain->storeWalker(walkerNumber, currState);
-    ParamType newLikelihood = calc.CalculateLogLikelihood(newPos);
+    ParamType newLikelihood = calc.CalcLogPostProb(newPos);
     ParamType ratio = ratioScale*(newLikelihood/currLikelihood);
     if(prng.getUniformReal() < ratio)
     {
