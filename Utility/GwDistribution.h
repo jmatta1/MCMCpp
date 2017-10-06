@@ -9,8 +9,8 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_UTILITY_MULTISAMPLER_H
-#define MCMC_UTILITY_MULTISAMPLER_H
+#ifndef MCMC_UTILITY_GWDISTRIBUTION_H
+#define MCMC_UTILITY_GWDISTRIBUTION_H
 // includes for C system headers
 // includes for C++ system headers
 // includes from other libraries
@@ -60,4 +60,4 @@ private:
 
 }
 }
-#endif  //MCMC_UTILITY_MULTISAMPLER_H
+#endif  //MCMC_UTILITY_GWDISTRIBUTION_H
