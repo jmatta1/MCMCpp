@@ -13,6 +13,7 @@
 #define MCMC_CHAIN_CHAINBLOCK_H
 // includes for C system headers
 // includes for C++ system headers
+#include<algorithm>
 // includes from other libraries
 // includes from MCMC
 
@@ -64,6 +65,17 @@ public:
      */
     bool incrementChainStepAndCheckNotFull(){++firstEmptyStep; return (firstEmptyStep < BlockSize);}
     
+    /*!
+     * \brief copyWalkerSet Copys a full set of walker parameters from the given location into the current step
+     * \param walkerData Array starting at the beginning of a step for a full set of walkers
+     */
+    void copyWalkerSet(ParamType* walkerData);
+    
+    /*!
+     * \brief reset Resets the block so it contains no steps
+     */
+    void reset(){firstEmptyStep = 0;}
+    
     friend class Chain;
     friend class ChainStepIterator;
     friend class ChainPsetIterator;
@@ -91,10 +103,14 @@ template <class ParamType, int BlockSize>
 void ChainBlock<ParamType, BlockSize>::storeWalker(int walkerNum, ParamType* walkerData)
 {
     ParamType* offset = chainArray + (firstEmptyStep*cellsPerStep + walkerNum*cellsPerWalker);
-    for(int i=0; i<cellsPerWalker; ++i)
-    {
-        offset[i] = walkerData[i];
-    }
+    std::copy(walkerData, (walkerData+cellsPerWalker), offset);
+}
+
+template <class ParamType, int BlockSize>
+void ChainBlock<ParamType, BlockSize>::copyWalkerSet(ParamType* walkerData)
+{
+    ParamType* offset = chainArray + (firstEmptyStep*cellsPerStep);
+    std::copy(walkerData, (walkerData+(walkerCount*cellsPerWalker)), offset);
 }
 
 }

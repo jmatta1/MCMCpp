@@ -94,6 +94,23 @@ public:
     void incrementLastStep(){++stepCount; curr->incrementChainStepAndCheckNotFull();}
     
     /*!
+     * \brief resetChain Effectively zeros out the number of steps taken by the walkers while leaving the memory allocated
+     */
+    void resetChain();
+    
+    /*!
+     * \brief resetChainForSparse Resets the chain for sparse sampling post figuring out the auto correlation time
+     * \param burnInSamples Number of samples at the start of the chain to discard in the name of 'burn-in'
+     * \param autoCorrelationTime Longest autocorrelation time of all the parameters
+     * 
+     * This function discards the first numDiscardAc*autoCorrelationTime samples in the chain.
+     * Of the remaining samples it then copies a sample every autoCorrelationTime samples along the chain
+     * this places a set of completely independent samples of the distribution at the beginning of the 
+     * chain and then leaves the remainder of the chain empty.
+     */
+    void resetChainForSparse(int burnInSamples, int autoCorrelationTime);
+    
+    /*!
      * \brief getPsetIteratorBegin Gets a parameter set iterator pointed at the very first parameter set
      * \return ChainPsetIterator pointed to the very beginning of the chain's parameter sets
      */
@@ -115,6 +132,9 @@ public:
      */
     ChainStepIterator<ParamType, BlockSize> getStepIteratorEnd();
 private:
+    template<class itType>
+    void jumpIterator(itType& start, const itType& end, int increments){int steps = 0; while(steps < increments && start != end){++steps; ++start;}}
+    
     //Linked list book-keeping
     ChainBlock<ParamType, BlockSize>* head = nullptr; ///<pointer to the first block in the chain linked list
     /*!
@@ -165,7 +185,11 @@ bool Chain<ParamType, BlockSize>::incrementChainStep()
     ++stepCount;
     if(!curr->incrementChainStepAndCheckNotFull())
     {
-        if(blockCount < maxBlocks)
+        if(curr->nextBlock != nullptr)
+        {
+            curr = curr->nextBlock;
+        }
+        else if(blockCount < maxBlocks)
         {
             curr->nextBlock = new ChainBlock<ParamType, BlockSize>(curr, walkerCount, cellsPerWalker);
             ++blockCount;
@@ -181,6 +205,31 @@ bool Chain<ParamType, BlockSize>::incrementChainStep()
     {
         return true;
     }
+}
+
+template <class ParamType, int BlockSize>
+void Chain<ParamType, BlockSize>::resetChain()
+{
+    ChainBlock<ParamType, BlockSize>* temp = head;
+    while(temp != nullptr)
+    {
+        temp->reset();
+        temp = temp->nextBlock;
+    }
+    stepCount = 0;
+}
+
+template <class ParamType, int BlockSize>
+void Chain<ParamType, BlockSize>::resetChainForSparse(int burnInSamples, int autoCorrelationTime)
+{
+    auto readLocation = this->getStepIteratorBegin();
+    auto end = this->getStepIteratorBegin();
+    //push the read location to the first non-burnin sample
+    jumpIterator(readLocation, end, burnInSamples);
+    //check to make sure we are not at the end (if so, just do a normal reset of the chain
+    if(readLocation == end){resetChain(); return;}
+    //if we are here we are not at the end of the chain
+    
 }
 
 template <class ParamType, int BlockSize>

@@ -39,7 +39,7 @@ namespace Chain
  * 
  * ChainStepIterator is a BidirectionalIterator, you can increment and decrement
  * it, as well as dereference it. However, you must use prefix increment and
- * decrement post-fix increment and decrement are not supported.
+ * decrement, post-fix increment and decrement are not supported.
  */
 template <class ParamType, int BlockSize>
 class ChainStepIterator
@@ -85,6 +85,8 @@ public:
      * is undefined behaviour.
      */
     ParamType* operator*(){return (curr->chainArray + stepIndex*(curr->cellsPerStep));}
+    
+    friend class Chain;
     
 private:
     //Linked list book-keeping

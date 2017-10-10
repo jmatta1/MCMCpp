@@ -88,6 +88,8 @@ public:
      */
     ParamType* operator*(){return (curr->chainArray + index*(curr->cellsPerWalker));}
     
+    friend class Chain;
+    
 private:
     //Linked list book-keeping
     ChainBlock<ParamType, BlockSize>* curr = nullptr; ///<pointer to the current block
