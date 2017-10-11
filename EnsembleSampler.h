@@ -35,14 +35,19 @@ namespace MarkovChainMonteCarlo
  * This can be calculated as the log of the likelihood function summed with the log of the prior-probability.
  * @tparam Mover The mover class, current options are StretchMove and WalkMove, StretchMove is
  * computationally much faster, but in some cases it can result in longer auto-correllation times,
- * WalkMove is much more computationally intensive, but it can result in shorter auto-correllation times
+ * WalkMove is much more computationally intensive, but it can result in shorter auto-correllation times in some cases
+ * @tparam PostBlockAction A functor that is called and given a pointer to the chain at the end of every step,
+ * it need not be concurrent, it is called by a single thread, though that thread may be different for each call
+ * @tparam PostBlockAction A functor that is called and given a pointer to the chain at the filling of every block
  * @tparam CustomDistribution The class that will be used to set the get sample from custom
  * distribution function in the MultiSampler, currently only affects StretchMove
- * @tparam BlockSize
+ * @tparam BlockSize Number of steps to store in a block of the linked list that stores the chain
  */
 
-template<class ParamType, class LikelihoodCalculator,
-         class PostStepAction=Utility::NoStepEndAction,
+template<class ParamType,
+         class LikelihoodCalculator,
+         class PostStepAction=Utility::NoAction,
+         class PostBlockAction=Utility::NoAction,
          class Mover=Walker::StretchMove,
          class CustomDistribution=Utility::GwDistribution<ParamType, 2.0>,
          int BlockSize=1000>
