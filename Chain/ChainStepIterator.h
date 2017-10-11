@@ -45,6 +45,9 @@ namespace Chain
  * following operators >, >=, <, <=, -, +, or []. The += and -= are provided
  * because they allow much more efficient jumps than simply using ++ or --
  * n times.
+ * 
+ * @remark It is possible to decrement an "end" iterator to yield an iterator
+ * pointing to the very last step taken
  */
 template <class ParamType, int BlockSize>
 class ChainStepIterator

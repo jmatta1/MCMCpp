@@ -40,6 +40,9 @@ namespace Chain
  * ChainPsetIterator is a BidirectionalIterator, you can increment and decrement
  * it, as well as dereference it. However, you must use prefix increment and
  * decrement post-fix increment and decrement are not supported.
+ * 
+ * @remark It is possible to decrement an "end" iterator to yield an iterator
+ * pointing to the very last parameter set in the last step taken
  */
 template <class ParamType, int BlockSize>
 class ChainPsetIterator
