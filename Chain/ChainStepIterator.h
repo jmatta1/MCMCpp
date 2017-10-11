@@ -37,9 +37,14 @@ namespace Chain
  * walkers, which is useful for operations that need to look at all the walkers
  * in a given point, at once.
  * 
- * ChainStepIterator is a BidirectionalIterator, you can increment and decrement
- * it, as well as dereference it. However, you must use prefix increment and
- * decrement, post-fix increment and decrement are not supported.
+ * ChainStepIterator is a bit more than a BidirectionalIterator, you can
+ * increment (prefix only) and decrement (prefix only) it, as well as
+ * dereference it. However, you can also add and subtract arbitrary numbers of
+ * steps with += and -=. It is not a RandomAccess iterator for a few reasons
+ * though. The += and -= are not fixed time and  there is no support for the
+ * following operators >, >=, <, <=, -, +, or []. The += and -= are provided
+ * because they allow much more efficient jumps than simply using ++ or --
+ * n times.
  */
 template <class ParamType, int BlockSize>
 class ChainStepIterator
@@ -78,6 +83,18 @@ public:
     ChainStepIterator<ParamType, BlockSize> operator--();
     
     /*!
+     * \brief operator+= Increase the iterator by some number of steps (stopping at the end if needed)
+     * \return The iterator that was increased
+     */
+    ChainStepIterator<ParamType, BlockSize> operator+=(int steps);
+    
+    /*!
+     * \brief operator-= Decrease the iterator by some number of steps (stopping at the Beginning if needed)
+     * \return The iterator that was decreased
+     */
+    ChainStepIterator<ParamType, BlockSize> operator+=(int steps);
+    
+    /*!
      * \brief operator* Dereference the iterator to get a pointer to the walker parameter array for this step
      * \return A pointer into the walker parameter array, pointed to the beginning of this step
      * 
@@ -91,28 +108,143 @@ public:
 private:
     //Linked list book-keeping
     ChainBlock<ParamType, BlockSize>* curr = nullptr; ///<pointer to the current block
+    int lastFullStep; ///<Proportional to the firstEmptyStep parameter of the current block
     int stepIndex;///<step index within the current block
 };
 
 template <class ParamType, int BlockSize>
-ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator++()
+ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator+=(int steps)
 {
     /*!
-     * @remark This function will allow the iterator to be incremented past the
-     * end. In fact, if the end is not the last cell of the last block merely a
-     * a cell in the last block, then it is possible to increment many times past
-     * the end iterator, once the iterator has gone past the last cell of the
-     * last block, the iterator is not recoverable
+     * @remark This increment *will* stop at the end of the chain, even if steps
+     * would take it further than that, this is necessary for knowing when we
+     * are at the end of the iterator
      */
+    //first figure out how many blocks we need to jump
+    int blocks = (steps/BlockSize);
+    while((blocks > 0) && (curr->nextBlock != nullptr))
+    {
+        curr = curr->nextBlock;
+        //leave step index alone because we are essentially incrementing by 1000
+        lastFullStep = (curr->firstEmptyStep - 1);
+        --blocks;
+    }
+    //Figure out if we stopped because we were at the end or because we hit our block Count
+    if(blocks > 0)
+    {//we stopped because we hit the end
+        stepIndex = (lastFullStep + 1);
+        return *this;
+    }
+    //if we are here we stopped because we hit our block count, now see if we need to jump one more block
+    steps = (steps%BlockSize);
+    if((stepIndex + steps) > BlockSize)
+    {//we need to jump one more block
+        if(curr->nextBlock != nullptr)
+        {//there is a next block available
+            curr = curr->nextBlock;
+            //now we are incrementing by the remaining size of the last block,
+            //therefor set step index to 0
+            stepIndex = 0;
+            lastFullStep = (curr->firstEmptyStep - 1);
+            steps -= (BlockSize - stepIndex);
+        }
+        else
+        {//the next block is not available
+            stepIndex = (lastFullStep + 1);
+            return *this;
+        }
+    }
+    //if we are here, we do not need to jump another block, just add some steps
+    //to the current step index
+    stepIndex += steps;
+    if(stepIndex <= lastFullStep)
+    {
+        return *this;
+    }
+    else
+    {//we could possibly be in the final block of the chain and the steps is only a little more than is in the chain
+        //if we are here then that is the case
+        stepIndex = lastFullStep;
+        return *this;
+    }
+}
+
+template <class ParamType, int BlockSize>
+ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator-=(int steps)
+{
+    /*!
+     * @remark This increment *will* stop at the beginning of the chain, even if steps
+     * would take it further than that, this is necessary for knowing when we
+     * are at the end of the iterator
+     */
+    //first figure out how many blocks we need to jump
+    int blocks = (steps/BlockSize);
+    while((blocks > 0) && (curr->lastBlock != nullptr))
+    {
+        curr = curr->lastBlock;
+        //leave step index alone because we are essentially incrementing by BlockSize
+        lastFullStep = (curr->firstEmptyStep - 1);
+        --blocks;
+    }
+    //Figure out if we stopped because we were at the end or because we hit our block Count
+    if(blocks > 0)
+    {//we stopped because we hit the end
+        stepIndex = 0;
+        return *this;
+    }
+    //if we are here we stopped because we hit our block count, now see if we need to jump one more block
+    steps = (steps%BlockSize);
+    if(stepIndex < steps)
+    {//we need to jump one more block
+        if(curr->lastBlock != nullptr)
+        {//there is a last block available
+            curr = curr->lastBlock;
+            //now we are decrementing by the remaining size of the previous block,
+            //therefor set step index to the last step in the new block
+            stepIndex = (BlockSize-1);
+            lastFullStep = (curr->firstEmptyStep - 1);
+            steps -= stepIndex;
+        }
+        else
+        {//We are in the first block
+            stepIndex = 0;
+            return *this;
+        }
+    }
+    //if we are here, we do not need to jump another block, just add some steps
+    //to the current step index
+    stepIndex -= steps;
+    if(stepIndex >= 0)
+    {
+        return *this;
+    }
+    else
+    {//If we were in the first block of the chain and had enough steps to go past
+        //the beginning we should have gotten stopped earlier in this function
+        //this is here for completeness/symmetry with +=
+        stepIndex = 0;
+        return *this;
+    }
+}
+
+
+template <class ParamType, int BlockSize>
+ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator++()
+{
     //check if we are not at the end of a block
-    if(stepIndex < (BlockSize-1))
+    if(stepIndex < lastFullStep)
     {//not at the end of a block, easy peasy
         ++stepIndex;
     }
-    else
-    {//at the end of a block, jump to the next block
+    else if((stepIndex==BlockSize) && (curr->nextBlock != nullptr))
+    {//at the end of a block, and there is a next block, jump to the next block
         curr = curr->nextBlock;
         stepIndex = 0;
+        lastFullStep = (curr->firstEmptyStep - 1);
+    }
+    else
+    {//at the end of a block, and there is no next block, set step index to the first available step in the block
+        stepIndex = (lastFullStep + 1);
     }
     return *this;
 }
@@ -120,19 +252,20 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
 template <class ParamType, int BlockSize>
 ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator--()
 {
-    /*!
-     * @remark This function will allow a .begin() operator to be decremented,
-     * once this happens the iterator is not recoverable
-     */
     //check if we are not at the end of a block
     if(stepIndex > 0)
     {//not at the start of a block, easy peasy
         --stepIndex;
     }
-    else
-    {//at the start of a block, jump to the end of the previous block
+    else if(curr->lastBlock != nullptr)
+    {//at the start of a block, and there is a previous block jump to the end of the previous block
         curr = curr->lastBlock;
-        stepIndex = (BlockSize-1);
+        lastFullStep = (curr->firstEmptyStep - 1);
+        stepIndex = lastFullStep;
+    }
+    else
+    {//otherwise we are at the beginning of the first block
+        stepIndex = 0;
     }
     return *this;
 }

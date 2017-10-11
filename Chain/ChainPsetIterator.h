@@ -51,7 +51,9 @@ public:
      * \param blockStep The step within the block that the iterator starts pointing to
      */
     ChainPsetIterator(ChainBlock<ParamType, BlockSize>* block, int blockStep):
-        curr(block), stepIndex(blockStep), lastCell(BlockSize*block->walkerCount - 1){}
+        curr(block), stepIndex(blockStep),
+        lastCell(block->firstEmptyStep*block->walkerCount - 1),
+        endCell(BlockSize*block->walkerCount - 1){}
     ~ChainPsetIterator(){}
     
     /*!
@@ -94,28 +96,27 @@ private:
     //Linked list book-keeping
     ChainBlock<ParamType, BlockSize>* curr = nullptr; ///<pointer to the current block
     int index;///<parameter set index within the current block
-    int lastCell;///<stores the index of the last valid cell within the block array
+    int lastCell;///<stored the inddex of the last cell with data within the block array
+    int endCell;///<stores the index of the last valid cell within the block array
 };
 
 template <class ParamType, int BlockSize>
 ChainPsetIterator<ParamType, BlockSize> ChainPsetIterator<ParamType, BlockSize>::operator++()
 {
-    /*!
-     * @remark This function will allow the iterator to be incremented past the
-     * end. In fact, if the end is not the last cell of the last block merely a
-     * a cell in the last block, then it is possible to increment many times past
-     * the end iterator, once the iterator has gone past the last cell of the
-     * last block, the iterator is not recoverable
-     */
     //check if we are not at the end of a block
     if(index < lastCell)
     {//not at the end of a block, easy peasy
         ++index;
     }
-    else
-    {//at the end of a block, jump to the next block
+    else if((index>endCell) && (curr->nextBlock != nullptr))
+    {//at the end of a block, there is a next block, jump to the next block
         curr = curr->nextBlock;
         index = 0;
+        lastCell = (curr->firstEmptyStep*curr->walkerCount - 1);
+    }
+    else
+    {//at the end of the chain
+        index = (lastCell + 1);
     }
     return *this;
 }
@@ -123,19 +124,20 @@ ChainPsetIterator<ParamType, BlockSize> ChainPsetIterator<ParamType, BlockSize>:
 template <class ParamType, int BlockSize>
 ChainPsetIterator<ParamType, BlockSize> ChainPsetIterator<ParamType, BlockSize>::operator--()
 {
-    /*!
-     * @remark This function will allow a .begin() operator to be decremented,
-     * once this happens the iterator is not recoverable
-     */
     //check if we are not at the end of a block
     if(index > 0)
     {//not at the start of a block, easy peasy
         --index;
     }
-    else
+    else if(curr->nextBlock != nullptr)
     {//at the start of a block, jump to the end of the previous block
         curr = curr->lastBlock;
+        lastCell = (curr->firstEmptyStep*curr->walkerCount - 1);
         index = lastCell;
+    }
+    else
+    {//at the start of the chain
+        index = 0;
     }
     return *this;
 }
