@@ -248,6 +248,7 @@ void Chain<ParamType, BlockSize>::incrementChainStepSubSampleReset()
 template <class ParamType, int BlockSize>
 void Chain<ParamType, BlockSize>::resetChain()
 {
+    //just jump through the chain blocks resetting each one
     ChainBlock<ParamType, BlockSize>* temp = head;
     while(temp != nullptr)
     {
