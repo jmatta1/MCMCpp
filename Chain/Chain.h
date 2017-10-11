@@ -25,6 +25,15 @@ namespace MarkovChainMonteCarlo
 namespace Chain
 {
 
+/*!
+ * \brief The IncrementStatus enum represents the possible statuses after the
+ * application of an end of step increment
+ */
+enum class IncrementStatus : char {NormalIncrement, ///< Standard increment, no moving to a new block or anything else
+                                   NewBlock, ///< Either jumped to or allocated a new block for the chain
+                                   EndOfChain ///< Reached the end of the last block *and* cannot allocate more memory to make a new block
+                                  };
+
 /**
  * @class Chain
  * @ingroup Chain
@@ -77,9 +86,9 @@ public:
     
     /*!
      * \brief incrementChainStep Moves the chain to the next step
-     * \return True if there is another step available (i.e. maxBlock has been reached), False otherwise
+     * \return An IncrementStatus enum whose value describes the chain state after the increment
      */
-    bool incrementChainStep();
+    IncrementStatus incrementChainStep();
     
     /*!
      * \brief getStoredStepCount get the number of steps
@@ -91,7 +100,7 @@ public:
      * \brief incrementLastStep Moves the chain to the next step but will not allocate
      * a new block if the current step was the end of a block
      */
-    void incrementLastStep(){++stepCount; curr->incrementChainStepAndCheckNotFull();}
+    void incrementLastStep(){++stepCount; curr->AndCheckNotFull();}
     
     /*!
      * \brief resetChain Effectively zeros out the number of steps taken by the walkers while leaving the memory allocated
@@ -108,7 +117,7 @@ public:
      * this places a set of completely independent samples of the distribution at the beginning of the 
      * chain and then leaves the remainder of the chain empty.
      */
-    void resetChainForSparse(int burnInSamples, int autoCorrelationTime);
+    void resetChainForSubSampling(int burnInSamples, int autoCorrelationTime);
     
     /*!
      * \brief getPsetIteratorBegin Gets a parameter set iterator pointed at the very first parameter set
@@ -132,8 +141,10 @@ public:
      */
     ChainStepIterator<ParamType, BlockSize> getStepIteratorEnd();
 private:
-    template<class itType>
-    void jumpIterator(itType& start, const itType& end, int increments){int steps = 0; while(steps < increments && start != end){++steps; ++start;}}
+    /*!
+     * \brief incrementChainStepSubSampleReset Moves the chain to the next step, doing special actions needed for resetting the chain as we go along
+     */
+    void incrementChainStepSubSampleReset();
     
     //Linked list book-keeping
     ChainBlock<ParamType, BlockSize>* head = nullptr; ///<pointer to the first block in the chain linked list
@@ -162,15 +173,19 @@ Chain<ParamType, BlockSize>::Chain(int numWalkers, int numCellsPerWalker, unsign
 {
     //allocate the first block
     head = new ChainBlock<ParamType, BlockSize>(nullptr, walkerCount, cellsPerWalker);
+    //record that we have allocated a new block
     ++blockCount;
+    //set up the curr ptr
     curr = head;
 }
 
 template <class ParamType, int BlockSize>
 Chain<ParamType, BlockSize>::~Chain()
 {
+    //grab a pointer to head's next block, head should *always be valid
     ChainBlock<ParamType, BlockSize>* temp = head->nextBlock;
     delete head;
+    // while temp is not a nullptr, move head to temp, move temp to nextblock and delete head, rinse and repeat
     while(temp != nullptr)
     {
         head = temp;
@@ -180,30 +195,53 @@ Chain<ParamType, BlockSize>::~Chain()
 }
 
 template <class ParamType, int BlockSize>
-bool Chain<ParamType, BlockSize>::incrementChainStep()
+IncrementStatus Chain<ParamType, BlockSize>::incrementChainStep()
 {
+    ++stepCount;
+    if(curr->incrementChainStepAndCheckNotFull())
+    {//The increment when completely normally
+        return IncrementStatus::NormalIncrement;
+    }
+    else
+    {//The current block is now full we either need to go to the next block, allocate a new block, or declare the chain finished
+        if(curr->nextBlock != nullptr)
+        {//There is a next block already allocated, move to it
+            curr = curr->nextBlock;
+            //Tell the caller that the chain has moved to a new block
+            return IncrementStatus::NewBlock;
+        }
+        else if(blockCount < maxBlocks)
+        {//There is no pre-allocated next block, but we can allocate one
+            curr->nextBlock = new ChainBlock<ParamType, BlockSize>(curr, walkerCount, cellsPerWalker);
+            //record the additional allocation
+            ++blockCount;
+            //move to the new block
+            curr = curr->nextBlock;
+            //tell the caller that the chain has moved to a new block
+            return IncrementStatus::NewBlock;
+        }
+        else
+        {//there is no next block available and we cannot allocate anymore without exceeding the space limits
+            //tell the user
+            return IncrementStatus::EndOfChain;
+        }
+    }
+}
+
+template <class ParamType, int BlockSize>
+void Chain<ParamType, BlockSize>::incrementChainStepSubSampleReset()
+{
+    //increment the number of steps taken
     ++stepCount;
     if(!curr->incrementChainStepAndCheckNotFull())
     {
+        //The current block is now full we either need to go to the next block
         if(curr->nextBlock != nullptr)
-        {
+        {//There is a next block already allocated, move to it
             curr = curr->nextBlock;
-        }
-        else if(blockCount < maxBlocks)
-        {
-            curr->nextBlock = new ChainBlock<ParamType, BlockSize>(curr, walkerCount, cellsPerWalker);
-            ++blockCount;
-            curr = curr->nextBlock;
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else
-    {
-        return true;
+            //since this function is only called by resetChainForSubSampling we need to reset the new block we moved into
+            curr->reset();
+        }//The else cases should *NOT* be able to happen when called from resetChainForSubSampling
     }
 }
 
@@ -220,43 +258,51 @@ void Chain<ParamType, BlockSize>::resetChain()
 }
 
 template <class ParamType, int BlockSize>
-void Chain<ParamType, BlockSize>::resetChainForSparse(int burnInSamples, int autoCorrelationTime)
+void Chain<ParamType, BlockSize>::resetChainForSubSampling(int burnInSamples, int autoCorrelationTime)
 {
+    stepCount = 0;
     auto readLocation = this->getStepIteratorBegin();
     auto end = this->getStepIteratorBegin();
     //push the read location to the first non-burnin sample
-    jumpIterator(readLocation, end, burnInSamples);
+    readLocation += burnInSamples;
     //check to make sure we are not at the end (if so, just do a normal reset of the chain
     if(readLocation == end){resetChain(); return;}
-    //if we are here we are not at the end of the chain
-    
+    //if we are here we are not at the end of the chain and so we need to start copying samples properly
+    //first put our current pointer at head
+    curr = head;
+    //now reset head
+    //it is safe to reset head, even though the iterator needs to know the size (incase the iterator is within head still)
+    //this is because the iterator gets what it needs as it is constructed. Post Construction it updates itself when it jumps to
+    //the new block, since the point being written will always be behind the point being read, the iterator will always get what
+    //it needs before the block is reset
+    curr->reset();
+    //now loop and copy walker parameter sets
+    while(reeadLocation != end)
+    {
+        curr->copyWalkerSet(*readLocation);
+        incrementChainStepSubSampleReset();
+        readLocation += autoCorrelationTime;
+    }
+    //now finish resetting the remainder of the chain
+    ChainBlock<ParamType, BlockSize>* temp = curr->nextBlock;
+    while(temp != nullptr)
+    {
+        temp->reset();
+        temp = temp->nextBlock;
+    }
 }
 
 template <class ParamType, int BlockSize>
 ChainPsetIterator<ParamType, BlockSize> Chain<ParamType, BlockSize>::getPsetIteratorEnd()
 {
-    if(curr->firstEmptyStep == BlockSize)
-    {
-        return ChainPsetIterator<ParamType, BlockSize>(nullptr, 0);
-    }
-    else
-    {
-        int index = (curr->firstEmptyStep*walkerCount*cellsPerWalker);
-        return ChainPsetIterator<ParamType, BlockSize>(curr, index);
-    }
+    int index = (curr->firstEmptyStep*walkerCount);
+    return ChainPsetIterator<ParamType, BlockSize>(curr, index);
 }
 
 template <class ParamType, int BlockSize>
 ChainStepIterator<ParamType, BlockSize> Chain<ParamType, BlockSize>::getStepIteratorEnd()
 {
-    if(curr->firstEmptyStep == BlockSize)
-    {
-        return ChainPsetIterator<ParamType, BlockSize>(nullptr, 0);
-    }
-    else
-    {
-        return ChainPsetIterator<ParamType, BlockSize>(curr, curr->firstEmptyStep);
-    }
+    return ChainPsetIterator<ParamType, BlockSize>(curr, curr->firstEmptyStep);
 }
 
 }
