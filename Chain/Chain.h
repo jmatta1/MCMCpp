@@ -51,14 +51,14 @@ enum class IncrementStatus : char {NormalIncrement, ///< Standard increment, no 
  * 'push' those sets to the chain as needed, as opposed to walkers attempting
  * to use memory allocated in the chain to store their current position
  * 
- * the first iterator ChainStepIterator allows traversal step by step. That is
+ * The first iterator, ChainStepIterator, allows traversal step by step. That is
  * to say that incrementing the iterator jumps all the parameter sets of all the
  * walkers, which is useful for operations that need to look at all the walkers
  * in a given point, at once.
  * 
- * The second iterator ChainPsetIterator allows traversal point by point. That
+ * The second iterator, ChainPsetIterator, allows traversal point by point. That
  * is to say that incrementing the iterator moves to the next parameter set,
- * which could be in the same step just the next walker, or it could be in the
+ * which could be in the same step merely the next walker, or it could be in the
  * first walker of the next step.
  */
 template <class ParamType, int BlockSize>
