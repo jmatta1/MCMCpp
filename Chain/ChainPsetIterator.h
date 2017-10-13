@@ -57,21 +57,38 @@ public:
         curr(block), stepIndex(blockStep),
         lastCell(block->firstEmptyStep*block->walkerCount - 1),
         endCell(BlockSize*block->walkerCount - 1){}
+    
+    /*!
+     * \brief ChainPsetIterator Copy constructor to make a copy of an iterator
+     * \param copy The original iterator to be copied into the iterator being constructed
+     */
+    ChainPsetIterator(const ChainPsetIterator<ParamType, BlockSize>& copy):
+        curr(copy.curr), index(copy.index), lastCell(copy.lastCell),
+        endCell(copy.endCell) {}
+    
     ~ChainPsetIterator(){}
+    
+    /*!
+     * \brief operator = Assignment operator for making two iterators that point to the same place
+     * \param rhs The iterator to copy into this iterator
+     * \return A reference to this iterator (post copying of rhs into it)
+     */
+    ChainPsetIterator<ParamType, BlockSize>& operator=(const ChainPsetIterator<ParamType, BlockSize>& rhs)
+    {curr = rhs.curr; index = rhs.index; lastCell = rhs.lastCell; endCell = rhs.endCell; return *this;}
     
     /*!
      * \brief operator== equality operator to test equality of two iterators (equivalence of their locations)
      * \param rhs the second iterator (the right hand side)
      * \return  True if they are equal, false otherwise
      */
-    bool operator==(const ChainStepIterator& rhs){return ((curr == rhs.curr) && (index == rhs.index));}
+    bool operator==(const ChainStepIterator<ParamType, BlockSize>& rhs){return ((curr == rhs.curr) && (index == rhs.index));}
     
     /*!
      * \brief operator!= equality operator to test inequality of two iterators (inequivalence of their locations)
      * \param rhs the second iterator (the right hand side)
      * \return  True if they are not equal, false otherwise
      */
-    bool operator!=(const ChainStepIterator& rhs){return ((curr != rhs.curr) || (index != rhs.index));}
+    bool operator!=(const ChainStepIterator<ParamType, BlockSize>& rhs){return ((curr != rhs.curr) || (index != rhs.index));}
     
     /*!
      * \brief operator++ Prefix increment of the iterator, move it to the next walker parameter set in the chain
