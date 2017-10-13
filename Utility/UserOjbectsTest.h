@@ -54,13 +54,14 @@ struct SameType<T1, T1> { typedef std::true_type ValType;};
  * @tparam RetType The type of the return argument
  * @tparam Arg0 The type of the first function argument
  */
-template<class TestClass, class RetType, class Arg0>
-static auto testSignature_performAction(unsigned long long) -> typename SameType<RetType, decltype(std::declval<TestClass>().performAction(std::declval<Arg0>())) >::ValType;
+template<class TestClass, class RetType, class Arg0, class Arg1>
+static auto testSignature_performAction(unsigned long long) -> typename SameType<RetType,
+    decltype(std::declval<TestClass>().performAction(std::declval<Arg0>(),std::declval<Arg1>())) >::ValType;
 /*!
  * @cond HIDDEN_SYMBOLS
  * substitution failure branch, either the function does not exist or the arguments passed cannot be coerced into being the correct arguments
  */
-template<class, class, class >
+template<class, class, class, class >
 static auto testSignature_performAction(int) -> std::false_type;
 /*!
  * @endcond
@@ -89,8 +90,8 @@ static auto testSignature_functor(int) -> std::false_type;
 /*!
  * @brief Outer Function to perform test for perform action function
  */
-template<class TestClass, class RetVal, class Arg0>
-struct CheckPerformAction : decltype(Detail::testSignature_performAction<TestClass, RetVal, Arg0>(0ULL) ){};
+template<class TestClass, class RetVal, class Arg0, class Arg1>
+struct CheckPerformAction : decltype(Detail::testSignature_performAction<TestClass, RetVal, Arg0, Arg1>(0ULL) ){};
 
 /*!
  * @brief Outer Function to perform test for operator() function
