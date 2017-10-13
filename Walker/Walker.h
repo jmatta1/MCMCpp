@@ -114,7 +114,7 @@ void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::set
 }
 
 template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
-void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::proposePoint(ParamType* newPos, const MarkovChainMonteCarlo::ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<MarkovChainMonteCarlo::Walker::ParamType, MarkovChainMonteCarlo::Walker::CustomDistribution>& prng)
+void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<MarkovChainMonteCarlo::Walker::ParamType, MarkovChainMonteCarlo::Walker::CustomDistribution>& prng)
 {
     currState[numParams] = currLikelihood;
     markovChain->storeWalker(walkerNumber, currState);
