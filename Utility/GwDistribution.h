@@ -35,13 +35,13 @@ namespace Utility
  * distribution between 0 and 1 to a floating point number draw from the
  * distribution proportional to 1/sqrt(z) on the interval 1/Alpha to Alpha
  */
-template <class ParamType, double Alpha>
+template <class ParamType, ParamType Alpha>
 class GwDistribution
 {
 public:
-    const double InverseAlpha = (1.0/Alpha);///< Constant needed for the inversion calculation
-    const double QuadraticConst = (Alpha - 2.0 + InverseAlpha);///< Constant needed for the inversion calculation
-    const double LinearConst = (1.0 - InverseAlpha);///< Constant needed for the inversion calculation
+    constexpr ParamType InverseAlpha = (static_cast<ParamType>(1)/Alpha);///< Constant needed for the inversion calculation
+    constexpr ParamType QuadraticConst = (Alpha - static_cast<ParamType>(2) + InverseAlpha);///< Constant needed for the inversion calculation
+    constexpr ParamType LinearConst = static_cast<ParamType>(2)*(static_cast<ParamType>(1) - InverseAlpha);///< Constant needed for the inversion calculation
     /*!
      * \brief GwDistribution Constructs a GwDistribution
      */
@@ -54,7 +54,7 @@ public:
      * \param in The floating point number drawn from the uniform distribution on [0, 1)
      * \return a floating point number draw from the distribution proportional to 1/sqrt(z) in the range 1/Alpha to Alphal
      */
-    ParamType operator()(double in){return (InverseAlpha + (LinearConst*in) + (QuadraticConst*in*in));}
+    ParamType operator()(ParamType in){return (InverseAlpha + (LinearConst*in) + (QuadraticConst*in*in));}
 private:
 };
 
