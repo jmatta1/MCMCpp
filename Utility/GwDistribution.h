@@ -42,13 +42,7 @@ public:
     constexpr ParamType InverseAlpha = (static_cast<ParamType>(1)/Alpha);///< Constant needed for the inversion calculation
     constexpr ParamType QuadraticConst = (Alpha - static_cast<ParamType>(2) + InverseAlpha);///< Constant needed for the inversion calculation
     constexpr ParamType LinearConst = static_cast<ParamType>(2)*(static_cast<ParamType>(1) - InverseAlpha);///< Constant needed for the inversion calculation
-    /*!
-     * \brief GwDistribution Constructs a GwDistribution
-     */
-    GwDistribution(){}
-    ~GwDistribution(){}
-    
-    
+
     /*!
      * \brief operator() Returns a random sample from the distribution proportional to 1/sqrt(z)
      * \param in The floating point number drawn from the uniform distribution on [0, 1)
