@@ -44,14 +44,13 @@ namespace MarkovChainMonteCarlo
  * distribution function in the MultiSampler, currently only affects StretchMove
  * @tparam BlockSize Number of steps to store in a block of the linked list that stores the chain
  */
-
 template<class ParamType,
          class LikelihoodCalculator,
-         class PostStepAction=Utility::NoAction,
-         class PostBlockAction=Utility::NoAction,
          class Mover=Walker::StretchMove,
          class CustomDistribution=Utility::GwDistribution<ParamType, 2.0>,
-         int BlockSize=1000>
+         int BlockSize=1000,
+         class PostStepAction=Utility::NoAction<ParamType, BlockSize>,
+         class PostBlockAction=Utility::NoAction<ParamType, BlockSize>>
 class EnsembleSampler
 {
 public:
@@ -103,8 +102,10 @@ public:
     /*!
      * \brief setSamplingMode Is used to change the sampling mode, either using subsampling, or taking all samples
      * \param useSubSampling Boolean for whether or not to use subsampling, default is false
+     * \param subSamplingInt The interval for subsampling
+     * \param burnIn The number of points at the beginning to discard for burnin
      */
-    void setSamplingMode(bool useSubSampling=false, int subSampingInt=1);
+    void setSamplingMode(bool useSubSampling=false, int subSampingInt=1, int burnIn=0);
     
     /*!
      * \brief getParamSetIttBegin Gets an iterator pointing to the beginning of the chain
