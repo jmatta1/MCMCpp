@@ -108,7 +108,7 @@ void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::set
     {
         currState[i] = init[i];
     }
-    currLikelihood = calc.CalcLogPostProb(init);
+    currLikelihood = calc.calcLogPostProb(init);
     ++acceptedSteps;
     ++totalSteps;
 }
@@ -118,7 +118,7 @@ void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::pro
 {
     currState[numParams] = currLikelihood;
     markovChain->storeWalker(walkerNumber, currState);
-    ParamType newLikelihood = calc.CalcLogPostProb(newPos);
+    ParamType newLikelihood = calc.calcLogPostProb(newPos);
     ParamType ratio = ratioScale*(newLikelihood/currLikelihood);
     if(prng.getUniformReal() < ratio)
     {
