@@ -53,6 +53,7 @@ struct SameType<T1, T1> { typedef std::true_type ValType;};
  * @tparam TestClass The class to test for existence of a member function
  * @tparam RetType The type of the return argument
  * @tparam Arg0 The type of the first function argument
+ * @tparam Arg1 The type of the second function argument
  */
 template<class TestClass, class RetType, class Arg0, class Arg1>
 static auto testSignature_performAction(unsigned long long) -> typename SameType<RetType,
@@ -63,6 +64,25 @@ static auto testSignature_performAction(unsigned long long) -> typename SameType
  */
 template<class, class, class, class >
 static auto testSignature_performAction(int) -> std::false_type;
+/*!
+ * @endcond
+ */
+
+/*!
+ * @brief testSignature_PerformAction tests the existance of a function named PerformAction that has 1 argument
+ * @tparam TestClass The class to test for existence of a member function
+ * @tparam RetType The type of the return argument
+ * @tparam Arg0 The type of the first function argument
+ */
+template<class TestClass, class RetType, class Arg0>
+static auto testSignature_calcLogPostProb(unsigned long long) -> typename SameType<RetType,
+    decltype(std::declval<TestClass>().calcLogPostProb(std::declval<Arg0>()) )>::ValType;
+/*!
+ * @cond HIDDEN_SYMBOLS
+ * substitution failure branch, either the function does not exist or the arguments passed cannot be coerced into being the correct arguments
+ */
+template<class, class, class>
+static auto testSignature_calcLogPostProb(int) -> std::false_type;
 /*!
  * @endcond
  */
@@ -99,6 +119,11 @@ struct CheckPerformAction : decltype(Detail::testSignature_performAction<TestCla
 template<class TestClass, class RetVal, class Arg0>
 struct CheckFunctor : decltype( Detail::testSignature_functor<TestClass, RetVal, Arg0>(0ULL) ){};
 
+/*!
+ * @brief Outer Function to perform test for calcLogPostProb function
+ */
+template<class TestClass, class RetVal, class Arg0>
+struct CheckCalcLogPostProb : decltype( Detail::testSignature_functor<TestClass, RetVal, Arg0>(0ULL) ){};
 }
 }
 #endif  //MCMC_UTILITY_USEROBJECTTEST_H
