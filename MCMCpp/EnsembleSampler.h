@@ -69,7 +69,8 @@ public:
     static_assert(Utility::CheckFunctor<CustomDistribution, ParamType, ParamType>(),
                   "The CustomDistribution class does not have the necessary member function with signature:\n"
                   "  'ParamType operator()(ParamType)'");
-    static_assert(std::is_trivially_constructible<CustomDistribution>::value, "The custom distribution needs to be trivially constructible");
+    static_assert(std::is_trivially_constructible<CustomDistribution>::value, "The CustomDistribution class needs to be trivially constructible.");
+    static_assert(std::is_copy_constructible<Mover>::value, "The Mover class needs to be copy constructible.");
     /*!
      * \brief EnsembleSampler Constructs the ensemble sampler
      * \param runNumber RunNumber, used to seed the random number generator
