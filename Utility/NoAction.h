@@ -41,7 +41,7 @@ public:
      * \param startItt The iterator to the beginning of the chain
      * \param endItt The iterator to the end of the chain
      */
-    void PerformAction(Chain::ChainStepIterator<ParamType, BlockSize>& startItt,
+    void performAction(Chain::ChainStepIterator<ParamType, BlockSize>& startItt,
                        Chain::ChainStepIterator<ParamType, BlockSize>& endItt){}
 private:
 };
