@@ -15,7 +15,7 @@
 // includes for C++ system headers
 // includes from other libraries
 // includes from MCMC
-#include"Reconstruction/MCMC/Utility/MultiSampler.h"
+#include"../../Utility/MultiSampler.h"
 #include"../Walker.h"
 
 namespace MarkovChainMonteCarlo
