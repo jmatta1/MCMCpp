@@ -11,6 +11,10 @@
 *******************************************************************************/
 #ifndef MCMC_UTILITY_AUTOCORRCALC_H
 #define MCMC_UTILITY_AUTOCORRCALC_H
+// includes for C system headers
+// includes for C++ system headers
+// includes from other libraries
+// includes from MCMC
 
 namespace MarkovChainMonteCarlo
 {
