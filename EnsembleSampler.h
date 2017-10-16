@@ -19,8 +19,10 @@
 #include"Walker/Movers/StretchMove.h"
 #include"Walker/Movers/WalkMove.h"
 #include"Walker/Walker.h"
+#include"Utility/NoAction.h"
 #include"Utility/GwDistribution.h"
 #include"Utility/UserOjbectsTest.h"
+#include"Utility/CalculateAutoCorr.h"
 
 namespace MarkovChainMonteCarlo
 {
@@ -36,21 +38,18 @@ namespace MarkovChainMonteCarlo
  * @tparam Mover The mover class, current options are StretchMove and WalkMove, StretchMove is
  * computationally much faster, but in some cases it can result in longer auto-correllation times,
  * WalkMove is much more computationally intensive, but it can result in shorter auto-correllation times in some cases
+ * @tparam CustomDistribution The class that will be used to set the get sample from custom
+ * distribution function in the MultiSampler, currently only affects StretchMove 
+ * @tparam BlockSize Number of steps to store in a block of the linked list that stores the chain 
  * @tparam PostStepAction A functor that is called and given a pointer to the chain at the end of every step,
  * it need not be concurrent, it is called by a single thread, though that thread may be different for each call
- * @tparam PostBlockAction A functor that is called and given a pointer to the chain at the filling of every block
- * it need not be concurrent, it is called by a single thread, though that thread may be different for each call
- * @tparam CustomDistribution The class that will be used to set the get sample from custom
- * distribution function in the MultiSampler, currently only affects StretchMove
- * @tparam BlockSize Number of steps to store in a block of the linked list that stores the chain
  */
 template<class ParamType,
          class LikelihoodCalculator,
-         class Mover=Walker::StretchMove,
-         class CustomDistribution=Utility::GwDistribution<ParamType, 2.0>,
          int BlockSize=1000,
          class PostStepAction=Utility::NoAction<ParamType, BlockSize>,
-         class PostBlockAction=Utility::NoAction<ParamType, BlockSize>>
+         class CustomDistribution=Utility::GwDistribution<ParamType, 2.0>,
+         class Mover=Walker::StretchMove<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>>
 class EnsembleSampler
 {
 public:
@@ -59,16 +58,17 @@ public:
     using MoverType=Mover<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>;
     using WalkerType=Walker::Walker<ParamType, BlockSize, MoverType, LikelihoodCalculator>;
     using PrngType=Utility::MultiSampler<ParamType, CustomDistribution>;
-    using EnsembleSamplerType=EnsembleSampler<ParamType, LikelihoodCalculator, PostStepAction, PostBlockAction, Mover, CustomDistribution>;
+    using PsetItt=Chain::ChainPsetIterator<ParamType, BlockSize>;
     //perform static checks of the users classes to ensure that they have the needed member functions for their role
-    static_assert(Utility::CheckPerformAction<PostStepAction, void, EnsembleSamplerType>(),
+    static_assert(Utility::CheckCalcLogPostProb<LikelihoodCalculator, ParamType, ParamType*>(),
+                  "The LikelihoodCalculator class does not have the necessary member function with signature:\n"
+                  "  'ParamType calcLogPostProb(ParamType* paramSet)'");
+    static_assert(Utility::CheckPerformAction<PostStepAction, void, PsetItt, PsetItt>(),
                   "The PostStepAction class does not have the necessary member function with signature:\n"
-                  "  'void PerformAction(EnsembleSampler<ParamType, LikelihoodCalculator, PostStepAction,"
-                  "                                      PostBlockAction, Mover, CustomDistribution>*)'");
-    static_assert(Utility::CheckPerformAction<PostBlockAction, void, EnsembleSamplerType>(),
-                  "The PostBlockAction class does not have the necessary member function with signature:\n"
-                  "  'void PerformAction(EnsembleSampler<ParamType, LikelihoodCalculator, PostStepAction,\n"
-                  "                                      PostBlockAction, Mover, CustomDistribution>*)'");
+                  "  'void PerformAction(Chain::ChainPsetIterator<ParamType, BlockSize>& start, Chain::ChainPsetIterator<ParamType, BlockSize>& end)'");
+    static_assert(Utility::CheckFunctor<CustomDistribution, ParamType, ParamType>(),
+                  "The CustomDistribution class does not have the necessary member function with signature:\n"
+                  "  'ParamType operator()(ParamType)'");
     static_assert(std::is_trivially_constructible<CustomDistribution>::value, "The custom distribution needs to be trivially constructible");
     /*!
      * \brief EnsembleSampler Constructs the ensemble sampler
@@ -76,8 +76,9 @@ public:
      * \param numWalker The number of walkers to use
      * \param numParameter The number of parameters in the problem
      * \param maxChainSizeBytes The maximum size of the sample chain in bytes
+     * \param stepAction An instance of the post step action class
      */
-    EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes);
+    EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, PostStepAction& stepAction);
     
     /*!
      * @brief ~EnsembleSampler Delete the walker list then allow the rest to die normally
@@ -132,18 +133,6 @@ public:
      * \return A Step iterator pointed to the end of the chain
      */
     Chain::ChainStepIterator<ParamType, BlockSize> getStepIttEnd();
-    
-    /*!
-     * \brief getAutoCorrelationTimes Calculates the correlation time for a given parameter
-     * \param paramIndex The index of the parameter [0, numParameter)
-     * \param minAutoCorrTimes The minimum required number of autocorrelation times the algorithm needs to examine
-     * \param step The increase in window size for each iteration of the algorithm
-     * \param loWin The minimum window size
-     * \param hiWin The maximum window size
-     * \param fast If true, only use the first power of two samples to accellerate calculation using FFT
-     * \return The autocorrelation time in samples for parameter # paramIndex
-     */
-    ParamType getAutoCorrelationTimes(int paramIndex, int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000, bool fast=false);
 private:
     ChainType markovChain;
     WalkerType* walkerList;
@@ -156,6 +145,8 @@ private:
     
     bool isInitted = false;
     bool subSampling = false;
+    
+    PostStepAction& stepAction;
 };
 
 }
