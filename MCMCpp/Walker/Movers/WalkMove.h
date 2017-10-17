@@ -50,7 +50,8 @@ public:
     typedef Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator> WalkType;
     
     /*!
-     * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates
+     * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates a new location proposal assumes that
+     * currWalker in not in the set of walkers to select from
      * \param proposal An array of ParamTypes that holds the proposed point this code will generate
      * \param numParams Number of parameters in the proposal array
      * \param currWalker A reference to the current walker that we are generating a proposal for
