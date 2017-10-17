@@ -32,15 +32,15 @@ namespace Walker
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
  * \tparam BlockSize The number of steps per walker that the block will hold
  * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
- * \tparam LikelihoodCalculator The class that calculates the log likelihood
+ * \tparam PostProbCalculator The class that calculates the log posterior probability
  * 
  * A fast, efficient Affine Invariant move algorithm functor that uses minimal resources and can yield good autocorrelation times
  */
-template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
+template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
 class StretchMove
 {
 public:
-    typedef Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator> WalkType;
+    typedef Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator> WalkType;
     StretchMove(int numParams){} ///<useless constructor, exists to give the same constructor signature as WalkMove
     
     /*!
@@ -52,7 +52,7 @@ public:
      * \param walkerSet A pointer to the set of walkers used to generate the proposal
      * \param numWalkers The number of walkers in WalkerSet
      * \param prng The pseudo random number generator to first select another walker for the calculation and to generate the scaling factor
-     * \return The scaling factor for the likelihood ratio to be constructed for determining if the move should be taken
+     * \return The scaling factor for the post-prob ratio to be constructed for determining if the move should be taken
      */
     ParamType getProposal(ParamType* proposal, int numParams, WalkType& currWalker, WalkType* walkerSet, int numWalkers, Utility::MultiSampler<ParamType, CustomDistribution>& prng)
     {

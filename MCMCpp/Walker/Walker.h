@@ -32,10 +32,10 @@ namespace Walker
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
  * \tparam BlockSize The number of steps per walker that the block will hold
  * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
- * \tparam LikelihoodCalculator The class that calculates the log likelihood
+ * \tparam PostProbCalculator The class that calculates the log post probability
  * 
  */
-template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
+template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
 class Walker
 {
 public:
@@ -58,24 +58,24 @@ public:
     /*!
      * \brief setFirstPoint Initializes the walker with its very first point (which is counted as an accepted step (and a normal step))
      * \param init The parameter set for the initial value
-     * \param calc The logLikelihood calculator, see Walker::proposePoint for why it is passed and not stored
+     * \param calc The log post prob calculator, see Walker::proposePoint for why it is passed and not stored
      */
-    void setFirstPoint(ParamType* init, LikelihoodCalculator& calc);
+    void setFirstPoint(ParamType* init, PostProbCalculator& calc);
     
     /*!
      * \brief proposePoint Stores the walker's current point in the MarkovChainMonteCarlo::Chain::Chain object, checks the proposal point, and moves there if accepted
      * \param newPos The point that is proposed as a next point in the walker
      * \param ratioScale The scaling factor of the ratio for acceptance (Z^(n-1) for stretch move, 1.0 for walk move)
-     * \param calc The likelihood calculator, this is passed instead of stored so that a thread can pass its local copy
+     * \param calc The post prob calculator, this is passed instead of stored so that a thread can pass its local copy
      * \param prng The pseudorandom number generator sampler, passed instead of stored so that a thread can pass its local copy
      * \param storeSample Select if the current point should be stored in the markov chain, used for subsampling
      */
-    void proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<ParamType, CustomDistribution>& prng, bool storeSample=true);
+    void proposePoint(ParamType* newPos, const ParamType& ratioScale, PostProbCalculator& calc, Utility::MultiSampler<ParamType, CustomDistribution>& prng, bool storeSample=true);
     
     /*!
      * \brief saveFinalPoint Places the point currently stored on the walker into the chain without testing a new one.
      */
-    void saveFinalPoint(){currState[numParams] = currLikelihood; markovChain->storeWalker(walkerNumber, currState);}
+    void saveFinalPoint(){currState[numParams] = currPostProb; markovChain->storeWalker(walkerNumber, currState);}
     
     /*!
      * \brief getTotalSteps Gets the total number of steps taken (Number of proposals + 1 because setting the walker initial state counts as a step)
@@ -93,44 +93,44 @@ public:
     friend class WalkMove;
 private:
     Chain::Chain<ParamType, BlockSize>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
-    ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the likelihood for that position when written to the chain
-    ParamType currLikelihood = 0.0; ///< holds the current likelihood (transfered into currState prior to dump to chain)
+    ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the post prob for that position when written to the chain
+    ParamType currPostProb = 0.0; ///< holds the current post prob (transfered into currState prior to dump to chain)
     int walkerNumber = 0; ///<Holds the integer index of the walker, unique between walkers
-    int numParams = 0; ///<holds the number of parameters for the likelihood function
+    int numParams = 0; ///<holds the number of parameters for the post prob function
     int numCells = 0; ///<holds the number of cells in the currState array
     int acceptedSteps = 0; ///< holds the number of times that a new parameter set was accepted
     int totalSteps = 0; ///< holds the number of times that a new parameter set was proposed
 };
 
-template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
-void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::setFirstPoint(ParamType* init, LikelihoodCalculator& calc)
+template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
+void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::setFirstPoint(ParamType* init, PostProbCalculator& calc)
 {
     for(int i=0; i<numParams; ++i)
     {
         currState[i] = init[i];
     }
-    currLikelihood = calc.calcLogPostProb(init);
+    currPostProb = calc.calcLogPostProb(init);
     ++acceptedSteps;
     ++totalSteps;
 }
 
-template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
-void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<MarkovChainMonteCarlo::Walker::ParamType, MarkovChainMonteCarlo::Walker::CustomDistribution>& prng, bool storeSample)
+template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
+void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::proposePoint(ParamType* newPos, const ParamType& ratioScale, PostProbCalculator& calc, Utility::MultiSampler<MarkovChainMonteCarlo::Walker::ParamType, MarkovChainMonteCarlo::Walker::CustomDistribution>& prng, bool storeSample)
 {
     if(storeSample)
     {
-        currState[numParams] = currLikelihood;
+        currState[numParams] = currPostProb;
         markovChain->storeWalker(walkerNumber, currState);
     }
-    ParamType newLikelihood = calc.calcLogPostProb(newPos);
-    ParamType ratio = ratioScale*(newLikelihood/currLikelihood);
+    ParamType newPostProb = calc.calcLogPostProb(newPos);
+    ParamType ratio = ratioScale*(newPostProb/currPostProb);
     if(prng.getUniformReal() < ratio)
     {
         for(int i=0; i<numParams; ++i)
         {
             currState[i] = newPos[i];
         }
-        currLikelihood = newLikelihood;
+        currPostProb = newPostProb;
         ++acceptedSteps;
     }
     ++totalSteps;

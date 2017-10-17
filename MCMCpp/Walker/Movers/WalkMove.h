@@ -32,11 +32,11 @@ namespace Walker
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
  * \tparam BlockSize The number of steps per walker that the block will hold
  * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
- * \tparam LikelihoodCalculator The class that calculates the log likelihood
+ * \tparam PostProbCalculator The class that calculates the log post prob
  * 
  * This mover is substantially more computationally expensive than StretchMove, however in some circumstances it can give better autocorrellation times
  */
-template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
+template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
 class WalkMove
 {
 public:
@@ -47,7 +47,7 @@ public:
     WalkMove(int numPts):numPoints(numPts),ptCount(static_cast<ParamType>(numPts)){selectedWalkers = new int[numPoints]; randoms = new ParamType[numPoints];}
     ~WalkMove(){delete[] selectedWalkers; delete[] randoms;}
     
-    typedef Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator> WalkType;
+    typedef Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator> WalkType;
     
     /*!
      * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates a new location proposal assumes that
@@ -58,7 +58,7 @@ public:
      * \param walkerSet A pointer to the set of walkers used to generate the proposal
      * \param numWalkers The number of walkers in WalkerSet
      * \param prng The pseudo random number generator to first select another walker for the calculation and to generate the scaling factor
-     * \return The scaling factor for the likelihood ratio to be constructed for determining if the move should be taken (1.0 for this algorithm)
+     * \return The scaling factor for the post prob ratio to be constructed for determining if the move should be taken (1.0 for this algorithm)
      */
     ParamType getProposal(ParamType* proposal, int numParams, WalkType& currWalker, WalkType* walkerSet, int numWalkers, Utility::MultiSampler<ParamType, CustomDistribution>& prng)
     {
