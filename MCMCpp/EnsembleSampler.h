@@ -72,6 +72,7 @@ public:
                   "  'ParamType operator()(ParamType)'");
     static_assert(std::is_trivially_constructible<CustomDistribution>::value, "The CustomDistribution class needs to be trivially constructible.");
     static_assert(std::is_copy_constructible<Mover>::value, "The Mover class needs to be copy constructible.");
+    static_assert(std::is_copy_constructible<PostProbCalculator>::value, "The Posterior Probability class needs to be copy constructible.");
     /*!
      * \brief EnsembleSampler Constructs the ensemble sampler
      * \param runNumber RunNumber, used to seed the random number generator
@@ -85,7 +86,7 @@ public:
     /*!
      * @brief ~EnsembleSampler Delete the walker list then allow the rest to die normally
      */
-    ~EnsembleSampler(){delete[] walkerList;}
+    ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet;}
     
     /*!
      * \brief setInitialWalkerPos Gives an initial position to every walker.
@@ -103,9 +104,15 @@ public:
     void runMCMC(int numSamples);
     
     /*!
-     * \brief resetChain resets the chain to a blank slate
+     * \brief reset Returns the sampler to it's original state except that the walkers retain their current positions
      */
-    void resetChain(){markovChain.resetChain();}
+    void reset(){markovChain.resetChain();for(int i=0; i<walkersPerSet; ++i){walkerRedSet[i].resetSteps();walkerBlkSet->resetSteps();}}
+    
+    /*!
+     * \brief getAcceptanceFraction Calculated the acceptance fraction for the ensemble over the current steps
+     * \return The fraction of steps where the proposal was accepted
+     */
+    ParamType getAcceptanceFraction();
     
     /*!
      * \brief setSamplingMode Is used to change the sampling mode, either using subsampling, or taking all samples
@@ -142,25 +149,33 @@ public:
      */
     StepItt getStepIttEnd(){return markovChain.getStepIteratorEnd();}
 private:
-    int cellsPerParamSet;
-    int numParams;
-    int numWalkers;
-    int walkersPerSet;
-    int subSampingInterval=1;
+    int cellsPerParamSet; ///<The number of cells in a block of parameters (padded to hold calculated post prob and for alignment)
+    int numParams; ///<The number of parameters being searched on
+    int numWalkers; ///<The number of walkers, must be a multiple of 2, and greater than 2*numParams
+    int walkersPerSet; ///<The number of walkers in the two sets (numWalkers/2)
+    int subSampingInterval=1; ///<The interval to store samples on if we are subsampling
     
-    ChainType markovChain;
-    WalkerType* walkerRedSet;
-    WalkerType* walkerBlkSet;
-    Mover moveProposer;
-    PrngType prng;
+    ChainType markovChain; ///<The Markov Chain storage class
+    WalkerType* walkerRedSet; ///<Set one of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
+    WalkerType* walkerBlkSet; ///<Set two of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
+    Mover moveProposer; ///<The class that proposes a new move position, expects a single numParams constructor parameter
+    PostProbCalculator calc; ///<The class that calculates the posterior probability for a given set of points
+    PrngType prng; ///<The pseudorandom number generator used to generate needed random numbers
 
-    bool subSampling = false;
+    bool subSampling = false; ///<Toggle for performing subsampling
     
-    PostStepAction& stepAction;
+    PostStepAction& stepAction; ///<Action to perform at the end of every step
 };
 
 namespace Detail
 {
+/*!
+ * @brief alignedSizeCalc A simple function to work out how much to pad an array so that its size is a multiple of a specific value
+ * @tparam ParamType The type of object in the array
+ * @param numCell The minimum number of cells needed
+ * @param alignSize The multiple for the array size
+ * @return The number of cells the array need to have for that specific alignment
+ */
 template<class ParamType>
 int alignedSizeCalc(int numCell, int alignSize)
 {
@@ -181,7 +196,7 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long lo
     cellsPerParamSet(Detail::alignedSizeCalc<ParamType>(numParameter+1, 16)),
     numParams(numParameter), numWalkers(numWalker), walkersPerSet(numWalker/2),
     markovChain(numWalker, cellsPerParamSet, maxChainSizeBytes),
-    prng(runNumber), stepAction(stepAct)
+    moveProposer(numParams), prng(runNumber), stepAction(stepAct)
 {
     assert(numWalkers%2 == 0);
     assert(numWalkers > (2*numParams));
@@ -194,6 +209,41 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long lo
         walkerRedSet[i].init(&markovChain, 2*i,   numParameter, cellsPerParamSet);
         walkerBlkSet[i].init(&markovChain, 2*i+1, numParameter, cellsPerParamSet);
     }
+}
+
+template<class ParamType, class PostProbCalculator, int BlockSize,
+         class PostStepAction,class CustomDistribution, class Mover>
+void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::setInitialWalkerPos(ParamType* positions)
+{
+    for(int i=0; i<walkersPerSet; ++i)
+    {
+        walkerRedSet->setFirstPoint(positions+2*i*numParams, calc);
+        walkerBlkSet->setFirstPoint(positions+(2*i+1)*numParams, calc);
+    }
+}
+
+template<class ParamType, class PostProbCalculator, int BlockSize,
+         class PostStepAction,class CustomDistribution, class Mover>
+ParamType EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::getAcceptanceFraction()
+{
+    unsigned long long accepted;
+    unsigned long long total;
+    for(int i=0; i<walkersPerSet; ++i)
+    {
+        accepted += walkerRedSet->getAcceptedProposals();
+        accepted += walkerBlkSet->getAcceptedProposals();
+        total += walkerRedSet->getTotalSteps();
+        total += walkerBlkSet->getTotalSteps();
+    }
+    ParamType fraction = static_cast<ParamType>(accepted)/static_cast<ParamType>(total);
+    return fraction;
+}
+
+template<class ParamType, class PostProbCalculator, int BlockSize,
+         class PostStepAction,class CustomDistribution, class Mover>
+void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::runMCMC(int numSamples)
+{
+    
 }
 
 }
