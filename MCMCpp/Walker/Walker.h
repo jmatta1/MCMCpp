@@ -78,16 +78,21 @@ public:
     void saveFinalPoint(){currState[numParams] = currPostProb; markovChain->storeWalker(walkerNumber, currState);}
     
     /*!
-     * \brief getTotalSteps Gets the total number of steps taken (Number of proposals + 1 because setting the walker initial state counts as a step)
+     * \brief getTotalSteps Gets the total number of steps taken (initial position not counted)
      * \return The total number of steps taken
      */
     int getTotalSteps(){return totalSteps;}
     
     /*!
-     * \brief getAcceptedProposals Gets the number of times a new proposal was taken (+1 because the initial state of the walker is counted as an accepted proposal)
+     * \brief getAcceptedProposals Gets the number of times a new proposal was taken (initial position not counted)
      * \return Gets the number of accepted proposals
      */
     int getAcceptedProposals(){return acceptedSteps;}
+    
+    /*!
+     * \brief resetSteps Resets the accepted and total steps to 0
+     */
+    void resetSteps(){acceptedSteps = 0; totalSteps = 0;}
     
     friend class StretchMove;
     friend class WalkMove;
@@ -110,8 +115,6 @@ void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::setFi
         currState[i] = init[i];
     }
     currPostProb = calc.calcLogPostProb(init);
-    ++acceptedSteps;
-    ++totalSteps;
 }
 
 template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
