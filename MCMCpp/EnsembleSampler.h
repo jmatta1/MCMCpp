@@ -84,9 +84,9 @@ public:
     EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, PostStepAction& stepAct);
     
     /*!
-     * @brief ~EnsembleSampler Delete the walker list then allow the rest to die normally
+     * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
      */
-    ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet;}
+    ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet; delete[] proposalPoint;}
     
     /*!
      * \brief setInitialWalkerPos Gives an initial position to every walker.
@@ -96,17 +96,17 @@ public:
     
     /*!
      * \brief runMCMC Runs the Markov chain Monte Carlo for a set number of samples
-     * \param numSamples The number of samples to store
+     * \param numSteps The number of steps to store
      * 
      * In normal sampling mode, this function will run the ensemble for numSamples per walker
-     * In subSampling mode, this function will run the ensemble numSamples*subSampingInterval and store numSamples
+     * In subSampling mode, this function will run the ensemble numSamples*subSamplingInterval and store numSamples
      */
-    void runMCMC(int numSamples);
+    void runMCMC(int numSteps);
     
     /*!
      * \brief reset Returns the sampler to it's original state except that the walkers retain their current positions
      */
-    void reset(){markovChain.resetChain();for(int i=0; i<walkersPerSet; ++i){walkerRedSet[i].resetSteps();walkerBlkSet->resetSteps();}}
+    void reset();
     
     /*!
      * \brief getAcceptanceFraction Calculated the acceptance fraction for the ensemble over the current steps
@@ -120,8 +120,13 @@ public:
      * \param subSamplingInt The interval for subsampling
      * \param burnIn The number of points at the beginning to discard for burnin
      */
-    void setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0)
-    {subSampling=useSubSampling; markovChain.resetChainForSubSampling(burnin, subSamplingInt);}
+    void setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0);
+    
+    /*!
+     * \brief calculateAutocorrelationTimes Uses an AutoCorrCalc object to calculate the autocorrelation times for the present chain
+     * \return True if the chain was long enough to extract an autocorrelation time with these parameters, False otherwise
+     */
+    bool calculateAutocorrelationTimes();
     
     /*!
      * \brief getParamSetIttBegin Gets an iterator pointing to the beginning of the chain
@@ -149,21 +154,29 @@ public:
      */
     StepItt getStepIttEnd(){return markovChain.getStepIteratorEnd();}
 private:
+    /*!
+     * \brief performStep Performs a step on all of the walkers
+     * \param save Whether or not to save the walker's current point, before deciding to update
+     */
+    void performStep(bool save);
+    
     int cellsPerParamSet; ///<The number of cells in a block of parameters (padded to hold calculated post prob and for alignment)
     int numParams; ///<The number of parameters being searched on
     int numWalkers; ///<The number of walkers, must be a multiple of 2, and greater than 2*numParams
     int walkersPerSet; ///<The number of walkers in the two sets (numWalkers/2)
-    int subSampingInterval=1; ///<The interval to store samples on if we are subsampling
+    int subSamplingInterval=1; ///<The interval to store samples on if we are subsampling
+    int storedSteps=0; ///<The number of steps stored in the chain
     
     ChainType markovChain; ///<The Markov Chain storage class
     WalkerType* walkerRedSet; ///<Set one of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
     WalkerType* walkerBlkSet; ///<Set two of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
+    ParamType* proposalPoint; ///<Internal parameter set needed to move proposal from mover to walker
     Mover moveProposer; ///<The class that proposes a new move position, expects a single numParams constructor parameter
     PostProbCalculator calc; ///<The class that calculates the posterior probability for a given set of points
     PrngType prng; ///<The pseudorandom number generator used to generate needed random numbers
 
     bool subSampling = false; ///<Toggle for performing subsampling
-    
+
     PostStepAction& stepAction; ///<Action to perform at the end of every step
 };
 
@@ -204,6 +217,7 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long lo
     //for the red set, allocate half the walkers
     walkerRedSet = new WalkerType[walkersPerSet];
     walkerBlkSet = new WalkerType[walkersPerSet];
+    proposalPoint = new ParamType[cellsPerParamSet];
     for(int i=0; i<walkersPerSet; ++i)
     {
         walkerRedSet[i].init(&markovChain, 2*i,   numParameter, cellsPerParamSet);
@@ -217,8 +231,8 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
 {
     for(int i=0; i<walkersPerSet; ++i)
     {
-        walkerRedSet->setFirstPoint(positions+2*i*numParams, calc);
-        walkerBlkSet->setFirstPoint(positions+(2*i+1)*numParams, calc);
+        walkerRedSet[i].setFirstPoint(positions+2*i*numParams, calc);
+        walkerBlkSet[i].setFirstPoint(positions+(2*i+1)*numParams, calc);
     }
 }
 
@@ -230,10 +244,10 @@ ParamType EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepActi
     unsigned long long total;
     for(int i=0; i<walkersPerSet; ++i)
     {
-        accepted += walkerRedSet->getAcceptedProposals();
-        accepted += walkerBlkSet->getAcceptedProposals();
-        total += walkerRedSet->getTotalSteps();
-        total += walkerBlkSet->getTotalSteps();
+        accepted += walkerRedSet[i].getAcceptedProposals();
+        accepted += walkerBlkSet[i].getAcceptedProposals();
+        total += walkerRedSet[i].getTotalSteps();
+        total += walkerBlkSet[i].getTotalSteps();
     }
     ParamType fraction = static_cast<ParamType>(accepted)/static_cast<ParamType>(total);
     return fraction;
@@ -241,9 +255,73 @@ ParamType EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepActi
 
 template<class ParamType, class PostProbCalculator, int BlockSize,
          class PostStepAction,class CustomDistribution, class Mover>
-void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::runMCMC(int numSamples)
+void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::runMCMC(int numSteps)
 {
-    
+    if(!subSampling)
+    {
+        for(int i=0; i<numSteps; ++i)
+        {
+            performStep(true);
+            ++storedSteps;
+        }
+    }
+    else
+    {
+        for(int i=0; i<numSteps; ++i)
+        {
+            performStep(true);
+            ++storedSteps;
+            for(int j=1; j<subSamplingInterval; ++j)
+            {
+                performStep(false);
+            }
+        }
+    }
+}
+
+template<class ParamType, class PostProbCalculator, int BlockSize,
+         class PostStepAction,class CustomDistribution, class Mover>
+void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::reset()
+{
+    storedSteps = 0;
+    markovChain.resetChain();
+    for(int i=0; i<walkersPerSet; ++i)
+    {
+        walkerRedSet[i].resetSteps();
+        walkerBlkSet[i].resetSteps();
+    }
+}
+
+template<class ParamType, class PostProbCalculator, int BlockSize,
+         class PostStepAction,class CustomDistribution, class Mover>
+void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::
+    setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0)
+{
+    subSampling=useSubSampling;
+    subSamplingInterval = subSamplingInt;
+    markovChain.resetChainForSubSampling(burnIn, subSamplingInt);
+    int tempSteps = (storedSteps - burnIn);
+    storedSteps = (tempSteps/subSamplingInterval);
+}
+
+template<class ParamType, class PostProbCalculator, int BlockSize,
+         class PostStepAction,class CustomDistribution, class Mover>
+void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::performStep(bool save)
+{
+    //first update all the red set from the black set
+    for(int i=0; i<walkersPerSet; ++i)
+    {
+        //first get a proposed new point to move to
+        ParamType scaling = moveProposer.getProposal(proposalPoint, numParams, walkerRedSet[i], walkerBlkSet, walkersPerSet, prng);
+        walkerRedSet[i].proposePoint(proposalPoint, scaling, calc, prng, save);
+    }
+    //now update all the black set from the red set
+    for(int i=0; i<walkersPerSet; ++i)
+    {
+        //first get a proposed new point to move to
+        ParamType scaling = moveProposer.getProposal(proposalPoint, numParams, walkerBlkSet[i], walkerRedSet, walkersPerSet, prng);
+        walkerBlkSet[i].proposePoint(proposalPoint, scaling, calc, prng, save);
+    }
 }
 
 }
