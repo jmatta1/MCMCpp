@@ -39,14 +39,14 @@ class AutoCorrCalc
      */
     AutoCorrCalc(int numParams, int numWalkers);
     /*!
-     * \brief setAutoCorrelationTimeParameters
+     * \brief calculateAutoCorrTime Calculates the auto correlation time using the method set forth in Goodman and Weare 2010 and in the python package emcee
      * \param minAutoCorrTimes The minimum required number of autocorrelation times the algorithm needs to examine
      * \param step The increase in window size for each iteration of the algorithm
      * \param loWin The minimum window size
      * \param hiWin The maximum window size
      * \param fast If true, only use the first power of two samples to accellerate calculation using FFT
      */
-    void setAutoCorrelationTimeParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000, bool fast=false);
+    void calculateAutoCorrTime(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000, bool fast=false);
     
     /*!
      * \brief getAutoCorrelationTime Calculates the correlation time for a given parameter
