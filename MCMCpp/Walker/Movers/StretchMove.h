@@ -41,9 +41,11 @@ class StretchMove
 {
 public:
     typedef Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator> WalkType;
+    StretchMove(int numParams){} ///<useless constructor, exists to give the same constructor signature as WalkMove
     
     /*!
-     * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates
+     * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates, assumes that
+     * currWalker in not in the set of walkers to select from
      * \param proposal An array of ParamTypes that holds the proposed point this code will generate
      * \param numParams Number of parameters in the proposal array
      * \param currWalker A reference to the current walker that we are generating a proposal for
@@ -54,7 +56,7 @@ public:
      */
     ParamType getProposal(ParamType* proposal, int numParams, WalkType& currWalker, WalkType* walkerSet, int numWalkers, Utility::MultiSampler<ParamType, CustomDistribution>& prng)
     {
-        WalkType& selWalker = walkerSet[prng.getNonOffSetInt(numWalkers);]
+        WalkType& selWalker = walkerSet[prng.getNonOffSetInt(numWalkers)];
         ParamType scalingFactor = prng.getCustomSample();
         for(int i=0; i<numParams; ++i)
         {
