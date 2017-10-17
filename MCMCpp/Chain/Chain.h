@@ -261,6 +261,8 @@ void Chain<ParamType, BlockSize>::resetChain()
 template <class ParamType, int BlockSize>
 void Chain<ParamType, BlockSize>::resetChainForSubSampling(int burnInSamples, int autoCorrelationTime)
 {
+    //check for a special case where we do nothing
+    if((burnInSamples == 0) && (autoCorrelationTime == 1)) return;
     stepCount = 0;
     auto readLocation = this->getStepIteratorBegin();
     auto end = this->getStepIteratorBegin();
