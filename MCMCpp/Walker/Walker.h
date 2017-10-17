@@ -68,8 +68,9 @@ public:
      * \param ratioScale The scaling factor of the ratio for acceptance (Z^(n-1) for stretch move, 1.0 for walk move)
      * \param calc The likelihood calculator, this is passed instead of stored so that a thread can pass its local copy
      * \param prng The pseudorandom number generator sampler, passed instead of stored so that a thread can pass its local copy
+     * \param storeSample Select if the current point should be stored in the markov chain, used for subsampling
      */
-    void proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<ParamType, CustomDistribution>& prng);
+    void proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<ParamType, CustomDistribution>& prng, bool storeSample=true);
     
     /*!
      * \brief saveFinalPoint Places the point currently stored on the walker into the chain without testing a new one.
@@ -94,7 +95,7 @@ private:
     Chain::Chain<ParamType, BlockSize>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
     ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the likelihood for that position when written to the chain
     ParamType currLikelihood = 0.0; ///< holds the current likelihood (transfered into currState prior to dump to chain)
-    int walkerNumber = 0; ///<Holds the integer index of the walker
+    int walkerNumber = 0; ///<Holds the integer index of the walker, unique between walkers
     int numParams = 0; ///<holds the number of parameters for the likelihood function
     int numCells = 0; ///<holds the number of cells in the currState array
     int acceptedSteps = 0; ///< holds the number of times that a new parameter set was accepted
@@ -114,10 +115,13 @@ void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::set
 }
 
 template <class ParamType, int BlockSize, class CustomDistribution, class LikelihoodCalculator>
-void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<MarkovChainMonteCarlo::Walker::ParamType, MarkovChainMonteCarlo::Walker::CustomDistribution>& prng)
+void Walker<ParamType, BlockSize, CustomDistribution, LikelihoodCalculator>::proposePoint(ParamType* newPos, const ParamType& ratioScale, LikelihoodCalculator& calc, Utility::MultiSampler<MarkovChainMonteCarlo::Walker::ParamType, MarkovChainMonteCarlo::Walker::CustomDistribution>& prng, bool storeSample)
 {
-    currState[numParams] = currLikelihood;
-    markovChain->storeWalker(walkerNumber, currState);
+    if(storeSample)
+    {
+        currState[numParams] = currLikelihood;
+        markovChain->storeWalker(walkerNumber, currState);
+    }
     ParamType newLikelihood = calc.calcLogPostProb(newPos);
     ParamType ratio = ratioScale*(newLikelihood/currLikelihood);
     if(prng.getUniformReal() < ratio)
