@@ -13,6 +13,7 @@
 #define MCMC_WALKER_MOVERS_STRETCHMOVE_H
 // includes for C system headers
 // includes for C++ system headers
+#include<cmath>
 // includes from other libraries
 // includes from MCMC
 #include"../../Utility/MultiSampler.h"
@@ -53,6 +54,7 @@ public:
      * \param numWalkers The number of walkers in WalkerSet
      * \param prng The pseudo random number generator to first select another walker for the calculation and to generate the scaling factor
      * \return The scaling factor for the post-prob ratio to be constructed for determining if the move should be taken
+     * (z^(n-1) for this algorithm, but since we are working in logs it is (n-1)*z
      */
     ParamType getProposal(ParamType* proposal, int numParams, WalkType& currWalker, WalkType* walkerSet, int numWalkers, Utility::MultiSampler<ParamType, CustomDistribution>& prng)
     {
@@ -62,16 +64,8 @@ public:
         {
             proposal[i] = (selWalker.currState[i] + scalingFactor*(currWalker.currState[i] - selWalker.currState[i]));
         }
-        //now do exponentiation by squaring on the scaling factor to return it
-        int exponent = (numParams - 1);
-        ParamType retValue = 1.0;
-        while(exponent > 0)
-        {
-            if(exponent&0x00000001) retValue *= scalingFactor;
-            exponent >>= 1;
-            scalingFactor *= scalingFactor;
-        }
-        return retValue;
+        //now calculate the probability scaling factor
+        return (std::log(scalingFactor)*static_cast<ParamType>((numParams - 1)));
     }
 
 private:

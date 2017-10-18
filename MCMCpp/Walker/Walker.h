@@ -118,7 +118,9 @@ void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::setFi
 }
 
 template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
-void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::proposePoint(ParamType* newPos, const ParamType& ratioScale, PostProbCalculator& calc, Utility::MultiSampler<MarkovChainMonteCarlo::Walker::ParamType, MarkovChainMonteCarlo::Walker::CustomDistribution>& prng, bool storeSample)
+void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::
+    proposePoint(ParamType* newPos, const ParamType& ratioScale, PostProbCalculator& calc,
+                 Utility::MultiSampler<Walker::ParamType, Walker::CustomDistribution>& prng, bool storeSample)
 {
     if(storeSample)
     {
@@ -126,8 +128,8 @@ void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::propo
         markovChain->storeWalker(walkerNumber, currState);
     }
     ParamType newPostProb = calc.calcLogPostProb(newPos);
-    ParamType ratio = ratioScale*(newPostProb/currPostProb);
-    if(prng.getUniformReal() < ratio)
+    ParamType logPostProbDiff = (ratioScale + newPostProb - currPostProb);
+    if(prng.getNegExponentialReal() < logPostProbDiff)
     {
         for(int i=0; i<numParams; ++i)
         {

@@ -58,7 +58,8 @@ public:
      * \param walkerSet A pointer to the set of walkers used to generate the proposal
      * \param numWalkers The number of walkers in WalkerSet
      * \param prng The pseudo random number generator to first select another walker for the calculation and to generate the scaling factor
-     * \return The scaling factor for the post prob ratio to be constructed for determining if the move should be taken (1.0 for this algorithm)
+     * \return The scaling factor for the post prob ratio to be constructed for determining if the move should be taken
+     * (1.0 for this movement algorithm, but since we are working in logs, it is 0.0)
      */
     ParamType getProposal(ParamType* proposal, int numParams, WalkType& currWalker, WalkType* walkerSet, int numWalkers, Utility::MultiSampler<ParamType, CustomDistribution>& prng)
     {
@@ -91,7 +92,7 @@ public:
             }
             proposal[i] = (currWalker.currState[i] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount))));
         }
-        return 1.0;
+        return 0.0;
     }
 
 private:
