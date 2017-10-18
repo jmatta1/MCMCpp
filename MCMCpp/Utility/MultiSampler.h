@@ -57,6 +57,18 @@ public:
     ParamType getUniformReal(){return realDist(engine);}
     
     /*!
+     * \brief getExponentialReal returns a sample from the exponential probability distribution with parameter 1
+     * \return ParamType floating point drawn from the exponential distribution
+     */
+    ParamType getExponentialReal(){return expDist(engine);}
+    
+    /*!
+     * \brief getNegExponentialReal returns the negative of asample from the exponential probability distribution with parameter 1
+     * \return ParamType floating point drawn from the exponential distribution, then made negative, which gives it the same shape as Log(x) where x is uniform on [0,1)
+     */
+    ParamType getNegExponentialReal(){return -expDist(engine);}
+    
+    /*!
      * \brief getNormalReal returns a sample from the normal probability distribution centered at 0 and with variance 1
      * \return ParamType floating point drawn from the normal distribution centered at 0 and with variance 1
      */
@@ -89,6 +101,7 @@ public:
 private:
     std::mt19937_64 engine;///<The base random number generator engine that is used for everything
     std::uniform_real_distribution<ParamType> realDist;///<The adapter that gives uniform real numbers between 0 and 1
+    std::exponential_distribution<ParamType> expDist;///<This adapter gives an exponential distribution with form e^-x, which is the shape of -log(x) when x is a uniform distribution
     std::normal_distribution<ParamType> normDist;///<The adapter that gives normally distributed real numbers with mean 0 and variance 1
     CustomDistribution customDist;///<The CDF inversion class that takes a number from 0 to 1 and converts it to a custom distribution
 };
