@@ -49,7 +49,7 @@ template<class ParamType,
          class PostProbCalculator,
          int BlockSize=1000,
          class PostStepAction=Utility::NoAction<ParamType, BlockSize>,
-         class CustomDistribution=Utility::GwDistribution<ParamType, 2.0>,
+         class CustomDistribution=Utility::GwDistribution<ParamType, 2, 1>,
          class Mover=Walker::StretchMove<ParamType, BlockSize, CustomDistribution, PostProbCalculator> >
 class EnsembleSampler
 {
