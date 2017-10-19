@@ -32,80 +32,70 @@ namespace Walker
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
  * \tparam BlockSize The number of steps per walker that the block will hold
  * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
- * \tparam PostProbCalculator The class that calculates the log post prob
+ * \tparam Calculator The class that calculates the log posterior and whatever else a mover may need
  * 
- * This mover is substantially more computationally expensive than StretchMove, however in some circumstances it can give better autocorrellation times
+ * This mover is substantially more computationally expensive than StretchMove,
+ * however in some circumstances it can give better autocorrellation times / chain properties
  */
-template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
+template <class ParamType, int BlockSize, class CustomDistribution, class Calculator>
 class WalkMove
 {
 public:
+    typedef Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator> WalkType;
+    static_assert(Utility::CheckCalcLogPostProb<Calculator, ParamType, ParamType*>(),
+                  "WalkMove: The Calculator class does not have the necessary member function with signature:\n"
+                  "  'ParamType calcLogPostProb(ParamType* paramSet)'");
+    static_assert(std::is_copy_constructible<Calculator>::value, "The Calculator class needs to be copy constructible.");
+    
     /*!
      * \brief WalkMove Constructs the walk move object
-     * \param numPts The number of points to select to generate the proposal from
+     * \param numParams The number of parameters to work with
+     * \param prngInit The seed for the random number generator
+     * \param orig The original calculator class that will be copied to make the one stored internally
      */
-    WalkMove(int numPts):numPoints(numPts),ptCount(static_cast<ParamType>(numPts)){selectedWalkers = new int[numPoints]; randoms = new ParamType[numPoints];}
+    WalkMove(int numParams, long long prngInit, const Calculator& orig):
+        numPoints(numParams+1),ptCount(static_cast<ParamType>(numPts)), paramCount(numParams), prng(prngInit), calc(orig)
+    {
+        walkerIndices = new int[numPoints];
+        randoms = new ParamType[numPoints];
+        proposal = new ParamType[paramCount];
+    }
     ~WalkMove(){delete[] selectedWalkers; delete[] randoms;}
     
-    typedef Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator> WalkType;
-    
     /*!
-     * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates a new location proposal assumes that
+     * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates, assumes that
      * currWalker in not in the set of walkers to select from
-     * \param proposal An array of ParamTypes that holds the proposed point this code will generate
-     * \param numParams Number of parameters in the proposal array
      * \param currWalker A reference to the current walker that we are generating a proposal for
      * \param walkerSet A pointer to the set of walkers used to generate the proposal
      * \param numWalkers The number of walkers in WalkerSet
-     * \param prng The pseudo random number generator to first select another walker for the calculation and to generate the scaling factor
-     * \return The scaling factor for the post prob ratio to be constructed for determining if the move should be taken
-     * (1.0 for this movement algorithm, but since we are working in logs, it is 0.0)
+     * \param storePoint False if the point should not be written into the chain, accepted or not
      */
-    ParamType getProposal(ParamType* proposal, int numParams, WalkType& currWalker, WalkType* walkerSet, int numWalkers, Utility::MultiSampler<ParamType, CustomDistribution>& prng)
+    void updateWalker(WalkType& currWalker, WalkType* walkerSet, int numWalkers, bool storePoint)
     {
-        selectWalkers(numWalkers, prng);
-        // do the first parameter explicitly to store the random values
-        intermediates[0] = 0.0;
-        intermediates[1] = 0.0;
-        intermediates[2] = 0.0;
-        for(int j=0; j<numPoints; ++j)
+        selectWalkers(numWalkers);
+        calculateProposal();
+        ParamType newProb = calc.calcLogPostProb(proposal);
+        ParamType logProbDiff = (newProb - currWalker.getCurrAuxData());
+        if(prng.getNegExponentialReal() < logProbDiff)
         {
-            randoms[j] = prng.getNormalReal();
-            ParamType value = walkerSet[walkerIndices[j]].currState[0];
-            intermediates[0] += randoms[j]*value;
-            intermediates[1] += randoms[j];
-            intermediates[2] += value;
+            currWalker.jumpToNewPoint(proposal, newProb, storePoint);
         }
-        proposal[0] = currWalker.currState[0] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount)));
-        //loop across the remaining parameters, using the pre-stored random numbers
-        for(int i=1; i<numParams; ++i)
+        else
         {
-            intermediates[0] = 0.0;
-            intermediates[1] = 0.0;
-            intermediates[2] = 0.0;
-            for(int j=0; j<numPoints; ++j)
-            {
-                ParamType value = walkerSet[walkerIndices[j]].currState[i];
-                intermediates[0] += randoms[j]*value;
-                intermediates[1] += randoms[j];
-                intermediates[2] += value;
-            }
-            proposal[i] = (currWalker.currState[i] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount))));
+            currWalker.stayAtCurrentPoint(storePoint);
         }
-        return 0.0;
     }
 
 private:
     /*!
      * \brief selectWalkers chooses a set of walkers to calculate the point proposal
      * \param numWalkers The number of walkers available to choose from
-     * \param prng The random number generator, to get integers
      */
-    void selectWalkers(int numWalkers, Utility::MultiSampler<CustomDistribution>& prng)
+    void selectWalkers(int numWalkers)
     {
         int limit = (numPoints <= numWalkers) ? numPoints : numWalkers; //probably unnecessary, but safety first
         int i=0;
-        while(i < numPoints)
+        while(i < limit)
         {
             walkerIndices[i] = prng.getNonOffSetInt(numWalkers);
             bool noRepeats = true;
@@ -120,11 +110,53 @@ private:
         }
     }
     
+    /*!
+     * \brief calculateProposal Takes the set of selected walkers and generates the proposal point
+     */
+    void calculateProposal()
+    {
+        // do the first parameter explicitly to store the random values
+        // we do this rather than simply loop to generate the random values because this way we do numPoints*paramCount iterations
+        // the other way requires (paramCount+1)*numPoints iterations, its probably small, but every little bit helps
+        intermediates[0] = 0.0;
+        intermediates[1] = 0.0;
+        intermediates[2] = 0.0;
+        for(int j=0; j<numPoints; ++j)
+        {
+            randoms[j] = prng.getNormalReal();
+            ParamType value = walkerSet[walkerIndices[j]].getCurrState()[0];
+            intermediates[0] += randoms[j]*value;
+            intermediates[1] += randoms[j];
+            intermediates[2] += value;
+        }
+        proposal[0] = currWalker.getCurrState()[0] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount)));
+        //loop across the remaining parameters, using the pre-stored random numbers
+        for(int i=1; i<paramCount; ++i)
+        {
+            intermediates[0] = 0.0;
+            intermediates[1] = 0.0;
+            intermediates[2] = 0.0;
+            for(int j=0; j<numPoints; ++j)
+            {
+                ParamType value = walkerSet[walkerIndices[j]].getCurrState()[i];
+                intermediates[0] += randoms[j]*value;
+                intermediates[1] += randoms[j];
+                intermediates[2] += value;
+            }
+            proposal[i] = (currWalker.getCurrState()[i] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount))));
+        }
+    }
+    
     int numPoints; ///<Number of points to sample from to generate the point proposal
     ParamType ptCount; ///<Number of points to sample from to generate the point proposal stored as a double
     ParamType intermediates[3]; ///<Intermediate values for use in calculating the point proposal
     ParamType* randoms; ///<Storage for the random number selectect in calculating the first parameter in the point proposal
     int* walkerIndices; ///<Storage for the indices of the randomly selected walkers
+    
+    ParamType* proposal = nullptr;
+    int paramCount;
+    Utility::MultiSampler<ParamType, CustomDistribution> prng;
+    Calculator calc;
 };
 }
 }
