@@ -23,7 +23,6 @@
 #include"Utility/NoAction.h"
 #include"Utility/GwDistribution.h"
 #include"Utility/UserOjbectsTest.h"
-#include"Utility/CalculateAutoCorr.h"
 
 namespace MarkovChainMonteCarlo
 {
@@ -61,9 +60,6 @@ public:
     typedef Chain::ChainPsetIterator<ParamType, BlockSize> PsetItt;
     typedef Chain::ChainStepIterator<ParamType, BlockSize> StepItt;
     //perform static checks of the users classes to ensure that they have the needed member functions for their role
-    static_assert(Utility::CheckCalcLogPostProb<PostProbCalculator, ParamType, ParamType*>(),
-                  "The PostProbCalculator class does not have the necessary member function with signature:\n"
-                  "  'ParamType calcLogPostProb(ParamType* paramSet)'");
     static_assert(Utility::CheckPerformAction<PostStepAction, void, PsetItt, PsetItt>(),
                   "The PostStepAction class does not have the necessary member function with signature:\n"
                   "  'void PerformAction(Chain::ChainPsetIterator<ParamType, BlockSize>& start, Chain::ChainPsetIterator<ParamType, BlockSize>& end)'");
@@ -72,7 +68,7 @@ public:
                   "  'ParamType operator()(ParamType)'");
     static_assert(std::is_trivially_constructible<CustomDistribution>::value, "The CustomDistribution class needs to be trivially constructible.");
     static_assert(std::is_copy_constructible<Mover>::value, "The Mover class needs to be copy constructible.");
-    static_assert(std::is_copy_constructible<PostProbCalculator>::value, "The Posterior Probability class needs to be copy constructible.");
+    
     /*!
      * \brief EnsembleSampler Constructs the ensemble sampler
      * \param runNumber RunNumber, used to seed the random number generator
