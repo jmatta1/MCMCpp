@@ -13,6 +13,7 @@
 #define MCMC_WALKER_MOVERS_WALKMOVE_H
 // includes for C system headers
 // includes for C++ system headers
+#include<cassert>
 // includes from other libraries
 // includes from MCMC
 #include"../../Utility/MultiSampler.h"
@@ -52,14 +53,16 @@ public:
      * \param numParams The number of parameters to work with
      * \param prngInit The seed for the random number generator
      * \param orig The original calculator class that will be copied to make the one stored internally
+     * \param numSamples The number of samples to draw from the complementary ensemble
      */
-    WalkMove(int numParams, long long prngInit, const Calculator& orig):
-        numPoints(numParams+1),ptCount(static_cast<ParamType>(numPts)), paramCount(numParams), prng(prngInit), calc(orig)
+    WalkMove(int numParams, long long prngInit, const Calculator& orig, int numSamples):
+        numPoints(numSamples),ptCount(static_cast<ParamType>(numSamples)), paramCount(numParams), prng(prngInit), calc(orig)
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
         proposal = new ParamType[paramCount];
     }
+    
     ~WalkMove(){delete[] selectedWalkers; delete[] randoms;}
     
     /*!
@@ -90,23 +93,32 @@ private:
     /*!
      * \brief selectWalkers chooses a set of walkers to calculate the point proposal
      * \param numWalkers The number of walkers available to choose from
+     * 
+     * This algorithm is drawn directly from Knuth's semi-numerical algorithms.
+     * There is a much more complicated, but faster algorithm available in 
+     * Jeffrey Scott Vitter in "An Efficient Algorithm for Sequential Random Sampling"
+     * ACM Transactions on Mathematical Software, 13(1), March 1987, 58-67.
+     * but this one is good enough for now
      */
     void selectWalkers(int numWalkers)
     {
-        int limit = (numPoints <= numWalkers) ? numPoints : numWalkers; //probably unnecessary, but safety first
-        int i=0;
-        while(i < limit)
+        assert(numPoints <= numWalkers);//probably unnecessary, but safety first
+        int numSelected = 0;
+        int totalInputExamined = 0;
+        ParamType randUniform;
+        while(numSelected < numPoints)
         {
-            walkerIndices[i] = prng.getNonOffSetInt(numWalkers);
-            bool noRepeats = true;
-            for(int j = 0; j<i; ++j)
+            randUniform = prng.getUniformReal();
+            if( ((numWalkers-totalInputExamined)*randUniform) >= (numWalkers-numSelected))
             {
-                if(walkerIndices[i] == walkerIndices[j])
-                {
-                    noRepeats = false;
-                }
+                ++totalInputExamined;
             }
-            if(noRepeats) ++i;
+            else
+            {
+                walkerIndices[numSelected] = totalInputExamined;
+                ++totalInputExamined;
+                ++numSelected;
+            }
         }
     }
     
@@ -150,7 +162,7 @@ private:
     int numPoints; ///<Number of points to sample from to generate the point proposal
     ParamType ptCount; ///<Number of points to sample from to generate the point proposal stored as a double
     ParamType intermediates[3]; ///<Intermediate values for use in calculating the point proposal
-    ParamType* randoms; ///<Storage for the random number selectect in calculating the first parameter in the point proposal
+    ParamType* randoms; ///<Storage for the random numbers selected in calculating the first parameter in the point proposal
     int* walkerIndices; ///<Storage for the indices of the randomly selected walkers
     
     ParamType* proposal = nullptr;
