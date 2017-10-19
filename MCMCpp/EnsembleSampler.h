@@ -263,6 +263,7 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
         {
             performStep(true);
             ++storedSteps;
+            markovChain.incrementChainStep();
         }
     }
     else
@@ -271,6 +272,7 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
         {
             performStep(true);
             ++storedSteps;
+            markovChain.incrementChainStep();
             for(int j=1; j<subSamplingInterval; ++j)
             {
                 performStep(false);
