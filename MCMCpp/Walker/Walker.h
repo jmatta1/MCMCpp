@@ -60,19 +60,21 @@ public:
      * \param init The parameter set for the initial value
      * \param calc The log post prob calculator, see Walker::proposePoint for why it is passed and not stored
      */
-    void setFirstPoint(ParamType* init, const ParamType& auxVal);
+    void setFirstPoint(ParamType* init, const ParamType& auxVal, bool storePoint=true){jumpToNewPoint(init, auxVal, storePoint);}
     
     /*!
      * \brief jumpToNewPoint Tells the walker there has been a new point accepted and that it should jump to it
      * \param newPos The new point for the walker
      * \param auxVal the value of the auxilliary data to be stored with the new position
+     * \param storePoint If false, do not store the new point in the Markov chain
      */
-    void jumpToNewPoint(ParamType* newPos, const ParamType& auxVal);
+    void jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint=true);
     
     /*!
      * \brief jumpToNewPoint Tells the walker that the step to this point has been rejected and that it should stay at the current point
+     * \param storePoint If false, do not store the new point in the Markov chain
      */
-    void stayAtCurrentPoint(){++totalSteps; markovChain->storeWalker(walkerNumber, currState);}
+    void stayAtCurrentPoint(bool storePoint=true){++totalSteps; if(storePoint) markovChain->storeWalker(walkerNumber, currState);}
     
     /*!
      * \brief getTotalSteps Gets the total number of steps taken (initial position not counted)
@@ -114,20 +116,7 @@ private:
 };
 
 template <class ParamType, int BlockSize>
-void Walker<ParamType, BlockSize>::setFirstPoint(ParamType* init, const ParamType& auxVal)
-{
-    for(int i=0; i<numParams; ++i)
-    {
-        currState[i] = init[i];
-    }
-    auxData = auxVal;
-    ++acceptedSteps;
-    ++totalSteps;
-    markovChain->storeWalker(walkerNumber, currState);
-}
-
-template <class ParamType, int BlockSize>
-void Walker<ParamType, BlockSize>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal)
+void Walker<ParamType, BlockSize>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint)
 {
     for(int i=0; i<numParams; ++i)
     {
@@ -136,7 +125,7 @@ void Walker<ParamType, BlockSize>::jumpToNewPoint(ParamType* newPos, const Param
     auxData = auxVal;
     ++acceptedSteps;
     ++totalSteps;
-    markovChain->storeWalker(walkerNumber, currState);
+    if(storePoint) markovChain->storeWalker(walkerNumber, currState);
 }
 
 }
