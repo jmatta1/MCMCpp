@@ -73,11 +73,6 @@ public:
     void proposePoint(ParamType* newPos, const ParamType& ratioScale, PostProbCalculator& calc, Utility::MultiSampler<ParamType, CustomDistribution>& prng, bool storeSample=true);
     
     /*!
-     * \brief saveFinalPoint Places the point currently stored on the walker into the chain without testing a new one.
-     */
-    void saveFinalPoint(){currState[numParams] = currPostProb; markovChain->storeWalker(walkerNumber, currState);}
-    
-    /*!
      * \brief getTotalSteps Gets the total number of steps taken (initial position not counted)
      * \return The total number of steps taken
      */
@@ -114,6 +109,7 @@ void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::setFi
         currState[i] = init[i];
     }
     currPostProb = calc.calcLogPostProb(init);
+    markovChain->storeWalker(walkerNumber, currState);
 }
 
 template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
@@ -121,10 +117,6 @@ void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::
     proposePoint(ParamType* newPos, const ParamType& ratioScale, PostProbCalculator& calc,
                  Utility::MultiSampler<Walker::ParamType, Walker::CustomDistribution>& prng, bool storeSample)
 {
-    if(storeSample)
-    {
-        markovChain->storeWalker(walkerNumber, currState);
-    }
     ParamType newPostProb = calc.calcLogPostProb(newPos);
     ParamType logPostProbDiff = (ratioScale + newPostProb - currPostProb);
     if(prng.getNegExponentialReal() < logPostProbDiff)
@@ -137,6 +129,10 @@ void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::
         ++acceptedSteps;
     }
     ++totalSteps;
+    if(storeSample)
+    {
+        markovChain->storeWalker(walkerNumber, currState);
+    }
 }
 
 }
