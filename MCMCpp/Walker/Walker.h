@@ -35,7 +35,7 @@ namespace Walker
  * \tparam PostProbCalculator The class that calculates the log post probability
  * 
  */
-template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
+template <class ParamType, int BlockSize>
 class Walker
 {
 public:
@@ -60,17 +60,19 @@ public:
      * \param init The parameter set for the initial value
      * \param calc The log post prob calculator, see Walker::proposePoint for why it is passed and not stored
      */
-    void setFirstPoint(ParamType* init, PostProbCalculator& calc);
+    void setFirstPoint(ParamType* init, const ParamType& auxVal);
     
     /*!
-     * \brief proposePoint Stores the walker's current point in the MarkovChainMonteCarlo::Chain::Chain object, checks the proposal point, and moves there if accepted
-     * \param newPos The point that is proposed as a next point in the walker
-     * \param ratioScale The scaling factor of the ratio for acceptance (Z^(n-1) for stretch move, 1.0 for walk move)
-     * \param calc The post prob calculator, this is passed instead of stored so that a thread can pass its local copy
-     * \param prng The pseudorandom number generator sampler, passed instead of stored so that a thread can pass its local copy
-     * \param storeSample Select if the current point should be stored in the markov chain, used for subsampling
+     * \brief jumpToNewPoint Tells the walker there has been a new point accepted and that it should jump to it
+     * \param newPos The new point for the walker
+     * \param auxVal the value of the auxilliary data to be stored with the new position
      */
-    void proposePoint(ParamType* newPos, const ParamType& ratioScale, PostProbCalculator& calc, Utility::MultiSampler<ParamType, CustomDistribution>& prng, bool storeSample=true);
+    void jumpToNewPoint(ParamType* newPos, const ParamType& auxVal);
+    
+    /*!
+     * \brief jumpToNewPoint Tells the walker that the step to this point has been rejected and that it should stay at the current point
+     */
+    void stayAtCurrentPoint(){++totalSteps; markovChain->storeWalker(walkerNumber, currState);}
     
     /*!
      * \brief getTotalSteps Gets the total number of steps taken (initial position not counted)
@@ -89,50 +91,52 @@ public:
      */
     void resetSteps(){acceptedSteps = 0; totalSteps = 0;}
     
-    friend class StretchMove;
-    friend class WalkMove;
+    /*!
+     * \brief getCurrState returns the current point that the walker is at
+     * \return array of size numParams containing the walker's current position
+     */
+    const ParamType* getCurrState(){return currState;}
+    
+    /*!
+     * \brief getCurrAuxData returns the auxilliary data that is stored with the walker
+     * \return the auxilliary data value
+     */
+    const ParamType getCurrAuxData(){return auxData;}
+    
 private:
     Chain::Chain<ParamType, BlockSize>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
     ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the post prob for that position when written to the chain
-    ParamType currPostProb = 0.0; ///< holds the current post prob (transfered into currState prior to dump to chain)
+    ParamType auxData = 0.0; ///< holds the auxiliary data the walker needs for a given position, to decide to make jumps or not
     int walkerNumber = 0; ///<Holds the integer index of the walker, unique between walkers
     int numParams = 0; ///<holds the number of parameters for the post prob function
     int acceptedSteps = 0; ///< holds the number of times that a new parameter set was accepted
     int totalSteps = 0; ///< holds the number of times that a new parameter set was proposed
 };
 
-template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
-void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::setFirstPoint(ParamType* init, PostProbCalculator& calc)
+template <class ParamType, int BlockSize>
+void Walker<ParamType, BlockSize>::setFirstPoint(ParamType* init, const ParamType& auxVal)
 {
     for(int i=0; i<numParams; ++i)
     {
         currState[i] = init[i];
     }
-    currPostProb = calc.calcLogPostProb(init);
+    auxData = auxVal;
+    ++acceptedSteps;
+    ++totalSteps;
     markovChain->storeWalker(walkerNumber, currState);
 }
 
-template <class ParamType, int BlockSize, class CustomDistribution, class PostProbCalculator>
-void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::
-    proposePoint(ParamType* newPos, const ParamType& ratioScale, PostProbCalculator& calc,
-                 Utility::MultiSampler<Walker::ParamType, Walker::CustomDistribution>& prng, bool storeSample)
+template <class ParamType, int BlockSize>
+void Walker<ParamType, BlockSize>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal)
 {
-    ParamType newPostProb = calc.calcLogPostProb(newPos);
-    ParamType logPostProbDiff = (ratioScale + newPostProb - currPostProb);
-    if(prng.getNegExponentialReal() < logPostProbDiff)
+    for(int i=0; i<numParams; ++i)
     {
-        for(int i=0; i<numParams; ++i)
-        {
-            currState[i] = newPos[i];
-        }
-        currPostProb = newPostProb;
-        ++acceptedSteps;
+        currState[i] = newPos[i];
     }
+    auxData = auxVal;
+    ++acceptedSteps;
     ++totalSteps;
-    if(storeSample)
-    {
-        markovChain->storeWalker(walkerNumber, currState);
-    }
+    markovChain->storeWalker(walkerNumber, currState);
 }
 
 }
