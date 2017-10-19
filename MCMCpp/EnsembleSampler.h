@@ -210,6 +210,8 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
         walkerRedSet[i].setFirstPoint(positions+2*i*numParams, calc);
         walkerBlkSet[i].setFirstPoint(positions+(2*i+1)*numParams, calc);
     }
+    ++storedSteps;
+    markovChain.incrementChainStep();
 }
 
 template<class ParamType, class PostProbCalculator, int BlockSize,
