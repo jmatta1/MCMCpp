@@ -9,16 +9,17 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_UTILITY_AUTOCORRCALC_H
-#define MCMC_UTILITY_AUTOCORRCALC_H
+#ifndef MCMC_ANALYSIS_AUTOCORRCALC_H
+#define MCMC_ANALYSIS_AUTOCORRCALC_H
 // includes for C system headers
 // includes for C++ system headers
+#include<complex>//needed for the DFT and FFT
 // includes from other libraries
 // includes from MCMC
 
 namespace MarkovChainMonteCarlo
 {
-namespace Utility
+namespace Analysis
 {
 /*!
  * @class AutoCorrCalc
@@ -27,38 +28,102 @@ namespace Utility
  * @author James Till Matta
  * 
  * @tparam ParamType The floating point type for which this calculation will be carried out
- * @tparam BlockSize Number of steps to store in a block of the linked list that stores the chain 
+ * @tparam IttType The type of iterator for the time series that it will be working with
  */
-template<class ParamType, int BlockSize>
+template<class ParamType, class IttType>
 class AutoCorrCalc
 {
+    
     /*!
      * \brief AutoCorrCalc constructs a new AutoCorrCalc object
      * \param numParams The number of parameters in each sample
      * \param numWalkers The number of walkers in the ensemble
      */
-    AutoCorrCalc(int numParams, int numWalkers);
+    AutoCorrCalc(int numParams, int numWalkers) : paramCount(numParams), walkerCount(numWalkers)
+    {acorrTimeList = new ParamType[paramCount]; for(int i=0; i<paramCount; ++i) acorrTimeList[i] = 0.0;}
+    
+    ~AutoCorrCalc()
+    {delete[] acorrTimeList; if(acovFuncSumArray!=nullptr) delete[] acovFuncSumArray; if(acovFuncArray!=nullptr) delete[] acovFuncArray;
+    if(interFuncArray!=nullptr) delete[] interFuncArray;}
     /*!
-     * \brief calculateAutoCorrTime Calculates the auto correlation time using the method set forth in Goodman and Weare 2010 and in the python package emcee
+     * \brief allAutoCorrTime Calculates the auto correlation time for each parameter using the full set of walkers
+     * \param numSamples The number of samples, per walker, in the chain
+     * 
+     * Warning, this *can* be slow. Using fft methods it will take time proportional to
+     * p*w*n*log2[n] where n is the number of samples to be used in the chain (the largest power of 2
+     * that is less than or equal to the actual chain size), p is the number of parameters,
+     * and w is the number of walkers. If fast is not set, and standard DFT methods are used, then
+     * it will take time proportional to p*w*m^2, where p and w retain their previous meanings and
+     * m is the total number of samples in the chain
+     * 
+     * Autocorrelation times that were calculated can be extracted using the retrieveAutoCorrelationTime function
+     */
+    void allAutoCorrTime(const MarkovChainMonteCarlo::Utility::IttType& start, const MarkovChainMonteCarlo::Utility::IttType& end, int numSamples);
+    
+    /*!
+     * \brief sampleParameterAutoCorrTimes Calculates the autocorrellation for a given parameter using a subset of the walkers
+     * \param numSamples The number of samples, per walker, in the chain
+     * \param paramNumber The parameter index to calculate the autocorrelation time for
+     * \param numWalkers The number of walkers to calculate the autocorrelation time for
+     * \param randomizeWalkers If true, randomly selects walkersToSample walkers instead of evenly dividing the walkers
+     * \return The autocorrelation time calculated for that parameter with that walker sampling
+     * 
+     * This too *can* be slow, using fft methods it will have time s*n*log2[n] where n has the same
+     * meaning as in allAutoCorrTime and s is the number of walkers to sample. If fast is not set then
+     * the time is proportional to s*n*log2[n]
+     */
+    ParamType sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int numWalkers, bool randomizeWalkers=false);
+    /*!
+     * \brief setAutoCorrParameters Sets the parameters for calculation of the autocorrelation time
      * \param minAutoCorrTimes The minimum required number of autocorrelation times the algorithm needs to examine
      * \param step The increase in window size for each iteration of the algorithm
      * \param loWin The minimum window size
      * \param hiWin The maximum window size
      * \param fast If true, only use the first power of two samples to accellerate calculation using FFT
      */
-    void calculateAutoCorrTime(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000, bool fast=false);
-    
+    void setAutoCorrParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000, bool fast=false);
     /*!
-     * \brief getAutoCorrelationTime Calculates the correlation time for a given parameter
+     * \brief getAutoCorrelationTime retrieves the calculated autocorrelation time for parameter number paramIndex
      * \param paramIndex The index of the parameter [0, numParameter)
      * \return The autocorrelation time in samples for parameter # paramIndex
      */
-    ParamType getAutoCorrelationTime(int paramIndex);
+    ParamType retrieveAutoCorrelationTime(int paramIndex){return acorrTimeList[paramIndex];}
     
 private:
-    
+    ParamType* acorrTimeList; ///<stores the list of computed autocorrelation times calculated by allAutoCorrTime
+    int paramCount; ///<stores the number of parameters per sample
+    int walkerCount; ///<stores the number of walkers in the chain
+    ParamType* acovFuncSumArray = nullptr; ///<Stores the sum of the autocovariance functions as they are calculated for every walker in the chain
+    ParamType* acovFuncArray = nullptr; ///<Stores the autocovariance function calculated for a given walker in the chain
+    ParamType* interFuncArray = nullptr; ///<stores the inverse fft generated in the first step of calculating the autocovariance function
+    int scratchSize = 0; ///<Size of the acovFuncSumArray, acovFuncArray, and interFuncArray arrays
+    int minAcorTimes = 10; ///<Minimum number of autocorrelation times to be processed to consider the result correct
+    int winStepSize = 1; ///<Size of step for increasing window size
+    int minWinSize = 10; ///<minimum window size for the algorithm
+    int maxWinSize = 10000; ///<maximum window size for the algorithm
+    bool useFFT = false; ///<Whether or not to use fft to calculate the transforms, or just a standard dft, if useFFT is true, sample chains will be truncated to the largest 2^l samples that is less than or equal to the number of samples
 };
+
+template<class ParamType, class IttType>
+void AutoCorrCalc<ParamType, IttType>::allAutoCorrTime(const IttType& start, const IttType& end, int numSamples)
+{
+    for(int i=0; i<= paramCount; ++i)
+    {//simply apply the more limited autocorrelation time calculator multiple times, storing the result
+        acorrTimeList[i] = sampleParameterAutoCorrTimes(start, end, numSamples, i, walkerCount);
+    }
+}
+
+template<class ParamType, class IttType>
+void AutoCorrCalc<ParamType, IttType>::setAutoCorrParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000, bool fast=false)
+{
+    minAcorTimes = minAutoCorrTimes;
+    winStepSize = step;
+    minWinSize = loWin;
+    maxWinSize = hiWin;
+    useFFT = fast;
+}
+
 
 }
 }
-#endif  //MCMC_UTILITY_AUTOCORRCALC_H
+#endif  //MCMC_ANALYSIS_AUTOCORRCALC_H
