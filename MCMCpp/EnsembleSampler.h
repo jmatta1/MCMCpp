@@ -160,7 +160,6 @@ private:
      */
     void performStep(bool save);
     
-    int cellsPerParamSet; ///<The number of cells in a block of parameters (padded to hold calculated post prob and for alignment)
     int numParams; ///<The number of parameters being searched on
     int numWalkers; ///<The number of walkers, must be a multiple of 2, and greater than 2*numParams
     int walkersPerSet; ///<The number of walkers in the two sets (numWalkers/2)
@@ -180,35 +179,12 @@ private:
     PostStepAction& stepAction; ///<Action to perform at the end of every step
 };
 
-namespace Detail
-{
-/*!
- * @brief alignedSizeCalc A simple function to work out how much to pad an array so that its size is a multiple of a specific value
- * @tparam ParamType The type of object in the array
- * @param numCell The minimum number of cells needed
- * @param alignSize The multiple for the array size
- * @return The number of cells the array need to have for that specific alignment
- */
-template<class ParamType>
-int alignedSizeCalc(int numCell, int alignSize)
-{
-    int temp = ((numCell*sizeof(ParamType))%alignSize);
-    if(temp != 0)
-    {
-        return (numCell + (alignSize-temp)/sizeof(ParamType));
-    }
-    return numCell;
-}
-
-}
-
 template<class ParamType, class PostProbCalculator, int BlockSize,
          class PostStepAction,class CustomDistribution, class Mover>
 EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::
 EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, PostStepAction& stepAct):
-    cellsPerParamSet(Detail::alignedSizeCalc<ParamType>(numParameter+1, 16)),
     numParams(numParameter), numWalkers(numWalker), walkersPerSet(numWalker/2),
-    markovChain(numWalker, cellsPerParamSet, maxChainSizeBytes),
+    markovChain(numWalkers, numParams, maxChainSizeBytes),
     moveProposer(numParams), prng(runNumber), stepAction(stepAct)
 {
     assert(numWalkers%2 == 0);
@@ -217,11 +193,11 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long lo
     //for the red set, allocate half the walkers
     walkerRedSet = new WalkerType[walkersPerSet];
     walkerBlkSet = new WalkerType[walkersPerSet];
-    proposalPoint = new ParamType[cellsPerParamSet];
+    proposalPoint = new ParamType[numParams];
     for(int i=0; i<walkersPerSet; ++i)
     {
-        walkerRedSet[i].init(&markovChain, 2*i,   numParameter, cellsPerParamSet);
-        walkerBlkSet[i].init(&markovChain, 2*i+1, numParameter, cellsPerParamSet);
+        walkerRedSet[i].init(&markovChain, 2*i,   numParams);
+        walkerBlkSet[i].init(&markovChain, 2*i+1, numParams);
     }
 }
 

@@ -74,7 +74,7 @@ public:
      * \param numCellsPerWalker Number of parameters plus overhead that the walker needs
      * \param maxSize Maximum size in bytes that the chain is allowed to occupy (does not include overhead of nodes etc)
      */
-    Chain(int numWalkers, int numCellsPerWalker, unsigned long long maxSize);
+    Chain(int numWalkers, int numParams, unsigned long long maxSize);
     ~Chain();
     
     /*!
@@ -167,8 +167,8 @@ private:
 
 
 template <class ParamType, int BlockSize>
-Chain<ParamType, BlockSize>::Chain(int numWalkers, int numCellsPerWalker, unsigned long long maxSize):
-    walkerCount(numWalkers), cellsPerWalker(numCellsPerWalker),
+Chain<ParamType, BlockSize>::Chain(int numWalkers, int numParams, unsigned long long maxSize):
+    walkerCount(numWalkers), cellsPerWalker(numParams),
     maxBlocks(maxSize/(sizeof(ParamType)*BlockSize*numWalkers*cellsPerWalker))
 {
     //allocate the first block

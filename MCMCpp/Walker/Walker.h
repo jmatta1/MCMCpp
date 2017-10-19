@@ -53,7 +53,7 @@ public:
      * \param numCell The number of cells to be stored per walker in the chain
      */
     void init(Chain::Chain<ParamType, BlockSize>* chain, int walkerIndex, int numParam, int numCell)
-    {markovChain = chain; walkerNumber = walkerIndex; numParams = numParam; numCells = numCell; currState = new ParamType[numCells];}
+    {markovChain = chain; walkerNumber = walkerIndex; numParams = numParam; currState = new ParamType[numParam];}
     
     /*!
      * \brief setFirstPoint Initializes the walker with its very first point (which is counted as an accepted step (and a normal step))
@@ -102,7 +102,6 @@ private:
     ParamType currPostProb = 0.0; ///< holds the current post prob (transfered into currState prior to dump to chain)
     int walkerNumber = 0; ///<Holds the integer index of the walker, unique between walkers
     int numParams = 0; ///<holds the number of parameters for the post prob function
-    int numCells = 0; ///<holds the number of cells in the currState array
     int acceptedSteps = 0; ///< holds the number of times that a new parameter set was accepted
     int totalSteps = 0; ///< holds the number of times that a new parameter set was proposed
 };
@@ -124,7 +123,6 @@ void Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator>::
 {
     if(storeSample)
     {
-        currState[numParams] = currPostProb;
         markovChain->storeWalker(walkerNumber, currState);
     }
     ParamType newPostProb = calc.calcLogPostProb(newPos);
