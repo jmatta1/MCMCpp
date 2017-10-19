@@ -45,18 +45,15 @@ namespace MarkovChainMonteCarlo
  * distribution function in the MultiSampler, currently only affects StretchMove 
  */
 template<class ParamType,
-         class PostProbCalculator,
+         class Mover,
          int BlockSize=1000,
-         class PostStepAction=Utility::NoAction<ParamType, BlockSize>,
-         class CustomDistribution=Utility::GwDistribution<ParamType, 2, 1>,
-         class Mover=Walker::StretchMove<ParamType, BlockSize, CustomDistribution, PostProbCalculator> >
+         class PostStepAction=Utility::NoAction<ParamType, BlockSize> >
 class EnsembleSampler
 {
 public:
     //define some useful typenames
     typedef Chain::Chain<ParamType, BlockSize> ChainType;
-    typedef Walker::Walker<ParamType, BlockSize, Mover, PostProbCalculator> WalkerType;
-    typedef Utility::MultiSampler<ParamType, CustomDistribution> PrngType;
+    typedef Walker::Walker<ParamType, BlockSize> WalkerType;
     typedef Chain::ChainPsetIterator<ParamType, BlockSize> PsetItt;
     typedef Chain::ChainStepIterator<ParamType, BlockSize> StepItt;
     //perform static checks of the users classes to ensure that they have the needed member functions for their role
@@ -82,7 +79,7 @@ public:
     /*!
      * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
      */
-    ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet; delete[] proposalPoint;}
+    ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet;}
     
     /*!
      * \brief setInitialWalkerPos Gives an initial position to every walker.
@@ -165,10 +162,7 @@ private:
     ChainType markovChain; ///<The Markov Chain storage class
     WalkerType* walkerRedSet; ///<Set one of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
     WalkerType* walkerBlkSet; ///<Set two of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
-    ParamType* proposalPoint; ///<Internal parameter set needed to move proposal from mover to walker
     Mover moveProposer; ///<The class that proposes a new move position, expects a single numParams constructor parameter
-    PostProbCalculator calc; ///<The class that calculates the posterior probability for a given set of points
-    PrngType prng; ///<The pseudorandom number generator used to generate needed random numbers
 
     bool subSampling = false; ///<Toggle for performing subsampling
 
@@ -189,7 +183,6 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long lo
     //for the red set, allocate half the walkers
     walkerRedSet = new WalkerType[walkersPerSet];
     walkerBlkSet = new WalkerType[walkersPerSet];
-    proposalPoint = new ParamType[numParams];
     for(int i=0; i<walkersPerSet; ++i)
     {
         walkerRedSet[i].init(&markovChain, 2*i,   numParams);
@@ -287,16 +280,13 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
     //first update all the red set from the black set
     for(int i=0; i<walkersPerSet; ++i)
     {
-        //first get a proposed new point to move to
-        ParamType scaling = moveProposer.getProposal(proposalPoint, numParams, walkerRedSet[i], walkerBlkSet, walkersPerSet, prng);
-        walkerRedSet[i].proposePoint(proposalPoint, scaling, calc, prng, save);
+        moveProposer.updateWalker(walkerRedSet[i], walkerBlkSet, walkersPerSet, save);
     }
     //now update all the black set from the red set
     for(int i=0; i<walkersPerSet; ++i)
     {
         //first get a proposed new point to move to
-        ParamType scaling = moveProposer.getProposal(proposalPoint, numParams, walkerBlkSet[i], walkerRedSet, walkersPerSet, prng);
-        walkerBlkSet[i].proposePoint(proposalPoint, scaling, calc, prng, save);
+        moveProposer.updateWalker(walkerRedSet[i], walkerBlkSet, walkersPerSet, save);
     }
 }
 

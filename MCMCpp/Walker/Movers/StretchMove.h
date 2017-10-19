@@ -38,7 +38,7 @@ namespace Walker
  * 
  * A fast, efficient Affine Invariant move algorithm functor that uses minimal resources and can yield good autocorrelation times
  */
-template <class ParamType, int BlockSize, class CustomDistribution, class Calculator>
+template <class ParamType, class Calculator, int BlockSize=1000, class CustomDistribution=Utility::GwDistribution<ParamType, 2, 1>>
 class StretchMove
 {
 public:
@@ -59,6 +59,12 @@ public:
     {proposal = new ParamType[paramCount];}
     
     ~StretchMove(){delete[] proposal;}
+    
+    /*!
+     * \brief setPrngSeed Sets the seed of the underlying prng
+     * \param seed The seed for the prng
+     */
+    void setPrngSeed(long long seed){prng.setPrngSeed(seed);}
     
     /*!
      * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates, assumes that

@@ -42,8 +42,14 @@ public:
      * \brief MultiSampler Constructs a multisampler with a given seed
      * \param seed The 64 bit integer that will serve the engine as a seed
      */
-    MultiSampler(long long seed):engine(seed),realDist(), normDist(){}
+    MultiSampler(long long seed=0):engine(seed),realDist(), normDist(){}
     ~MultiSampler(){}
+    
+    /*!
+     * \brief setPrngSeed Sets the random number engines seed to see
+     * \param seed The new seed for the random number engine
+     */
+    void setPrngSeed(long long seed){engine.seed(seed);}
     
     /*!
      * \brief getCustomSample returns a sample from the given probability distribution

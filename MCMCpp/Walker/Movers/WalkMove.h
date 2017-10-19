@@ -66,6 +66,12 @@ public:
     ~WalkMove(){delete[] selectedWalkers; delete[] randoms;}
     
     /*!
+     * \brief setPrngSeed Sets the seed of the underlying prng
+     * \param seed The seed for the prng
+     */
+    void setPrngSeed(long long seed){prng.setPrngSeed(seed);}
+    
+    /*!
      * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates, assumes that
      * currWalker in not in the set of walkers to select from
      * \param currWalker A reference to the current walker that we are generating a proposal for
@@ -95,8 +101,8 @@ private:
      * \param numWalkers The number of walkers available to choose from
      * 
      * This algorithm is drawn directly from Knuth's semi-numerical algorithms.
-     * There is a much more complicated, but faster algorithm available in 
-     * Jeffrey Scott Vitter in "An Efficient Algorithm for Sequential Random Sampling"
+     * There is a much more complicated, but faster algorithm available in the article
+     * J. Vitter. "An Efficient Algorithm for Sequential Random Sampling"
      * ACM Transactions on Mathematical Software, 13(1), March 1987, 58-67.
      * but this one is good enough for now
      */
