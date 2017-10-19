@@ -52,7 +52,7 @@ public:
      * \param numParam The number of parameters in the spaces to be walked
      * \param numCell The number of cells to be stored per walker in the chain
      */
-    void init(Chain::Chain<ParamType, BlockSize>* chain, int walkerIndex, int numParam, int numCell)
+    void init(Chain::Chain<ParamType, BlockSize>* chain, int walkerIndex, int numParam)
     {markovChain = chain; walkerNumber = walkerIndex; numParams = numParam; currState = new ParamType[numParam];}
     
     /*!
