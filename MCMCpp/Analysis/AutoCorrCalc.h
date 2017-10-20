@@ -41,21 +41,19 @@ class AutoCorrCalc
      * \param numWalkers The number of walkers in the ensemble
      */
     AutoCorrCalc(int numParams, int numWalkers) : paramCount(numParams), walkerCount(numWalkers)
-    {acorrTimeList = new ParamType[paramCount]; for(int i=0; i<paramCount; ++i) acorrTimeList[i] = 0.0;}
+    {acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount]; for(int i=0; i<paramCount; ++i) acorrTimeList[i] = 0.0;}
     
     ~AutoCorrCalc()
-    {delete[] acorrTimeList; if(acovFuncSumArray!=nullptr) delete[] acovFuncSumArray; if(acovFuncArray!=nullptr) delete[] acovFuncArray;
+    {delete[] acorrTimeList; delete[] randomWalkerIndices; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray; if(acovFuncArray!=nullptr) delete[] acovFuncArray;
     if(interFuncArray!=nullptr) delete[] interFuncArray;}
     /*!
      * \brief allAutoCorrTime Calculates the auto correlation time for each parameter using the full set of walkers
      * \param numSamples The number of samples, per walker, in the chain
      * 
      * Warning, this *can* be slow. Using fft methods it will take time proportional to
-     * p*w*n*log2[n] where n is the number of samples to be used in the chain (the largest power of 2
-     * that is less than or equal to the actual chain size), p is the number of parameters,
-     * and w is the number of walkers. If fast is not set, and standard DFT methods are used, then
-     * it will take time proportional to p*w*m^2, where p and w retain their previous meanings and
-     * m is the total number of samples in the chain
+     * p*w*n*log2[n] where n is the number of samples to be used in the chain (the smallest power of 2
+     * that is greater than or equal to the actual chain size), p is the number of parameters,
+     * and w is the number of walkers.
      * 
      * Autocorrelation times that were calculated can be extracted using the retrieveAutoCorrelationTime function
      */
@@ -94,10 +92,12 @@ private:
     ParamType* acorrTimeList; ///<stores the list of computed autocorrelation times calculated by allAutoCorrTime
     int paramCount; ///<stores the number of parameters per sample
     int walkerCount; ///<stores the number of walkers in the chain
-    ParamType* acovFuncSumArray = nullptr; ///<Stores the sum of the autocovariance functions as they are calculated for every walker in the chain
+    ParamType* acovFuncAvgArray = nullptr; ///<Stores the sum of the autocovariance functions as they are calculated for every walker in the chain
     ParamType* acovFuncArray = nullptr; ///<Stores the autocovariance function calculated for a given walker in the chain
+    int acovSize = 0; ///<Stores the size of the autocovariance function arrays
     std::complex<ParamType>* interFuncArray = nullptr; ///<stores the inverse fft generated in the first step of calculating the autocovariance function
     int scratchSize = 0; ///<Size of the acovFuncSumArray, acovFuncArray, and interFuncArray arrays
+    int* randomWalkerIndices = nullptr; ///<Stores the array of randomly chosen walker indices
     int minAcorTimes = 10; ///<Minimum number of autocorrelation times to be processed to consider the result correct
     int winStepSize = 1; ///<Size of step for increasing window size
     int minWinSize = 10; ///<minimum window size for the algorithm
@@ -122,6 +122,48 @@ void AutoCorrCalc<ParamType, IttType>::setAutoCorrParameters(int minAutoCorrTime
     maxWinSize = hiWin;
 }
 
+
+template<class ParamType, class IttType>
+ParamType AutoCorrCalc<ParamType, IttType>::
+sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int numWalkers, bool randomizeWalkers=false)
+{
+    //first check how many points we are using
+    int fftSize = (0x01 << static_cast<int>(std::ceiling(std::log2(numSamples))));
+    //now make sure that the storage for the autocovariance function is large enough
+    if(acovSize < numSamples)
+    {
+        acovSize = numSamples;
+        if(acovFuncArray != nullptr) delete[] acovFuncArray;
+        if(acovFuncAvgArray != nullptr) delete[] acovFuncAvgArray;
+        acovFuncArray = new ParamType[acovSize];
+        acovFuncAvgArray = new ParamType[acovSize];
+    }
+    //now make sure that the storage for the inverted fft is large enough
+    if(scratchSize < fftSize)
+    {
+        scratchSize = fftSize;
+        if(interFuncArray != nullptr) delete[] interFuncArray;
+        interFuncArray = new ParamType[scratchSize];
+    }
+    //now select the set of walkers whose autocorrelation functions are to be averaged
+    int numSelected = 0;
+    int totalInputExamined = 0;
+    ParamType randUniform;
+    while(numSelected < numPoints)
+    {
+        randUniform = prng.getUniformReal();
+        if( ((numWalkers-totalInputExamined)*randUniform) >= (numWalkers-numSelected))
+        {
+            ++totalInputExamined;
+        }
+        else
+        {
+            walkerIndices[numSelected] = totalInputExamined;
+            ++totalInputExamined;
+            ++numSelected;
+        }
+    }
+}
 
 }
 }
