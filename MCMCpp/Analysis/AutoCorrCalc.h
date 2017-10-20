@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<complex>//needed for the DFT and FFT
+#include<cmath>
 // includes from other libraries
 // includes from MCMC
 
@@ -81,7 +82,7 @@ class AutoCorrCalc
      * \param hiWin The maximum window size
      * \param fast If true, only use the first power of two samples to accellerate calculation using FFT
      */
-    void setAutoCorrParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000, bool fast=false);
+    void setAutoCorrParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000);
     /*!
      * \brief getAutoCorrelationTime retrieves the calculated autocorrelation time for parameter number paramIndex
      * \param paramIndex The index of the parameter [0, numParameter)
@@ -95,13 +96,12 @@ private:
     int walkerCount; ///<stores the number of walkers in the chain
     ParamType* acovFuncSumArray = nullptr; ///<Stores the sum of the autocovariance functions as they are calculated for every walker in the chain
     ParamType* acovFuncArray = nullptr; ///<Stores the autocovariance function calculated for a given walker in the chain
-    ParamType* interFuncArray = nullptr; ///<stores the inverse fft generated in the first step of calculating the autocovariance function
+    std::complex<ParamType>* interFuncArray = nullptr; ///<stores the inverse fft generated in the first step of calculating the autocovariance function
     int scratchSize = 0; ///<Size of the acovFuncSumArray, acovFuncArray, and interFuncArray arrays
     int minAcorTimes = 10; ///<Minimum number of autocorrelation times to be processed to consider the result correct
     int winStepSize = 1; ///<Size of step for increasing window size
     int minWinSize = 10; ///<minimum window size for the algorithm
     int maxWinSize = 10000; ///<maximum window size for the algorithm
-    bool useFFT = false; ///<Whether or not to use fft to calculate the transforms, or just a standard dft, if useFFT is true, sample chains will be truncated to the largest 2^l samples that is less than or equal to the number of samples
 };
 
 template<class ParamType, class IttType>
@@ -114,13 +114,12 @@ void AutoCorrCalc<ParamType, IttType>::allAutoCorrTime(const IttType& start, con
 }
 
 template<class ParamType, class IttType>
-void AutoCorrCalc<ParamType, IttType>::setAutoCorrParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000, bool fast=false)
+void AutoCorrCalc<ParamType, IttType>::setAutoCorrParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000)
 {
     minAcorTimes = minAutoCorrTimes;
     winStepSize = step;
     minWinSize = loWin;
     maxWinSize = hiWin;
-    useFFT = fast;
 }
 
 
