@@ -46,7 +46,11 @@ public:
     static_assert(Utility::CheckCalcLogPostProb<Calculator, ParamType, ParamType*>(),
                   "WalkMove: The Calculator class does not have the necessary member function with signature:\n"
                   "  'ParamType calcLogPostProb(ParamType* paramSet)'");
+    static_assert(Utility::CheckFunctor<CustomDistribution, ParamType, ParamType>(),
+                  "The CustomDistribution class does not have the necessary member function with signature:\n"
+                  "  'ParamType operator()(ParamType)'");
     static_assert(std::is_copy_constructible<Calculator>::value, "The Calculator class needs to be copy constructible.");
+    static_assert(std::is_trivially_constructible<CustomDistribution>::value, "The CustomDistribution class needs to be trivially constructible.");
     
     /*!
      * \brief WalkMove Constructs the walk move object
