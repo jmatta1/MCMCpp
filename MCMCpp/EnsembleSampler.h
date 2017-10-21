@@ -57,14 +57,14 @@ public:
     typedef Chain::ChainPsetIterator<ParamType, BlockSize> PsetItt;
     typedef Chain::ChainStepIterator<ParamType, BlockSize> StepItt;
     //perform static checks of the users classes to ensure that they have the needed member functions for their role
+    static_assert(Utility::CheckCalcUpdateWalker<Mover, void, WalkerType, WalkerType*, int, bool>(),
+                  "The Mover class does not have the necessary member function with signature:\n"
+                  "  'void updateWalker(Walker::Walker<ParamType, BlockSize>&, Walker::Walker<ParamType, BlockSize>*, int, bool)'");
     static_assert(Utility::CheckPerformAction<PostStepAction, void, PsetItt, PsetItt>(),
                   "The PostStepAction class does not have the necessary member function with signature:\n"
                   "  'void PerformAction(Chain::ChainPsetIterator<ParamType, BlockSize>& start, Chain::ChainPsetIterator<ParamType, BlockSize>& end)'");
-    static_assert(Utility::CheckFunctor<CustomDistribution, ParamType, ParamType>(),
-                  "The CustomDistribution class does not have the necessary member function with signature:\n"
-                  "  'ParamType operator()(ParamType)'");
-    static_assert(std::is_trivially_constructible<CustomDistribution>::value, "The CustomDistribution class needs to be trivially constructible.");
     static_assert(std::is_copy_constructible<Mover>::value, "The Mover class needs to be copy constructible.");
+    static_assert(std::is_copy_constructible<PostStepAction>::value, "The PostStepAction class needs to be copy constructible.");
     
     /*!
      * \brief EnsembleSampler Constructs the ensemble sampler
@@ -114,12 +114,6 @@ public:
      * \param burnIn The number of points at the beginning to discard for burnin
      */
     void setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0);
-    
-    /*!
-     * \brief calculateAutocorrelationTimes Uses an AutoCorrCalc object to calculate the autocorrelation times for the present chain
-     * \return True if the chain was long enough to extract an autocorrelation time with these parameters, False otherwise
-     */
-    bool calculateAutocorrelationTimes();
     
     /*!
      * \brief getParamSetIttBegin Gets an iterator pointing to the beginning of the chain
