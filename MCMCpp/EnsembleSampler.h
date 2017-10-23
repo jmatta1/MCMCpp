@@ -33,36 +33,28 @@ namespace MarkovChainMonteCarlo
  * @author James Till Matta
  * 
  * @tparam ParamType The floating point type for which this calculation will be carried out
- * @tparam PostProbCalculator The calculator of the log of the posterior probability function.
- * This can be calculated as the log of the likelihood function summed with the log of the prior-probability.
- * @tparam BlockSize Number of steps to store in a block of the linked list that stores the chain  
- * @tparam PostStepAction A functor that is called and given a pointer to the chain at the end of every step,
- * it need not be concurrent, it is called by a single thread, though that thread may be different for each call
  * @tparam Mover The mover class, current options are StretchMove and WalkMove, StretchMove is
  * computationally much faster, but in some cases it can result in longer auto-correllation times,
  * WalkMove is much more computationally intensive, but it can result in shorter auto-correllation times in some cases
- * @tparam CustomDistribution The class that will be used to set the get sample from custom
- * distribution function in the MultiSampler, currently only affects StretchMove 
+ * @tparam PostStepAction A functor that is called and given a pointer to the chain at the end of every step,
+ * it need not be concurrent, it is called by a single thread, though that thread may be different for each call
  */
-template<class ParamType,
-         class Mover,
-         int BlockSize=1000,
-         class PostStepAction=Utility::NoAction<ParamType, BlockSize> >
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
 class EnsembleSampler
 {
 public:
     //define some useful typenames
-    typedef Chain::Chain<ParamType, BlockSize> ChainType;
-    typedef Walker::Walker<ParamType, BlockSize> WalkerType;
-    typedef Chain::ChainPsetIterator<ParamType, BlockSize> PsetItt;
-    typedef Chain::ChainStepIterator<ParamType, BlockSize> StepItt;
+    typedef Chain::Chain<ParamType> ChainType;
+    typedef Walker::Walker<ParamType> WalkerType;
+    typedef Chain::ChainPsetIterator<ParamType> PsetItt;
+    typedef Chain::ChainStepIterator<ParamType> StepItt;
     //perform static checks of the users classes to ensure that they have the needed member functions for their role
     static_assert(Utility::CheckCalcUpdateWalker<Mover, void, WalkerType, WalkerType*, int, bool>(),
                   "The Mover class does not have the necessary member function with signature:\n"
-                  "  'void updateWalker(Walker::Walker<ParamType, BlockSize>&, Walker::Walker<ParamType, BlockSize>*, int, bool)'");
+                  "  'void updateWalker(Walker::Walker<ParamType>&, Walker::Walker<ParamType>*, int, bool)'");
     static_assert(Utility::CheckPerformAction<PostStepAction, void, PsetItt, PsetItt>(),
                   "The PostStepAction class does not have the necessary member function with signature:\n"
-                  "  'void PerformAction(Chain::ChainPsetIterator<ParamType, BlockSize>& start, Chain::ChainPsetIterator<ParamType, BlockSize>& end)'");
+                  "  'void PerformAction(Chain::ChainPsetIterator<ParamType>& start, Chain::ChainPsetIterator<ParamType>& end)'");
     static_assert(std::is_copy_constructible<Mover>::value, "The Mover class needs to be copy constructible.");
     static_assert(std::is_copy_constructible<PostStepAction>::value, "The PostStepAction class needs to be copy constructible.");
     
@@ -163,9 +155,8 @@ private:
     PostStepAction& stepAction; ///<Action to perform at the end of every step
 };
 
-template<class ParamType, class PostProbCalculator, int BlockSize,
-         class PostStepAction,class CustomDistribution, class Mover>
-EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+EnsembleSampler<ParamType, Mover, PostStepAction>::
 EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, PostStepAction& stepAct):
     numParams(numParameter), numWalkers(numWalker), walkersPerSet(numWalker/2),
     markovChain(numWalkers, numParams, maxChainSizeBytes),
@@ -184,9 +175,8 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long lo
     }
 }
 
-template<class ParamType, class PostProbCalculator, int BlockSize,
-         class PostStepAction,class CustomDistribution, class Mover>
-void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::setInitialWalkerPos(ParamType* positions)
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(ParamType* positions)
 {
     for(int i=0; i<walkersPerSet; ++i)
     {
@@ -197,9 +187,8 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
     markovChain.incrementChainStep();
 }
 
-template<class ParamType, class PostProbCalculator, int BlockSize,
-         class PostStepAction,class CustomDistribution, class Mover>
-ParamType EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::getAcceptanceFraction()
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+ParamType EnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptanceFraction()
 {
     unsigned long long accepted;
     unsigned long long total;
@@ -214,9 +203,8 @@ ParamType EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepActi
     return fraction;
 }
 
-template<class ParamType, class PostProbCalculator, int BlockSize,
-         class PostStepAction,class CustomDistribution, class Mover>
-void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::runMCMC(int numSteps)
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+void EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
 {
     if(!subSampling)
     {
@@ -242,9 +230,8 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
     }
 }
 
-template<class ParamType, class PostProbCalculator, int BlockSize,
-         class PostStepAction,class CustomDistribution, class Mover>
-void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::reset()
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+void EnsembleSampler<ParamType, Mover, PostStepAction>::reset()
 {
     storedSteps = 0;
     markovChain.resetChain();
@@ -255,10 +242,8 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
     }
 }
 
-template<class ParamType, class PostProbCalculator, int BlockSize,
-         class PostStepAction,class CustomDistribution, class Mover>
-void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::
-    setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0)
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+void EnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0)
 {
     subSampling=useSubSampling;
     subSamplingInterval = subSamplingInt;
@@ -267,9 +252,8 @@ void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, C
     storedSteps = (tempSteps/subSamplingInterval);
 }
 
-template<class ParamType, class PostProbCalculator, int BlockSize,
-         class PostStepAction,class CustomDistribution, class Mover>
-void EnsembleSampler<ParamType, PostProbCalculator, BlockSize, PostStepAction, CustomDistribution, Mover>::performStep(bool save)
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+void EnsembleSampler<ParamType, Mover, PostStepAction>::performStep(bool save)
 {
     //first update all the red set from the black set
     for(int i=0; i<walkersPerSet; ++i)
