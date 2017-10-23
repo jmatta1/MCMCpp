@@ -30,7 +30,6 @@ namespace Chain
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
- * \tparam BlockSize The number of steps per walker that the block will hold
  * 
  * ChainStepIterator allows traversal of the chain step by step. That is
  * to say that incrementing the iterator jumps all the parameter sets of all the
@@ -49,7 +48,7 @@ namespace Chain
  * @remark It is possible to decrement an "end" iterator to yield an iterator
  * pointing to the very last step taken
  */
-template <class ParamType, int BlockSize>
+template <class ParamType>
 class ChainStepIterator
 {
 public:
@@ -58,12 +57,12 @@ public:
      * \param block The block the iterator is starting pointed to
      * \param blockStep The step within the block that the iterator starts pointing to
      */
-    ChainStepIterator(ChainBlock<ParamType, BlockSize>* block, int blockStep):curr(block), stepIndex(blockStep){}
+    ChainStepIterator(ChainBlock<ParamType>* block, int blockStep):curr(block), stepIndex(blockStep){}
     /*!
      * \brief ChainStepIterator Copy constructor to make a copy of an iterator
      * \param copy The original iterator to be copied into the iterator being constructed
      */
-    ChainStepIterator(const ChainStepIterator<ParamType, BlockSize>& copy):
+    ChainStepIterator(const ChainStepIterator<ParamType>& copy):
         curr(copy.curr), lastFullStep(copy.lastFullStep), stepIndex(copy.stepIndex)
     {}
     
@@ -73,7 +72,7 @@ public:
      * \param rhs The iterator to copy into this iterator
      * \return A reference to this iterator (post copying of rhs into it)
      */
-    ChainStepIterator<ParamType, BlockSize>& operator=(const ChainStepIterator<ParamType, BlockSize>& rhs)
+    ChainStepIterator<ParamType>& operator=(const ChainStepIterator<ParamType>& rhs)
     {curr = rhs.curr; lastFullStep = rhs.lastFullStep; stepIndex = rhs.stepIndex; return *this;}
     
     /*!
@@ -81,36 +80,36 @@ public:
      * \param rhs the second iterator (the right hand side)
      * \return  True if they are equal, false otherwise
      */
-    bool operator==(const ChainStepIterator<ParamType, BlockSize>& rhs){return ((curr == rhs.curr) && (stepIndex == rhs.stepIndex));}
+    bool operator==(const ChainStepIterator<ParamType>& rhs){return ((curr == rhs.curr) && (stepIndex == rhs.stepIndex));}
     /*!
      * \brief operator!= equality operator to test inequality of two iterators (inequivalence of their locations)
      * \param rhs the second iterator (the right hand side)
      * \return  True if they are not equal, false otherwise
      */
-    bool operator!=(const ChainStepIterator<ParamType, BlockSize>& rhs){return ((curr != rhs.curr) || (stepIndex != rhs.stepIndex));}
+    bool operator!=(const ChainStepIterator<ParamType>& rhs){return ((curr != rhs.curr) || (stepIndex != rhs.stepIndex));}
     
     /*!
      * \brief operator++ Prefix increment of the iterator, move it to the next step in the chain
      * \return The iterator that was incremented
      */
-    ChainStepIterator<ParamType, BlockSize> operator++();
+    ChainStepIterator<ParamType> operator++();
     /*!
      * \brief operator++ Prefix decrement of the iterator, move it to the previous step in the chain
      * \return The iterator that was decremented
      */
-    ChainStepIterator<ParamType, BlockSize> operator--();
+    ChainStepIterator<ParamType> operator--();
     
     /*!
      * \brief operator+= Increase the iterator by some number of steps (stopping at the end if needed)
      * \return The iterator that was increased
      */
-    ChainStepIterator<ParamType, BlockSize> operator+=(int steps);
+    ChainStepIterator<ParamType> operator+=(int steps);
     
     /*!
      * \brief operator-= Decrease the iterator by some number of steps (stopping at the Beginning if needed)
      * \return The iterator that was decreased
      */
-    ChainStepIterator<ParamType, BlockSize> operator+=(int steps);
+    ChainStepIterator<ParamType> operator+=(int steps);
     
     /*!
      * \brief operator* Dereference the iterator to get a pointer to the walker parameter array for this step
@@ -125,13 +124,13 @@ public:
     
 private:
     //Linked list book-keeping
-    ChainBlock<ParamType, BlockSize>* curr = nullptr; ///<pointer to the current block
+    ChainBlock<ParamType>* curr = nullptr; ///<pointer to the current block
     int lastFullStep; ///<Proportional to the firstEmptyStep parameter of the current block
     int stepIndex;///<step index within the current block
 };
 
-template <class ParamType, int BlockSize>
-ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator+=(int steps)
+template <class ParamType>
+ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator+=(int steps)
 {
     /*!
      * @remark This increment *will* stop at the end of the chain, even if steps
@@ -139,7 +138,7 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
      * are at the end of the iterator
      */
     //first figure out how many blocks we need to jump
-    int blocks = (steps/BlockSize);
+    int blocks = (steps/Detail::BlockSize);
     while((blocks > 0) && (curr->nextBlock != nullptr))
     {
         curr = curr->nextBlock;
@@ -154,8 +153,8 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
         return *this;
     }
     //if we are here we stopped because we hit our block count, now see if we need to jump one more block
-    steps = (steps%BlockSize);
-    if((stepIndex + steps) > BlockSize)
+    steps = (steps%Detail::BlockSize);
+    if((stepIndex + steps) > Detail::BlockSize)
     {//we need to jump one more block
         if(curr->nextBlock != nullptr)
         {//there is a next block available
@@ -164,7 +163,7 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
             //therefor set step index to 0
             stepIndex = 0;
             lastFullStep = (curr->firstEmptyStep - 1);
-            steps -= (BlockSize - stepIndex);
+            steps -= (Detail::BlockSize - stepIndex);
         }
         else
         {//the next block is not available
@@ -187,8 +186,8 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
     }
 }
 
-template <class ParamType, int BlockSize>
-ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator-=(int steps)
+template <class ParamType>
+ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator-=(int steps)
 {
     /*!
      * @remark This increment *will* stop at the beginning of the chain, even if steps
@@ -196,7 +195,7 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
      * are at the end of the iterator
      */
     //first figure out how many blocks we need to jump
-    int blocks = (steps/BlockSize);
+    int blocks = (steps/Detail::BlockSize);
     while((blocks > 0) && (curr->lastBlock != nullptr))
     {
         curr = curr->lastBlock;
@@ -211,7 +210,7 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
         return *this;
     }
     //if we are here we stopped because we hit our block count, now see if we need to jump one more block
-    steps = (steps%BlockSize);
+    steps = (steps%Detail::BlockSize);
     if(stepIndex < steps)
     {//we need to jump one more block
         if(curr->lastBlock != nullptr)
@@ -219,7 +218,7 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
             curr = curr->lastBlock;
             //now we are decrementing by the remaining size of the previous block,
             //therefor set step index to the last step in the new block
-            stepIndex = (BlockSize-1);
+            stepIndex = (Detail::BlockSize-1);
             lastFullStep = (curr->firstEmptyStep - 1);
             steps -= stepIndex;
         }
@@ -246,15 +245,15 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
 }
 
 
-template <class ParamType, int BlockSize>
-ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator++()
+template <class ParamType>
+ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator++()
 {
     //check if we are not at the end of a block
     if(stepIndex < lastFullStep)
     {//not at the end of a block, easy peasy
         ++stepIndex;
     }
-    else if((stepIndex==BlockSize) && (curr->nextBlock != nullptr))
+    else if((stepIndex==Detail::BlockSize) && (curr->nextBlock != nullptr))
     {//at the end of a block, and there is a next block, jump to the next block
         curr = curr->nextBlock;
         stepIndex = 0;
@@ -267,8 +266,8 @@ ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>:
     return *this;
 }
 
-template <class ParamType, int BlockSize>
-ChainStepIterator<ParamType, BlockSize> ChainStepIterator<ParamType, BlockSize>::operator--()
+template <class ParamType>
+ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator--()
 {
     //check if we are not at the end of a block
     if(stepIndex > 0)

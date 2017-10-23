@@ -30,9 +30,8 @@ namespace Utility
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type returned in the uniform and non-uniform floating point distributions
- * \tparam BlockSize The number of steps stored in each block
  */
-template <class ParamType, int BlockSize>
+template <class ParamType>
 class NoAction
 {
 public:
@@ -41,8 +40,8 @@ public:
      * \param startItt The iterator to the beginning of the chain
      * \param endItt The iterator to the end of the chain
      */
-    void performAction(Chain::ChainStepIterator<ParamType, BlockSize>& startItt,
-                       Chain::ChainStepIterator<ParamType, BlockSize>& endItt){}
+    void performAction(Chain::ChainStepIterator<ParamType>& startItt,
+                       Chain::ChainStepIterator<ParamType>& endItt){}
 private:
 };
 

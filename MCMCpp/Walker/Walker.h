@@ -30,12 +30,9 @@ namespace Walker
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
- * \tparam BlockSize The number of steps per walker that the block will hold
- * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
- * \tparam PostProbCalculator The class that calculates the log post probability
  * 
  */
-template <class ParamType, int BlockSize>
+template <class ParamType>
 class Walker
 {
 public:
@@ -52,7 +49,7 @@ public:
      * \param numParam The number of parameters in the spaces to be walked
      * \param numCell The number of cells to be stored per walker in the chain
      */
-    void init(Chain::Chain<ParamType, BlockSize>* chain, int walkerIndex, int numParam)
+    void init(Chain::Chain<ParamType>* chain, int walkerIndex, int numParam)
     {markovChain = chain; walkerNumber = walkerIndex; numParams = numParam; currState = new ParamType[numParam];}
     
     /*!
@@ -106,7 +103,7 @@ public:
     const ParamType getCurrAuxData(){return auxData;}
     
 private:
-    Chain::Chain<ParamType, BlockSize>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
+    Chain::Chain<ParamType>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
     ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the post prob for that position when written to the chain
     ParamType auxData = 0.0; ///< holds the auxiliary data the walker needs for a given position, to decide to make jumps or not
     int walkerNumber = 0; ///<Holds the integer index of the walker, unique between walkers
@@ -115,8 +112,8 @@ private:
     int totalSteps = 0; ///< holds the number of times that a new parameter set was proposed
 };
 
-template <class ParamType, int BlockSize>
-void Walker<ParamType, BlockSize>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint)
+template <class ParamType>
+void Walker<ParamType>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint)
 {
     for(int i=0; i<numParams; ++i)
     {

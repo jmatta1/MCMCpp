@@ -31,18 +31,17 @@ namespace Walker
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
- * \tparam BlockSize The number of steps per walker that the block will hold
  * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
  * \tparam Calculator The class that calculates the log posterior and whatever else a mover may need
  * 
  * This mover is substantially more computationally expensive than StretchMove,
  * however in some circumstances it can give better autocorrellation times / chain properties
  */
-template <class ParamType, int BlockSize, class CustomDistribution, class Calculator>
+template <class ParamType, class CustomDistribution, class Calculator>
 class WalkMove
 {
 public:
-    typedef Walker<ParamType, BlockSize, CustomDistribution, PostProbCalculator> WalkType;
+    typedef Walker<ParamType, CustomDistribution, PostProbCalculator> WalkType;
     static_assert(Utility::CheckCalcLogPostProb<Calculator, ParamType, ParamType*>(),
                   "WalkMove: The Calculator class does not have the necessary member function with signature:\n"
                   "  'ParamType calcLogPostProb(ParamType* paramSet)'");

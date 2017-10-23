@@ -30,7 +30,6 @@ namespace Chain
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
- * \tparam BlockSize The number of steps per walker that the block will hold
  * 
  * ChainPsetIterator allows traversal point by point. That
  * is to say that incrementing the iterator moves to the next parameter set,
@@ -44,7 +43,7 @@ namespace Chain
  * @remark It is possible to decrement an "end" iterator to yield an iterator
  * pointing to the very last parameter set in the last step taken
  */
-template <class ParamType, int BlockSize>
+template <class ParamType>
 class ChainPsetIterator
 {
 public:
@@ -53,16 +52,16 @@ public:
      * \param block The block the iterator is starting pointed to
      * \param blockStep The step within the block that the iterator starts pointing to
      */
-    ChainPsetIterator(ChainBlock<ParamType, BlockSize>* block, int blockStep):
+    ChainPsetIterator(ChainBlock<ParamType>* block, int blockStep):
         curr(block), stepIndex(blockStep),
         lastCell(block->firstEmptyStep*block->walkerCount - 1),
-        endCell(BlockSize*block->walkerCount - 1){}
+        endCell(Detail::BlockSize*block->walkerCount - 1){}
     
     /*!
      * \brief ChainPsetIterator Copy constructor to make a copy of an iterator
      * \param copy The original iterator to be copied into the iterator being constructed
      */
-    ChainPsetIterator(const ChainPsetIterator<ParamType, BlockSize>& copy):
+    ChainPsetIterator(const ChainPsetIterator<ParamType>& copy):
         curr(copy.curr), index(copy.index), lastCell(copy.lastCell),
         endCell(copy.endCell) {}
     
@@ -73,7 +72,7 @@ public:
      * \param rhs The iterator to copy into this iterator
      * \return A reference to this iterator (post copying of rhs into it)
      */
-    ChainPsetIterator<ParamType, BlockSize>& operator=(const ChainPsetIterator<ParamType, BlockSize>& rhs)
+    ChainPsetIterator<ParamType>& operator=(const ChainPsetIterator<ParamType>& rhs)
     {curr = rhs.curr; index = rhs.index; lastCell = rhs.lastCell; endCell = rhs.endCell; return *this;}
     
     /*!
@@ -81,25 +80,25 @@ public:
      * \param rhs the second iterator (the right hand side)
      * \return  True if they are equal, false otherwise
      */
-    bool operator==(const ChainStepIterator<ParamType, BlockSize>& rhs){return ((curr == rhs.curr) && (index == rhs.index));}
+    bool operator==(const ChainStepIterator<ParamType>& rhs){return ((curr == rhs.curr) && (index == rhs.index));}
     
     /*!
      * \brief operator!= equality operator to test inequality of two iterators (inequivalence of their locations)
      * \param rhs the second iterator (the right hand side)
      * \return  True if they are not equal, false otherwise
      */
-    bool operator!=(const ChainStepIterator<ParamType, BlockSize>& rhs){return ((curr != rhs.curr) || (index != rhs.index));}
+    bool operator!=(const ChainStepIterator<ParamType>& rhs){return ((curr != rhs.curr) || (index != rhs.index));}
     
     /*!
      * \brief operator++ Prefix increment of the iterator, move it to the next walker parameter set in the chain
      * \return The iterator that was incremented
      */
-    ChainPsetIterator<ParamType, BlockSize> operator++();
+    ChainPsetIterator<ParamType> operator++();
     /*!
      * \brief operator++ Prefix decrement of the iterator, move it to the previous walker parameter set in the chain
      * \return The iterator that was decremented
      */
-    ChainPsetIterator<ParamType, BlockSize> operator--();
+    ChainPsetIterator<ParamType> operator--();
     
     /*!
      * \brief operator* Dereference the iterator to get a pointer to the walker parameter array for this walker parameter set
@@ -114,14 +113,14 @@ public:
     
 private:
     //Linked list book-keeping
-    ChainBlock<ParamType, BlockSize>* curr = nullptr; ///<pointer to the current block
+    ChainBlock<ParamType>* curr = nullptr; ///<pointer to the current block
     int index;///<parameter set index within the current block
     int lastCell;///<stored the inddex of the last cell with data within the block array
     int endCell;///<stores the index of the last valid cell within the block array
 };
 
-template <class ParamType, int BlockSize>
-ChainPsetIterator<ParamType, BlockSize> ChainPsetIterator<ParamType, BlockSize>::operator++()
+template <class ParamType>
+ChainPsetIterator<ParamType> ChainPsetIterator<ParamType>::operator++()
 {
     //check if we are not at the end of a block
     if(index < lastCell)
@@ -141,8 +140,8 @@ ChainPsetIterator<ParamType, BlockSize> ChainPsetIterator<ParamType, BlockSize>:
     return *this;
 }
 
-template <class ParamType, int BlockSize>
-ChainPsetIterator<ParamType, BlockSize> ChainPsetIterator<ParamType, BlockSize>::operator--()
+template <class ParamType>
+ChainPsetIterator<ParamType> ChainPsetIterator<ParamType>::operator--()
 {
     //check if we are not at the end of a block
     if(index > 0)

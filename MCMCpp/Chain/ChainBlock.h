@@ -23,6 +23,11 @@ namespace MarkovChainMonteCarlo
 namespace Chain
 {
 
+namespace Detail
+{
+static const int BlockSize = 1000; ///<Number of steps to store in one chain block
+}
+
 /**
  * @class ChainBlock
  * @ingroup Chain
@@ -30,14 +35,13 @@ namespace Chain
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
- * \tparam BlockSize The number of steps per walker that the block will hold
  * 
  * This class holds 'chunks' of the chain that is distributed across a linked
- * list style structure. Each block holds BlockSize parameter sets for all the
+ * list style structure. Each block holds Detail::BlockSize parameter sets for all the
  * walkers
  * 
  */
-template <class ParamType, int BlockSize>
+template <class ParamType>
 class ChainBlock
 {
 public:
@@ -47,7 +51,7 @@ public:
      * \param numWalkers Number of walkers to store parameters for
      * \param numCellsPerWalker Number of parameters plus overhead that the walker needs
      */
-    ChainBlock(ChainBlock<ParamType, BlockSize>* prev, int numWalkers, int numCellsPerWalker);
+    ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker);
     ~ChainBlock(){delete[] chainArray;}
     
     /*!
@@ -63,7 +67,7 @@ public:
      * \brief incrementChainStepAndCheckSpace should be called after a the full set of walkers has stored themselves to the chain
      * \return Returns true if there is space for at least one more step in the block, otherwise returns false
      */
-    bool incrementChainStepAndCheckNotFull(){++firstEmptyStep; return (firstEmptyStep < BlockSize);}
+    bool incrementChainStepAndCheckNotFull(){++firstEmptyStep; return (firstEmptyStep < Detail::BlockSize);}
     
     /*!
      * \brief copyWalkerSet Copys a full set of walker parameters from the given location into the current step
@@ -81,8 +85,8 @@ public:
     friend class ChainPsetIterator;
 private:
     //Linked list book-keeping
-    ChainBlock<ParamType, BlockSize>* lastBlock = nullptr; ///<pointer to the previous block in the chain linked list
-    ChainBlock<ParamType, BlockSize>* nextBlock = nullptr; ///<pointer to the next block in the chain linked list
+    ChainBlock<ParamType>* lastBlock = nullptr; ///<pointer to the previous block in the chain linked list
+    ChainBlock<ParamType>* nextBlock = nullptr; ///<pointer to the next block in the chain linked list
     //Chain book-keeping
     int walkerCount; ///<Number of walkers included in this chain
     int cellsPerWalker; ///<Number of cells needed by each walker
@@ -91,23 +95,23 @@ private:
     ParamType* chainArray = nullptr;///<Pointer into the array that stores the parameter set for every walker for every step in the block
 };
 
-template <class ParamType, int BlockSize>
-ChainBlock<ParamType, BlockSize>::ChainBlock(ChainBlock<ParamType, BlockSize>* prev, int numWalkers, int numCellsPerWalker):
+template <class ParamType>
+ChainBlock<ParamType>::ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker):
     lastBlock(prev), walkerCount(numWalkers), cellsPerWalker(numCellsPerWalker),
     cellsPerStep(numWalkers*numCellsPerWalker)
 {
-    chainArray = new ParamType[BlockSize*cellsPerStep];
+    chainArray = new ParamType[Detail::BlockSize*cellsPerStep];
 }
 
-template <class ParamType, int BlockSize>
-void ChainBlock<ParamType, BlockSize>::storeWalker(int walkerNum, ParamType* walkerData)
+template <class ParamType>
+void ChainBlock<ParamType>::storeWalker(int walkerNum, ParamType* walkerData)
 {
     ParamType* offset = chainArray + (firstEmptyStep*cellsPerStep + walkerNum*cellsPerWalker);
     std::copy(walkerData, (walkerData+cellsPerWalker), offset);
 }
 
-template <class ParamType, int BlockSize>
-void ChainBlock<ParamType, BlockSize>::copyWalkerSet(ParamType* walkerData)
+template <class ParamType>
+void ChainBlock<ParamType>::copyWalkerSet(ParamType* walkerData)
 {
     ParamType* offset = chainArray + (firstEmptyStep*cellsPerStep);
     std::copy(walkerData, (walkerData+(walkerCount*cellsPerWalker)), offset);
