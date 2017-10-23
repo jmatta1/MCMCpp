@@ -13,10 +13,11 @@
 #define MCMC_ANALYSIS_AUTOCORRCALC_H
 // includes for C system headers
 // includes for C++ system headers
-#include<complex>//needed for the DFT and FFT
+#include<complex>//needed for the FFT and iFFT
 #include<cmath>
 // includes from other libraries
 // includes from MCMC
+#include"../Chain/ChainStepIterator.h"
 
 namespace MarkovChainMonteCarlo
 {
@@ -29,12 +30,20 @@ namespace Analysis
  * @author James Till Matta
  * 
  * @tparam ParamType The floating point type for which this calculation will be carried out
- * @tparam IttType The type of iterator for the time series that it will be working with
  */
-template<class ParamType, class IttType>
+
+namespace Detail
+{
+const unsigned long long PiNumerator =   3141592653589793239ULL;
+const unsigned long long PiDenomenator = 1000000000000000000ULL;
+}
+
+template<class ParamType>
 class AutoCorrCalc
 {
-    
+    typedef Chain::ChainStepIterator<ParamType> IttType;
+    //has enough digits that it will be truncated to whatever precision is necessary (assuming the options are 32, 64, 80, or even 128 bit floats)
+    const ParamType Pi = (static_cast<ParamType>(Detail::PiNumerator)/static_cast<ParamType>(Detail::PiDenomenator));
     /*!
      * \brief AutoCorrCalc constructs a new AutoCorrCalc object
      * \param numParams The number of parameters in each sample
@@ -48,6 +57,8 @@ class AutoCorrCalc
     if(interFuncArray!=nullptr) delete[] interFuncArray;}
     /*!
      * \brief allAutoCorrTime Calculates the auto correlation time for each parameter using the full set of walkers
+     * \param start The iterator pointing at the start of the time series
+     * \param end The iterator pointing past the last element in the time series
      * \param numSamples The number of samples, per walker, in the chain
      * 
      * Warning, this *can* be slow. Using fft methods it will take time proportional to
@@ -57,30 +68,26 @@ class AutoCorrCalc
      * 
      * Autocorrelation times that were calculated can be extracted using the retrieveAutoCorrelationTime function
      */
-    void allAutoCorrTime(const MarkovChainMonteCarlo::Utility::IttType& start, const MarkovChainMonteCarlo::Utility::IttType& end, int numSamples);
+    void allAutoCorrTime(const IttType& start, const IttType& end, int numSamples);
     
     /*!
      * \brief sampleParameterAutoCorrTimes Calculates the autocorrellation for a given parameter using a subset of the walkers
      * \param numSamples The number of samples, per walker, in the chain
      * \param paramNumber The parameter index to calculate the autocorrelation time for
-     * \param numWalkers The number of walkers to calculate the autocorrelation time for
-     * \param randomizeWalkers If true, randomly selects walkersToSample walkers instead of evenly dividing the walkers
+     * \param walkersToSelect The number of walkers to calculate the autocorrelation time for
+     * \param keepPreviousWalkers If true, keeps the selection of walkers the acor time was previously calculated for
      * \return The autocorrelation time calculated for that parameter with that walker sampling
      * 
      * This too *can* be slow, using fft methods it will have time s*n*log2[n] where n has the same
      * meaning as in allAutoCorrTime and s is the number of walkers to sample. If fast is not set then
      * the time is proportional to s*n*log2[n]
      */
-    ParamType sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int numWalkers, bool randomizeWalkers=false);
+    ParamType sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int walkersToSelect, bool keepPreviousWalkers=false);
     /*!
      * \brief setAutoCorrParameters Sets the parameters for calculation of the autocorrelation time
-     * \param minAutoCorrTimes The minimum required number of autocorrelation times the algorithm needs to examine
-     * \param step The increase in window size for each iteration of the algorithm
-     * \param loWin The minimum window size
-     * \param hiWin The maximum window size
-     * \param fast If true, only use the first power of two samples to accellerate calculation using FFT
+     * \param scaleFactor The minimum required number of autocorrelation times the algorithm needs to examine
      */
-    void setAutoCorrParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000);
+    void setAutoCorrScaleFactor(int scaleFactor=5){windowScaling = scaleFactor;}
     /*!
      * \brief getAutoCorrelationTime retrieves the calculated autocorrelation time for parameter number paramIndex
      * \param paramIndex The index of the parameter [0, numParameter)
@@ -89,82 +96,178 @@ class AutoCorrCalc
     ParamType retrieveAutoCorrelationTime(int paramIndex){return acorrTimeList[paramIndex];}
     
 private:
-    ParamType* acorrTimeList; ///<stores the list of computed autocorrelation times calculated by allAutoCorrTime
+    //"Behind the scenes" functions that do some menial work and heavy lifting
+    void genWalkerIndexList(int walkersToSelect);
+    void genWalkerAutoCovFunc(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber);
+    ParamType findWalkerChainParameterAverage(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber);
+    int bitReverse(int input);
+    
+    //General bookkeeping parameters
     int paramCount; ///<stores the number of parameters per sample
     int walkerCount; ///<stores the number of walkers in the chain
+    
+    //storage array for precalculated autocorrelation times
+    ParamType* acorrTimeList; ///<stores the list of computed autocorrelation times calculated by allAutoCorrTime
+    
+    //general use random number generator stuff
+    std::mt19937_64 engine;///<The base random number generator engine that is used for selecting walkers randomly
+    std::normal_distribution<ParamType> normDist;///<The adapter that gives normally distributed real numbers with mean 0 and variance 1
+    
+    //Parameters for calculation of autocorellations
     ParamType* acovFuncAvgArray = nullptr; ///<Stores the sum of the autocovariance functions as they are calculated for every walker in the chain
-    ParamType* acovFuncArray = nullptr; ///<Stores the autocovariance function calculated for a given walker in the chain
     int acovSize = 0; ///<Stores the size of the autocovariance function arrays
+    ParamType* acovFuncArray = nullptr; ///<Stores the autocovariance function calculated for a given walker in the chain
     std::complex<ParamType>* interFuncArray = nullptr; ///<stores the inverse fft generated in the first step of calculating the autocovariance function
-    int scratchSize = 0; ///<Size of the acovFuncSumArray, acovFuncArray, and interFuncArray arrays
+    int scratchSize = 0; ///<Size of the acovFuncArray and interFuncArray arrays
+    int logFftSize = 0; ///<Stores the Log2 of the scratchSize
     int* randomWalkerIndices = nullptr; ///<Stores the array of randomly chosen walker indices
-    int minAcorTimes = 10; ///<Minimum number of autocorrelation times to be processed to consider the result correct
-    int winStepSize = 1; ///<Size of step for increasing window size
-    int minWinSize = 10; ///<minimum window size for the algorithm
-    int maxWinSize = 10000; ///<maximum window size for the algorithm
+    int windowScaling = 5; ///<Minimum number of autocorrelation times to be processed to consider the result correct
 };
 
-template<class ParamType, class IttType>
-void AutoCorrCalc<ParamType, IttType>::allAutoCorrTime(const IttType& start, const IttType& end, int numSamples)
+template<class ParamType>
+void AutoCorrCalc<ParamType>::allAutoCorrTime(const IttType& start, const IttType& end, int numSamples)
 {
-    for(int i=0; i<= paramCount; ++i)
+    //do the first one seperately to force the setting of the walker indice array
+    acorrTimeList[0] = sampleParameterAutoCorrTimes(start, end, numSamples, i, walkerCount, false);
+    for(int i=1; i<= paramCount; ++i)
     {//simply apply the more limited autocorrelation time calculator multiple times, storing the result
-        acorrTimeList[i] = sampleParameterAutoCorrTimes(start, end, numSamples, i, walkerCount);
+        acorrTimeList[i] = sampleParameterAutoCorrTimes(start, end, numSamples, i, walkerCount, true);
     }
 }
 
-template<class ParamType, class IttType>
-void AutoCorrCalc<ParamType, IttType>::setAutoCorrParameters(int minAutoCorrTimes=10, int step=1, int loWin=10, int hiWin=10000)
-{
-    minAcorTimes = minAutoCorrTimes;
-    winStepSize = step;
-    minWinSize = loWin;
-    maxWinSize = hiWin;
-}
-
-
-template<class ParamType, class IttType>
-ParamType AutoCorrCalc<ParamType, IttType>::
-sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int numWalkers, bool randomizeWalkers=false)
+template<class ParamType>
+ParamType AutoCorrCalc<ParamType>::sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int walkersToSelect, bool keepPreviousWalkers)
 {
     //first check how many points we are using
-    int fftSize = (0x01 << static_cast<int>(std::ceiling(std::log2(numSamples))));
+    logFftSize = static_cast<int>(std::ceiling(std::log2(numSamples)));
+    int fftSize = (0x01 << logFftSize);
     //now make sure that the storage for the autocovariance function is large enough
     if(acovSize < numSamples)
     {
         acovSize = numSamples;
-        if(acovFuncArray != nullptr) delete[] acovFuncArray;
         if(acovFuncAvgArray != nullptr) delete[] acovFuncAvgArray;
-        acovFuncArray = new ParamType[acovSize];
         acovFuncAvgArray = new ParamType[acovSize];
     }
     //now make sure that the storage for the inverted fft is large enough
     if(scratchSize < fftSize)
     {
         scratchSize = fftSize;
+        if(acovFuncArray != nullptr) delete[] acovFuncArray;
+        acovFuncArray = new ParamType[acovSize];
         if(interFuncArray != nullptr) delete[] interFuncArray;
         interFuncArray = new ParamType[scratchSize];
     }
     //now select the set of walkers whose autocorrelation functions are to be averaged
-    int numSelected = 0;
-    int totalInputExamined = 0;
-    ParamType randUniform;
-    while(numSelected < numPoints)
+    if(!keepPreviousWalkers)
     {
-        randUniform = prng.getUniformReal();
-        if( ((numWalkers-totalInputExamined)*randUniform) >= (numWalkers-numSelected))
-        {
-            ++totalInputExamined;
-        }
-        else
-        {
-            walkerIndices[numSelected] = totalInputExamined;
-            ++totalInputExamined;
-            ++numSelected;
-        }
+        genWalkerIndexList(walkersToSelect);
+    }
+    //now calculate the autocovariance function of the appropriate parameter in the selected chains
+    for(int i=0; i<walkersToSelect; ++i)
+    {
+        genWalkerAutoCovFunc(start, end, randomWalkerIndices[i], numSamples, paramNumber);
     }
 }
 
+template<class ParamType>
+void AutoCorrCalc<ParamType>::genWalkerAutoCovFunc(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber)
+{
+    // First calculate the average of the chain so that we can center the time series as we go along later
+    ParamType avg = findWalkerChainParameterAverage(start, end, walkerNum, numSamples, paramNumber);
+    
+}
+
+template<class ParamType>
+int AutoCorrCalc<ParamType>::bitReverse(int input)
+{
+    int output = 0;
+    for(int i=0; i<logFftSize; ++i)
+    {
+        output <<= 1;
+        output |= (input & 0x1);
+        input >>= 1;
+    }
+    return output;
+}
+
+//Since chains might be long and have weird values, use the Kahan summation to reduce the floating point error
+//Kahan summation can be optimized away by overly aggressive compilers, so it might be needed to turn the optimization down a bit for this function
+//bottom of the file has code to wrap around this function if necessary
+template<class ParamType>
+ParamType AutoCorrCalc<ParamType>::findWalkerChainParameterAverage(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber)
+{
+    IttType itt(start);
+    ParamType sum = 0.0;
+    ParamType compensation = 0.0;
+    int offset = (walkerNum*paramCount + paramNumber);
+    for( ;itt != end; ++itt)
+    {
+        ParamType temp1 = ((*itt)[offset] - compensation);
+        ParamType temp2 = sum + temp1;  // If sum is big and temp1 is small low order digits of (*itt)[offset] are lost
+        compensation = (temp2 - sum) - temp1; //restore the low order digits of (*itt)[offset] to try again with later
+        sum = temp2;
+    }
+    ParamType denom = static_cast<ParamType>(numSamples);
+    return (sum/denom);
+}
+
+template<class ParamType>
+void AutoCorrCalc<ParamType>::genWalkerIndexList(int walkersToSelect)
+{
+    if(walkerCount == walkersToSelect)
+    {
+        for(int i=0; i<=walkerCount; ++i)
+        {
+            randomWalkerIndices[i] = i;
+        }
+    }
+    else
+    {
+        int numSelected = 0;
+        int totalInputExamined = 0;
+        ParamType randUniform;
+        while(numSelected < walkersToSelect)
+        {
+            randUniform = normDist(engine);
+            if( ((walkerCount-totalInputExamined)*randUniform) >= (walkerCount-numSelected))
+            {
+                ++totalInputExamined;
+            }
+            else
+            {
+                randomWalkerIndices[numSelected] = totalInputExamined;
+                ++totalInputExamined;
+                ++numSelected;
+            }
+        }
+    }
+}
+/*
+ * Code to wrap around function to reduce optimization level
+ * useful for functions where aggressive transitivity rules might collapse the whole scheme,
+ * like for Kahan summation
+ * 
+#ifdef __GNUC__
+#pragma GCC push_options
+#pragma GCC optimize ("O2")
+#endif
+#ifdef __INTEL_COMPILER
+#pragma optimize off
+#endif
+#ifdef __clang__
+#pragma clang optimize off
+#endif
+  //Put function here
+#ifdef __GNUC__
+#pragma GCC pop_options
+#endif 
+#ifdef __INTEL_COMPILER
+#pragma optimize on
+#endif
+#ifdef __clang__
+#pragma clang optimize on
+#endif
+*/
 }
 }
 #endif  //MCMC_ANALYSIS_AUTOCORRCALC_H
