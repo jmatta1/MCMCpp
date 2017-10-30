@@ -53,7 +53,7 @@ class AutoCorrCalc
     
     ~AutoCorrCalc()
     {delete[] acorrTimeList; delete[] randomWalkerIndices; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray; if(acovFuncArray!=nullptr) delete[] acovFuncArray;
-    if(interFuncArray!=nullptr) delete[] interFuncArray; if(sampleSet!=nullptr) delete[] sampleSet; if(sampleSetRev!=nullptr) delete[] sampleSetRev;}
+    if(interFuncArray!=nullptr) delete[] interFuncArray;}
     /*!
      * \brief allAutoCorrTime Calculates the auto correlation time for each parameter using the full set of walkers
      * \param start The iterator pointing at the start of the time series
@@ -81,7 +81,8 @@ class AutoCorrCalc
      * meaning as in allAutoCorrTime and s is the number of walkers to sample. If fast is not set then
      * the time is proportional to s*n*log2[n]
      */
-    ParamType sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int walkersToSelect, bool keepPreviousWalkers=false);
+    ParamType sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int walkersToSelect, bool keepPreviousWalkers=false)
+    {checkScratchSizes(numSamples); return sampleParamAutoCorrTimesInternal(start, end, numSamples, paramNumber, walkersToSelect, keepPreviousWalkers);}
     /*!
      * \brief setAutoCorrParameters Sets the parameters for calculation of the autocorrelation time
      * \param scaleFactor The minimum required number of autocorrelation times the algorithm needs to examine
@@ -96,7 +97,9 @@ class AutoCorrCalc
     
 private:
     //"Behind the scenes" functions that do some menial work and heavy lifting
+    ParamType sampleParamAutoCorrTimesInternal(const IttType& start, const IttType& end, int numSamples, int paramNumber, int walkersToSelect, bool keepPreviousWalkers);
     void genWalkerIndexList(int walkersToSelect);
+    void checkScratchSizes(int numSamples);
     void genWalkerAutoCovFunc(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber, int walkersToSelect);
     void makeCenteredWalkerChain(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber);
     int bitReverse(int input);
@@ -133,36 +136,19 @@ private:
 template<class ParamType>
 void AutoCorrCalc<ParamType>::allAutoCorrTime(const IttType& start, const IttType& end, int numSamples)
 {
+    //first do the checks on scratch size
+    checkScratchSizes(numSamples);
     //do the first one seperately to force the setting of the walker indice array
-    acorrTimeList[0] = sampleParameterAutoCorrTimes(start, end, numSamples, i, walkerCount, false);
+    acorrTimeList[0] = sampleParamAutoCorrTimesInternal(start, end, numSamples, i, walkerCount, false);
     for(int i=1; i<= paramCount; ++i)
     {//simply apply the more limited autocorrelation time calculator multiple times, storing the result
-        acorrTimeList[i] = sampleParameterAutoCorrTimes(start, end, numSamples, i, walkerCount, true);
+        acorrTimeList[i] = sampleParamAutoCorrTimesInternal(start, end, numSamples, i, walkerCount, true);
     }
 }
 
 template<class ParamType>
-ParamType AutoCorrCalc<ParamType>::sampleParameterAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int walkersToSelect, bool keepPreviousWalkers)
+ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimesInternal(const IttType& start, const IttType& end, int numSamples, int paramNumber, int walkersToSelect, bool keepPreviousWalkers)
 {
-    //first check how many points we are using
-    logFftSize = static_cast<int>(std::ceiling(std::log2(numSamples)));
-    int tempFftSize = (0x1UL << logFftSize);
-    //now make sure that the storage for the autocovariance function is large enough
-    if(acovSize < numSamples)
-    {
-        acovSize = numSamples;
-        if(acovFuncAvgArray != nullptr) delete[] acovFuncAvgArray;
-        acovFuncAvgArray = new ParamType[acovSize];
-    }
-    //now make sure that the storage for the inverted fft is large enough
-    if(fftSize < tempFftSize)
-    {
-        fftSize = tempFftSize;
-        if(acovFuncArray != nullptr) delete[] acovFuncArray;
-        acovFuncArray = new std::complex<ParamType>[fftSize];
-        if(interFuncArray != nullptr) delete[] interFuncArray;
-        interFuncArray = new std::complex<ParamType>[fftSize];
-    }
     //now select the set of walkers whose autocorrelation functions are to be averaged
     if(!keepPreviousWalkers)
     {
@@ -201,6 +187,30 @@ ParamType AutoCorrCalc<ParamType>::sampleParameterAutoCorrTimes(const IttType& s
 }
 
 template<class ParamType>
+void AutoCorrCalc<ParamType>::checkScratchSizes(int numSamples)
+{
+    //first check how many points we are using
+    logFftSize = static_cast<int>(std::ceiling(std::log2(numSamples)));
+    int tempFftSize = (0x1UL << logFftSize);
+    //now make sure that the storage for the autocovariance function is large enough
+    if(acovSize < numSamples)
+    {
+        acovSize = numSamples;
+        if(acovFuncAvgArray != nullptr) delete[] acovFuncAvgArray;
+        acovFuncAvgArray = new ParamType[acovSize];
+    }
+    //now make sure that the storage for the inverted fft is large enough
+    if(fftSize < tempFftSize)
+    {
+        fftSize = tempFftSize;
+        if(acovFuncArray != nullptr) delete[] acovFuncArray;
+        acovFuncArray = new std::complex<ParamType>[fftSize];
+        if(interFuncArray != nullptr) delete[] interFuncArray;
+        interFuncArray = new std::complex<ParamType>[fftSize];
+    }
+}
+
+template<class ParamType>
 void AutoCorrCalc<ParamType>::genWalkerAutoCovFunc(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber, int walkersToSelect)
 {
     // First calculate the average of the chain and center it
@@ -230,7 +240,10 @@ void AutoCorrCalc<ParamType>::averageAutocovarianceFunctions(int walkersToSelect
 
 template<class ParamType>
 void AutoCorrCalc<ParamType>::ifft()
-{//this IFFT does not do the 1/N factor (that will be taken into account later)
+{//simple implementation of Cooley-Tukey in reverse (negate frequency in exponent of freqStep and apply a factor of 1/N to everything after the fact
+    //however this IFFT does not do the 1/N factor (that will be taken into account later,
+    //during the averaging process, because otherwise it is an unnecessary loop through the array
+    //which can be deferred to be combined with the necessary loop through the array to do the averaging)
     for(int s=0; s<logFftSize; ++s)    
     {
         int m1 = 0x1<<s;
@@ -249,7 +262,6 @@ void AutoCorrCalc<ParamType>::ifft()
             }
         }
     }
-    
 }
 
 template<class ParamType>
@@ -263,7 +275,7 @@ void AutoCorrCalc<ParamType>::copyBitInverseMagnitudes()
 
 template<class ParamType>
 void AutoCorrCalc<ParamType>::fft()
-{
+{//simple implementation of Cooley-Tukey
     for(int s=0; s<logFftSize; ++s)    
     {
         int m1 = 0x1<<s;
