@@ -32,13 +32,12 @@ namespace Mover
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
- * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
  * \tparam Calculator The class that calculates the log posterior and whatever else a mover may need
  * 
  * This mover is substantially more computationally expensive than StretchMove,
  * however in some circumstances it can give better autocorrellation times / chain properties
  */
-template <class ParamType, class Calculator, class CustomDistribution=Utility::GwDistribution<ParamType, 2, 1> >
+template <class ParamType, class Calculator>
 class WalkMove
 {
 public:
@@ -46,11 +45,7 @@ public:
     static_assert(Utility::CheckCalcLogPostProb<Calculator, ParamType, ParamType*>(),
                   "WalkMove: The Calculator class does not have the necessary member function with signature:\n"
                   "  'ParamType calcLogPostProb(ParamType* paramSet)'");
-    static_assert(Utility::CheckFunctor<CustomDistribution, ParamType, ParamType>(),
-                  "The CustomDistribution class does not have the necessary member function with signature:\n"
-                  "  'ParamType operator()(ParamType)'");
     static_assert(std::is_copy_constructible<Calculator>::value, "The Calculator class needs to be copy constructible.");
-    static_assert(std::is_trivially_constructible<CustomDistribution>::value, "The CustomDistribution class needs to be trivially constructible.");
     
     /*!
      * \brief WalkMove Constructs the walk move object
@@ -177,7 +172,7 @@ private:
     
     ParamType* proposal = nullptr;
     int paramCount;
-    Utility::MultiSampler<ParamType, CustomDistribution> prng;
+    Utility::MultiSampler<ParamType, Utility::GwDistribution<ParamType, 2, 1>> prng;
     Calculator calc;
 };
 }
