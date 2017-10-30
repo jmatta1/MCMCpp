@@ -32,8 +32,8 @@ namespace Mover
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
- * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
  * \tparam Calculator The class that calculates the log posterior and whatever else a mover may need
+ * \tparam CustomDistribution The custom distribution used to draw samples for the various kinds of moves and other needed random numbers
  * 
  * A fast, efficient Affine Invariant move algorithm functor that uses minimal resources and can yield good autocorrelation times
  */
