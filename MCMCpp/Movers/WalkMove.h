@@ -16,16 +16,17 @@
 #include<cassert>
 // includes from other libraries
 // includes from MCMC
-#include"../../Utility/MultiSampler.h"
-#include"../Walker.h"
+#include"../Utility/MultiSampler.h"
+#include"../Utility/UserOjbectsTest.h"
+#include"../Utility/GwDistribution.h"
+#include"../Walker/Walker.h"
 
 namespace MarkovChainMonteCarlo
 {
-namespace Walker
+namespace Mover
 {
 /**
  * @class WalkMove
- * @ingroup Walker
  * @ingroup Movers
  * @brief An object that calculates the next proposed step for a walker using the walk move algorithm
  * @author James Till Matta
@@ -37,11 +38,11 @@ namespace Walker
  * This mover is substantially more computationally expensive than StretchMove,
  * however in some circumstances it can give better autocorrellation times / chain properties
  */
-template <class ParamType, class CustomDistribution, class Calculator>
+template <class ParamType, class Calculator, class CustomDistribution=Utility::GwDistribution<ParamType, 2, 1> >
 class WalkMove
 {
 public:
-    typedef Walker<ParamType, CustomDistribution, PostProbCalculator> WalkType;
+    typedef Walker::Walker<ParamType> WalkType;
     static_assert(Utility::CheckCalcLogPostProb<Calculator, ParamType, ParamType*>(),
                   "WalkMove: The Calculator class does not have the necessary member function with signature:\n"
                   "  'ParamType calcLogPostProb(ParamType* paramSet)'");
@@ -85,7 +86,7 @@ public:
     void updateWalker(WalkType& currWalker, WalkType* walkerSet, int numWalkers, bool storePoint)
     {
         selectWalkers(numWalkers);
-        calculateProposal();
+        calculateProposal(currWalker, walkerSet);
         ParamType newProb = calc.calcLogPostProb(proposal);
         ParamType logProbDiff = (newProb - currWalker.getCurrAuxData());
         if(prng.getNegExponentialReal() < logProbDiff)
@@ -134,7 +135,7 @@ private:
     /*!
      * \brief calculateProposal Takes the set of selected walkers and generates the proposal point
      */
-    void calculateProposal()
+    void calculateProposal(WalkType& currWalker, WalkType* walkerSet)
     {
         // do the first parameter explicitly to store the random values
         // we do this rather than simply loop to generate the random values because this way we do numPoints*paramCount iterations

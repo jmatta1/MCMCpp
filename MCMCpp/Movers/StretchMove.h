@@ -16,17 +16,17 @@
 #include<cmath>
 // includes from other libraries
 // includes from MCMC
-#include"../Walker.h"
-#include"../../Utility/MultiSampler.h"
-#include"../../Utility/UserOjbectsTest.h"
+#include"../Walker/Walker.h"
+#include"../Utility/MultiSampler.h"
+#include"../Utility/GwDistribution.h"
+#include"../Utility/UserOjbectsTest.h"
 
 namespace MarkovChainMonteCarlo
 {
-namespace Walker
+namespace Mover
 {
 /**
  * @class StretchMove
- * @ingroup Walker
  * @ingroup Movers
  * @brief An object that calculates the next proposed step for a walker using the stretch move algorithm
  * @author James Till Matta
@@ -37,7 +37,7 @@ namespace Walker
  * 
  * A fast, efficient Affine Invariant move algorithm functor that uses minimal resources and can yield good autocorrelation times
  */
-template <class ParamType, class Calculator, class CustomDistribution=Utility::GwDistribution<ParamType, 2, 1>>
+template <class ParamType, class Calculator, class CustomDistribution=Utility::GwDistribution<ParamType, 2, 1> >
 class StretchMove
 {
 public:
