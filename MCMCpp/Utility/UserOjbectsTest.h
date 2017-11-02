@@ -113,14 +113,14 @@ static auto testSignature_functor(int) -> std::false_type;
  * @tparam Arg0 The type of the first function argument
  */
 template<class TestClass, class RetType, class Arg0, class Arg1, class Arg2, class Arg3>
-static auto testSignature_udateWalker(unsigned long long) -> typename SameType<RetType,
+static auto testSignature_updateWalker(unsigned long long) -> typename SameType<RetType,
     decltype(std::declval<TestClass>().updateWalker(std::declval<Arg0>(), std::declval<Arg1>(), std::declval<Arg2>(), std::declval<Arg3>()))>::ValType;
 /*!
  * @cond HIDDEN_SYMBOLS
  * substitution failure branch, either the function does not exist or the arguments passed cannot be coerced into being the correct arguments
  */
 template<class, class, class >
-static auto testSignature_udateWalker(int) -> std::false_type;
+static auto testSignature_updateWalker(int) -> std::false_type;
 /*!
  * @endcond
  */
