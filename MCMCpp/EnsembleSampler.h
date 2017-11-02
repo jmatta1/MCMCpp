@@ -152,7 +152,7 @@ private:
 
     bool subSampling = false; ///<Toggle for performing subsampling
 
-    PostStepAction& stepAction; ///<Action to perform at the end of every step
+    PostStepAction stepAction; ///<Action to perform at the end of every step
 };
 
 template<class ParamType, class Mover, class PostStepAction>
