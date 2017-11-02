@@ -14,9 +14,11 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cmath>
+#include<memory>
 // includes from other libraries
 // includes from MCMC
 #include"../Walker/Walker.h"
+#include"../Utility/ArrayDeleter.h"
 #include"../Utility/MultiSampler.h"
 #include"../Utility/GwDistribution.h"
 #include"../Utility/UserOjbectsTest.h"
@@ -28,12 +30,12 @@ namespace Mover
 /**
  * @class StretchMove
  * @ingroup Movers
- * @brief An object that calculates the next proposed step for a walker using the stretch move algorithm
+ * @brief An object that calculates the next proposed step for a walker by using an AR1 model, useful for testing
  * @author James Till Matta
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
  * 
- * A fast, efficient Affine Invariant move algorithm functor that uses minimal resources and can yield good autocorrelation times
+ * A mover that generates each next point using an autoregression model
  */
 template <class ParamType>
 class AutoRegressiveMove
@@ -47,13 +49,12 @@ public:
      * \param prngInit The seed for the random number generator
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
-    AutoRegressiveMove(int numParams, const ParamType* offsets, const ParamType* phiValues,
-                       const ParamType* paramVariance): paramCount(numParams)
+    AutoRegressiveMove(int numParams, const ParamType* offsets, const ParamType* phiValues, const ParamType* paramVariance):
+        paramCount(numParams), proposal(new ParamType[numParams]),
+        phis(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
+        offs(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
+        prngStdDev(new ParamType[numParams], Utility::ArrayDeleter<ParamType>())
     {
-        proposal = new ParamType[paramCount];
-        phis = new ParamType[paramCount];
-        offs = new ParamType[paramCount];
-        prngStdDev = new ParamType[paramCount];
         for(int i=0; i<paramCount; ++i)
         {
             phis[i] = phiValues[i];
@@ -63,6 +64,10 @@ public:
     }
     
     ~AutoRegressiveMove(){delete[] proposal;}
+    
+    AutoRegressiveMove(const AutoRegressiveMove<ParamType>& rhs):
+    paramCount(rhs.paramCount), proposal(rhs.proposal), phis(rhs.phis),
+      offs(rhs.offs), prngStdDev(rhs.prngStdDev){}
     
     /*!
      * \brief setPrngSeed Sets the seed of the underlying prng
@@ -83,9 +88,9 @@ public:
         ParamType* currState = currWalker.getCurrState();
         for(int i=0; i<paramCount; ++i)
         {
-            proposal[i] = (offs[i] + (phis[i]*currState[i]) + (prngStdDev[i]*prng.getNormalReal()));
+            proposal.get()[i] = (offs.get()[i] + (phis.get()[i]*currState.get()[i]) + (prngStdDev.get()[i]*prng.getNormalReal()));
         }
-        currWalker.jumpToNewPoint(proposal, static_cast<ParamType>(0), storePoint);
+        currWalker.jumpToNewPoint(proposal.get(), static_cast<ParamType>(0), storePoint);
     }
 
     /*!
@@ -97,7 +102,8 @@ public:
     {
         for(int i=0; i<paramCount; ++i)
         {
-            ParamType totalStdDev = prngStdDev[i]/std::sqrt(static_cast<ParamType>(1)-phis[i]*phis[i]);
+            ParamType phi = phis.get()[i];
+            ParamType totalStdDev = prngStdDev.get()[i]/std::sqrt(static_cast<ParamType>(1)-phi*phi);
             for(int j=0; j<numWalkers; ++j)
             {
                 initArray[j*paramCount + i] = totalStdDev*prng.getNormalReal();
@@ -106,12 +112,11 @@ public:
     }
     
 private:
-    ParamType* proposal = nullptr; ///<Holds the array that will tell the walker its new point
-    ParamType* phis = nullptr; ///<Holds the array of recursion parameters
-    ParamType* offs = nullptr; ///<Holds the array of offsets to the AR(1) model)
-    ParamType* prngStdDev = nullptr; ///<Holds the standard deviation of each parameters needed normal distributed random number
-    
     int paramCount; ///<Holds the total number of parameters
+    ParamType* proposal; ///Holds the new parameter set for the walker
+    std::shared_ptr<ParamType> phis; ///<Holds the array of recursion parameters, doesn't need to be replicated
+    std::shared_ptr<ParamType> offs; ///<Holds the array of offsets to the AR(1) model), doesn't need to be replicated
+    std::shared_ptr<ParamType> prngStdDev; ///<Holds the standard deviation of each parameters needed normal distributed random number, doesn't need to be replicated
     Utility::MultiSampler<Utility::GwDistribution<ParamType, 2, 1> prng;  ///<The random number generator with an unused distribution transformer
 };
 }
