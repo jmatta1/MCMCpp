@@ -17,8 +17,6 @@
 // includes from other libraries
 // includes from MCMC
 #include"Chain/Chain.h"
-#include"Walker/Movers/StretchMove.h"
-#include"Walker/Movers/WalkMove.h"
 #include"Walker/Walker.h"
 #include"Utility/NoAction.h"
 #include"Utility/GwDistribution.h"
@@ -66,8 +64,8 @@ public:
      * \param maxChainSizeBytes The maximum size of the sample chain in bytes
      * \param stepAction An instance of the post step action class
      */
-    EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, const Mover& move,
-                    PostStepAction& stepAct=Utility::NoAction<ParamType>());
+    EnsembleSampler(int runNumber, int numWalker, int numParameter, const MarkovChainMonteCarlo::Mover& move,
+                    unsigned long long maxChainSizeBytes=2147483648, PostStepAction& stepAct=Utility::NoAction<ParamType>());
     
     /*!
      * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
@@ -158,7 +156,8 @@ private:
 
 template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
 EnsembleSampler<ParamType, Mover, PostStepAction>::
-EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, const MarkovChainMonteCarlo::Mover& move, PostStepAction& stepAct):
+EnsembleSampler(int runNumber, int numWalker, int numParameter, const MarkovChainMonteCarlo::Mover& move,
+                unsigned long long maxChainSizeBytes, PostStepAction& stepAct):
     numParams(numParameter), numWalkers(numWalker), walkersPerSet(numWalker/2),
     markovChain(numWalkers, numParams, maxChainSizeBytes),
     moveProposer(move), stepAction(stepAct)
