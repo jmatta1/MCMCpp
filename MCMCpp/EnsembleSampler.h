@@ -65,7 +65,7 @@ public:
      * \param stepAction An instance of the post step action class
      */
     EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& move,
-                    unsigned long long maxChainSizeBytes=2147483648, PostStepAction& stepAct=Utility::NoAction<ParamType>());
+                    unsigned long long maxChainSizeBytes=2147483648, PostStepAction* stepAct=nullptr);
     
     /*!
      * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
@@ -152,13 +152,13 @@ private:
 
     bool subSampling = false; ///<Toggle for performing subsampling
 
-    PostStepAction stepAction; ///<Action to perform at the end of every step
+    PostStepAction* stepAction; ///<Action to perform at the end of every step
 };
 
 template<class ParamType, class Mover, class PostStepAction>
 EnsembleSampler<ParamType, Mover, PostStepAction>::
 EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& move,
-                unsigned long long maxChainSizeBytes, PostStepAction& stepAct):
+                unsigned long long maxChainSizeBytes, PostStepAction* stepAct):
     numParams(numParameter), numWalkers(numWalker), walkersPerSet(numWalker/2),
     markovChain(numWalkers, numParams, maxChainSizeBytes),
     moveProposer(move), stepAction(stepAct)
@@ -173,6 +173,10 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& mov
     {
         walkerRedSet[i].init(&markovChain, 2*i,   numParams);
         walkerBlkSet[i].init(&markovChain, 2*i+1, numParams);
+    }
+    if(stepAct==nullptr)
+    {
+        stepAct = new PostStepAction;
     }
 }
 
@@ -267,6 +271,8 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::performStep(bool save)
         //first get a proposed new point to move to
         moveProposer.updateWalker(walkerRedSet[i], walkerBlkSet, walkersPerSet, save);
     }
+    //now perform the poststep action
+    stepAction->performAction(markovChain.getStepIteratorBegin(), markovChain.getStepIteratorEnd());
 }
 
 }
