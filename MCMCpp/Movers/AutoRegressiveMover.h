@@ -83,7 +83,7 @@ public:
      * \param numWalkers The number of walkers in WalkerSet this is ignored for this mover
      * \param storePoint False if the point should not be written into the chain, accepted or not
      */
-    void getProposal(WalkType& currWalker, WalkType* walkerSet, int numWalkers, bool storePoint)
+    void updateWalker(WalkType& currWalker, WalkType* walkerSet, int numWalkers, bool storePoint)
     {
         ParamType* currState = currWalker.getCurrState();
         for(int i=0; i<paramCount; ++i)
