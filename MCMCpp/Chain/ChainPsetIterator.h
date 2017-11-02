@@ -53,8 +53,7 @@ public:
      * \param blockStep The step within the block that the iterator starts pointing to
      */
     ChainPsetIterator(ChainBlock<ParamType>* block, int blockStep):
-        curr(block), stepIndex(blockStep),
-        lastCell(block->firstEmptyStep*block->walkerCount - 1),
+        curr(block), lastCell(block->firstEmptyStep*block->walkerCount - 1),
         endCell(Detail::BlockSize*block->walkerCount - 1){}
     
     /*!
@@ -80,14 +79,14 @@ public:
      * \param rhs the second iterator (the right hand side)
      * \return  True if they are equal, false otherwise
      */
-    bool operator==(const ChainStepIterator<ParamType>& rhs){return ((curr == rhs.curr) && (index == rhs.index));}
+    bool operator==(const ChainPsetIterator<ParamType>& rhs){return ((curr == rhs.curr) && (index == rhs.index));}
     
     /*!
      * \brief operator!= equality operator to test inequality of two iterators (inequivalence of their locations)
      * \param rhs the second iterator (the right hand side)
      * \return  True if they are not equal, false otherwise
      */
-    bool operator!=(const ChainStepIterator<ParamType>& rhs){return ((curr != rhs.curr) || (index != rhs.index));}
+    bool operator!=(const ChainPsetIterator<ParamType>& rhs){return ((curr != rhs.curr) || (index != rhs.index));}
     
     /*!
      * \brief operator++ Prefix increment of the iterator, move it to the next walker parameter set in the chain
