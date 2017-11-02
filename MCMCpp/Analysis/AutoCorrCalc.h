@@ -235,7 +235,7 @@ void AutoCorrCalc<ParamType>::averageAutocovarianceFunctions(int walkersToSelect
     ParamType normVal = (static_cast<ParamType>(1)/(static_cast<ParamType>(walkersToSelect)*(acovFuncArray[0].real())));
     for(int i=0; i<acovSize; ++i)
     {
-        acovFuncAvgArray += (normVal*(acovFuncArray[i].real()));
+        acovFuncAvgArray[i] += (normVal*(acovFuncArray[i].real()));
     }
 }
 
@@ -322,7 +322,7 @@ void AutoCorrCalc<ParamType>::makeCenteredWalkerChain(const IttType& start, cons
     ParamType avg = (sum/static_cast<ParamType>(numSamples));
     for(int i=0; i<numSamples; ++i)
     {
-        interFuncArray -= avg;
+        interFuncArray[i] -= avg;
     }
     //pretend that we have zero extended the data array before we did this whole copy, subtract, and bit-reversal thing
     for(; index<fftSize; ++index)
