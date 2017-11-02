@@ -252,18 +252,20 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator++()
     if(stepIndex < lastFullStep)
     {//not at the end of a block, easy peasy
         ++stepIndex;
+        return *this;
     }
     else if((stepIndex==Detail::BlockSize) && (curr->nextBlock != nullptr))
     {//at the end of a block, and there is a next block, jump to the next block
         curr = curr->nextBlock;
         stepIndex = 0;
         lastFullStep = (curr->firstEmptyStep - 1);
+        return *this;
     }
     else
     {//at the end of a block, and there is no next block, set step index to the first available step in the block
         stepIndex = (lastFullStep + 1);
+        return *this;
     }
-    return *this;
 }
 
 template <class ParamType>
@@ -273,18 +275,20 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator--()
     if(stepIndex > 0)
     {//not at the start of a block, easy peasy
         --stepIndex;
+        return *this;
     }
     else if(curr->lastBlock != nullptr)
     {//at the start of a block, and there is a previous block jump to the end of the previous block
         curr = curr->lastBlock;
         lastFullStep = (curr->firstEmptyStep - 1);
         stepIndex = lastFullStep;
+        return *this;
     }
     else
     {//otherwise we are at the beginning of the first block
         stepIndex = 0;
+        return *this;
     }
-    return *this;
 }
 
 }
