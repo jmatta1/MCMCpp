@@ -80,14 +80,11 @@ public:
      */
     void reset(){firstEmptyStep = 0;}
     
-    template<typename ParamType>
-    friend class Chain;
+    friend class Chain<ParamType>;
     
-    template<typename ParamType>
-    friend class ChainStepIterator;
+    friend class ChainStepIterator<ParamType>;
     
-    template<typename ParamType>
-    friend class ChainPsetIterator;
+    friend class ChainPsetIterator<ParamType>;
 private:
     //Linked list book-keeping
     ChainBlock<ParamType>* lastBlock = nullptr; ///<pointer to the previous block in the chain linked list
