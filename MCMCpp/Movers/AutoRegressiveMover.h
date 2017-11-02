@@ -59,7 +59,7 @@ public:
         {
             phis.get()[i] = phiValues[i];
             offs.get()[i] = offsets[i];
-            prngStdDev.get()[i] = std::sqrt(paramVariance[i])*std::sqrt(static_cast<ParamType>(1)-phis[i]*phis[i]);
+            prngStdDev.get()[i] = std::sqrt(paramVariance[i])*std::sqrt(static_cast<ParamType>(1)-phiValues[i]*phiValues[i]);
         }
     }
     
