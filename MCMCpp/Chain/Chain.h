@@ -304,7 +304,7 @@ ChainPsetIterator<ParamType> Chain<ParamType>::getPsetIteratorEnd()
 template <class ParamType>
 ChainStepIterator<ParamType> Chain<ParamType>::getStepIteratorEnd()
 {
-    return ChainPsetIterator<ParamType>(curr, curr->firstEmptyStep);
+    return ChainStepIterator<ParamType>(curr, curr->firstEmptyStep);
 }
 
 }
