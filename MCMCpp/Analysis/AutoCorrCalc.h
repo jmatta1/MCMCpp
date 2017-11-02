@@ -156,7 +156,7 @@ ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimesInternal(const IttTyp
         genWalkerIndexList(walkersToSelect);
     }
     //clear the autocovariance function average array
-    for(int i=0; i<fftSize; ++i)
+    for(int i=0; i<acovSize; ++i)
     {
         acovFuncAvgArray[i] = static_cast<ParamType>(0);
     }
