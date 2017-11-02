@@ -1,0 +1,5 @@
+set(GCC_OPT_FLAG "-O2")
+set(GCC_DEB_FLAG "-g")
+set(WARN_FLAGS "-Wall -Wextra -Wpedantic -Weffc++ -Wdouble-promotion -Wformat -Wswitch-default -Wswitch-enum -Wsync-nand -Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn -Wsuggest-attribute=format -Wsuggest-final-types -Wsuggest-final-methods -Wsuggest-override -Wtrampolines -Wfloat-equal -Wshadow -Wunsafe-loop-optimizations -Wpointer-arith -Wtype-limits -Wcast-qual -Wcast-align -Wwrite-strings -Wconditionally-supported -Wconversion -Wzero-as-null-pointer-constant -Wdate-time -Wuseless-cast -Wenum-compare -Wlogical-op -Wmissing-declarations -Wmissing-field-initializers -Wnormalized -Wopenmp-simd -Wpacked -Wpadded -Wredundant-decls -Winline -Winvalid-pch -Wvector-operation-performance -Wvla -Wdisabled-optimization -Wopenmp-simd")
+
+set(WARN_OPT_FLAGS "-fstrict-aliasing -Wstrict-aliasing -fstrict-overflow -Wstrict-overflow=5 -ftree-vrp -Warray-bounds=2 -fsized-deallocation -Wsized-deallocation -flto-odr-type-merging -Wno-odr  -fstack-protector -Wstack-protector")
