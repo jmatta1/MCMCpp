@@ -117,7 +117,7 @@ private:
     std::shared_ptr<ParamType> phis; ///<Holds the array of recursion parameters, doesn't need to be replicated
     std::shared_ptr<ParamType> offs; ///<Holds the array of offsets to the AR(1) model), doesn't need to be replicated
     std::shared_ptr<ParamType> prngStdDev; ///<Holds the standard deviation of each parameters needed normal distributed random number, doesn't need to be replicated
-    Utility::MultiSampler<ParamType, Utility::GwDistribution<ParamType, 2, 1> prng;  ///<The random number generator with an unused distribution transformer
+    Utility::MultiSampler<ParamType, Utility::GwDistribution<ParamType, 2, 1> > prng;  ///<The random number generator with an unused distribution transformer
 };
 }
 }
