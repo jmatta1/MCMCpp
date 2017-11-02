@@ -148,7 +148,7 @@ struct CheckCalcLogPostProb : decltype( Detail::testSignature_functor<TestClass,
  * @brief Outer Function to perform test for calcLogPostProb function
  */
 template<class TestClass, class RetVal, class Arg0, class Arg1, class Arg2, class Arg3>
-struct CheckCalcUpdateWalker : decltype( Detail::testSignature_udateWalker<TestClass, RetVal, Arg0, Arg1, Arg2>(0ULL) ){};
+struct CheckCalcUpdateWalker : decltype( Detail::testSignature_updateWalker<TestClass, RetVal, Arg0, Arg1, Arg2>(0ULL) ){};
 }
 }
 #endif  //MCMC_UTILITY_USEROBJECTTEST_H

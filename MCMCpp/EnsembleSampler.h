@@ -64,7 +64,7 @@ public:
      * \param maxChainSizeBytes The maximum size of the sample chain in bytes
      * \param stepAction An instance of the post step action class
      */
-    EnsembleSampler(int runNumber, int numWalker, int numParameter, const MarkovChainMonteCarlo::Mover& move,
+    EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& move,
                     unsigned long long maxChainSizeBytes=2147483648, PostStepAction& stepAct=Utility::NoAction<ParamType>());
     
     /*!
@@ -154,7 +154,7 @@ private:
     PostStepAction& stepAction; ///<Action to perform at the end of every step
 };
 
-template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+template<class ParamType, class Mover, class PostStepAction>
 EnsembleSampler<ParamType, Mover, PostStepAction>::
 EnsembleSampler(int runNumber, int numWalker, int numParameter, const MarkovChainMonteCarlo::Mover& move,
                 unsigned long long maxChainSizeBytes, PostStepAction& stepAct):
@@ -175,7 +175,7 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, const MarkovChai
     }
 }
 
-template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+template<class ParamType, class Mover, class PostStepAction>
 void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(ParamType* positions)
 {
     for(int i=0; i<walkersPerSet; ++i)
@@ -187,7 +187,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(Para
     markovChain.incrementChainStep();
 }
 
-template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+template<class ParamType, class Mover, class PostStepAction>
 ParamType EnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptanceFraction()
 {
     unsigned long long accepted;
@@ -203,7 +203,7 @@ ParamType EnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptanceFracti
     return fraction;
 }
 
-template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+template<class ParamType, class Mover, class PostStepAction>
 void EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
 {
     if(!subSampling)
@@ -230,7 +230,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
     }
 }
 
-template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+template<class ParamType, class Mover, class PostStepAction>
 void EnsembleSampler<ParamType, Mover, PostStepAction>::reset()
 {
     storedSteps = 0;
@@ -242,7 +242,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::reset()
     }
 }
 
-template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+template<class ParamType, class Mover, class PostStepAction>
 void EnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0)
 {
     subSampling=useSubSampling;
@@ -252,7 +252,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(bool use
     storedSteps = (tempSteps/subSamplingInterval);
 }
 
-template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+template<class ParamType, class Mover, class PostStepAction>
 void EnsembleSampler<ParamType, Mover, PostStepAction>::performStep(bool save)
 {
     //first update all the red set from the black set

@@ -140,7 +140,7 @@ void AutoCorrCalc<ParamType>::allAutoCorrTime(const IttType& start, const IttTyp
     //first do the checks on scratch size
     checkScratchSizes(numSamples);
     //do the first one seperately to force the setting of the walker indice array
-    acorrTimeList[0] = sampleParamAutoCorrTimesInternal(start, end, numSamples, i, walkerCount, false);
+    acorrTimeList[0] = sampleParamAutoCorrTimesInternal(start, end, numSamples, 0, walkerCount, false);
     for(int i=1; i<= paramCount; ++i)
     {//simply apply the more limited autocorrelation time calculator multiple times, storing the result
         acorrTimeList[i] = sampleParamAutoCorrTimesInternal(start, end, numSamples, i, walkerCount, true);
@@ -191,7 +191,7 @@ template<class ParamType>
 void AutoCorrCalc<ParamType>::checkScratchSizes(int numSamples)
 {
     //first check how many points we are using
-    logFftSize = static_cast<int>(std::ceiling(std::log2(numSamples)));
+    logFftSize = static_cast<int>(std::ceil(std::log2(numSamples)));
     int tempFftSize = (0x1UL << logFftSize);
     //now make sure that the storage for the autocovariance function is large enough
     if(acovSize < numSamples)
@@ -232,7 +232,7 @@ void AutoCorrCalc<ParamType>::averageAutocovarianceFunctions(int walkersToSelect
     //This incorporates the normalization of the IFFT (1/N), the averaging factor (1/walkersToSelect), *and* the division by the autocovariance at lag 0
     //The since acovFuncArray[0] contains covFunc[t=0]*N (because it has not been normalized from the inverse FFT)
     //I can ignore dividing by 1/FFT size since that is already included
-    ParamType normVal = (static_cast<ParamType>(1)/(static_cast<ParamType>(walkersToSelect)*(acovFuncArray[0].real()/)));
+    ParamType normVal = (static_cast<ParamType>(1)/(static_cast<ParamType>(walkersToSelect)*(acovFuncArray[0].real())));
     for(int i=0; i<acovSize; ++i)
     {
         acovFuncAvgArray += (normVal*(acovFuncArray[i].real()));
@@ -250,7 +250,7 @@ void AutoCorrCalc<ParamType>::ifft()
         int m1 = 0x1<<s;
         int m2 = m1 >> 1;
         std::complex<ParamType> freqStep(std::polar(static_cast<ParamType>(1), Pi/static_cast<ParamType>(m2)));
-        for(unsigned int i=0; i<fftSize; i+=m1)
+        for(unsigned int k=0; k<fftSize; k+=m1)
         {
             std::complex<ParamType> baseFreq(1, 0);
             for(unsigned int j=0; j<m2; ++j)
