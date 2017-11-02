@@ -88,9 +88,9 @@ public:
         const ParamType* currState = currWalker.getCurrState();
         for(int i=0; i<paramCount; ++i)
         {
-            proposal.get()[i] = (offs.get()[i] + (phis.get()[i]*currState[i]) + (prngStdDev.get()[i]*prng.getNormalReal()));
+            proposal[i] = (offs.get()[i] + (phis.get()[i]*currState[i]) + (prngStdDev.get()[i]*prng.getNormalReal()));
         }
-        currWalker.jumpToNewPoint(proposal.get(), static_cast<ParamType>(0), storePoint);
+        currWalker.jumpToNewPoint(proposal, static_cast<ParamType>(0), storePoint);
     }
 
     /*!
