@@ -174,6 +174,7 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& mov
         walkerRedSet[i].init(&markovChain, 2*i,   numParams);
         walkerBlkSet[i].init(&markovChain, 2*i+1, numParams);
     }
+    //if nullptr, then default allocate a poststepaction
     if(stepAct==nullptr)
     {
         stepAct = new PostStepAction;
@@ -185,8 +186,8 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(Para
 {
     for(int i=0; i<walkersPerSet; ++i)
     {
-        walkerRedSet[i].setFirstPoint(positions+2*i*numParams, auxValues+2*i, storeInit);
-        walkerBlkSet[i].setFirstPoint(positions+(2*i+1)*numParams, auxValues+2*i+1, storeInit);
+        walkerRedSet[i].setFirstPoint(positions+2*i*numParams, auxValues[2*i], storeInit);
+        walkerBlkSet[i].setFirstPoint(positions+(2*i+1)*numParams, auxValues[2*i+1], storeInit);
     }
     ++storedSteps;
     markovChain.incrementChainStep();
