@@ -40,8 +40,8 @@ public:
      * \param startItt The iterator to the beginning of the chain
      * \param endItt The iterator to the end of the chain
      */
-    void performAction(Chain::ChainStepIterator<ParamType>& startItt,
-                       Chain::ChainStepIterator<ParamType>& endItt){}
+    void performAction(const Chain::ChainStepIterator<ParamType>& startItt,
+                       const Chain::ChainStepIterator<ParamType>& endItt){}
 private:
 };
 
