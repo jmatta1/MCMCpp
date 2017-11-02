@@ -120,7 +120,7 @@ public:
      */
     ParamType* operator*(){return (curr->chainArray + stepIndex*(curr->cellsPerStep));}
     
-    friend class Chain<ParamType>;
+    template<class> friend class Chain;
     
 private:
     //Linked list book-keeping

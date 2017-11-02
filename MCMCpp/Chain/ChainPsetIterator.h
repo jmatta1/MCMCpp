@@ -108,7 +108,7 @@ public:
      */
     ParamType* operator*(){return (curr->chainArray + index*(curr->cellsPerWalker));}
     
-    friend class Chain<ParamType>;
+    template<class> friend class Chain;
     
 private:
     //Linked list book-keeping
