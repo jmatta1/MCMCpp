@@ -74,9 +74,10 @@ public:
     
     /*!
      * \brief setInitialWalkerPos Gives an initial position to every walker.
-     * \param positions An array of floating point types with length numParameters*numWalker
+     * \param positions An array of floating point types with length numParameters*numWalker representing a starting point for every walker
+     * \param auxValues An array of floating point types with length numWalker representing the auxillary data for every walker
      */
-    void setInitialWalkerPos(ParamType* positions);
+    void setInitialWalkerPos(ParamType* positions, ParamType* auxValues, bool storeInit=true);
     
     /*!
      * \brief runMCMC Runs the Markov chain Monte Carlo for a set number of samples
@@ -176,12 +177,12 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& mov
 }
 
 template<class ParamType, class Mover, class PostStepAction>
-void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(ParamType* positions)
+void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(ParamType* positions, ParamType* auxValues, bool storeInit)
 {
     for(int i=0; i<walkersPerSet; ++i)
     {
-        walkerRedSet[i].setFirstPoint(positions+2*i*numParams, calc);
-        walkerBlkSet[i].setFirstPoint(positions+(2*i+1)*numParams, calc);
+        walkerRedSet[i].setFirstPoint(positions+2*i*numParams, auxValues+2*i, storeInit);
+        walkerBlkSet[i].setFirstPoint(positions+(2*i+1)*numParams, auxValues+2*i+1, storeInit);
     }
     ++storedSteps;
     markovChain.incrementChainStep();
@@ -243,7 +244,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::reset()
 }
 
 template<class ParamType, class Mover, class PostStepAction>
-void EnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0)
+void EnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(bool useSubSampling, int subSamplingInt, int burnIn)
 {
     subSampling=useSubSampling;
     subSamplingInterval = subSamplingInt;
