@@ -109,7 +109,7 @@ public:
      * \brief operator-= Decrease the iterator by some number of steps (stopping at the Beginning if needed)
      * \return The iterator that was decreased
      */
-    ChainStepIterator<ParamType> operator+=(int steps);
+    ChainStepIterator<ParamType> operator-=(int steps);
     
     /*!
      * \brief operator* Dereference the iterator to get a pointer to the walker parameter array for this step
