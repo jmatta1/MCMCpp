@@ -47,7 +47,7 @@ public:
     typedef Chain::ChainPsetIterator<ParamType> PsetItt;
     typedef Chain::ChainStepIterator<ParamType> StepItt;
     //perform static checks of the users classes to ensure that they have the needed member functions for their role
-    static_assert(Utility::CheckCalcUpdateWalker<Mover, void, WalkerType, WalkerType*, int, bool>(),
+    static_assert(Utility::CheckCalcUpdateWalker<Mover, void, WalkerType&, WalkerType*, int, bool>(),
                   "The Mover class does not have the necessary member function with signature:\n"
                   "  'void updateWalker(Walker::Walker<ParamType>&, Walker::Walker<ParamType>*, int, bool)'");
     static_assert(Utility::CheckPerformAction<PostStepAction, void, PsetItt, PsetItt>(),
