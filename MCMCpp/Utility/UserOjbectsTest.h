@@ -119,7 +119,7 @@ static auto testSignature_updateWalker(unsigned long long) -> typename SameType<
  * @cond HIDDEN_SYMBOLS
  * substitution failure branch, either the function does not exist or the arguments passed cannot be coerced into being the correct arguments
  */
-template<class, class, class >
+template<class, class, class, class, class, class >
 static auto testSignature_updateWalker(int) -> std::false_type;
 /*!
  * @endcond
@@ -136,19 +136,19 @@ struct CheckPerformAction : decltype(Detail::testSignature_performAction<TestCla
  * @brief Outer Function to perform test for operator() function
  */
 template<class TestClass, class RetVal, class Arg0>
-struct CheckFunctor : decltype( Detail::testSignature_functor<TestClass, RetVal, Arg0>(0ULL) ){};
+struct CheckFunctor : decltype(Detail::testSignature_functor<TestClass, RetVal, Arg0>(0ULL) ){};
 
 /*!
  * @brief Outer Function to perform test for calcLogPostProb function
  */
 template<class TestClass, class RetVal, class Arg0>
-struct CheckCalcLogPostProb : decltype( Detail::testSignature_functor<TestClass, RetVal, Arg0>(0ULL) ){};
+struct CheckCalcLogPostProb : decltype(Detail::testSignature_functor<TestClass, RetVal, Arg0>(0ULL) ){};
 
 /*!
  * @brief Outer Function to perform test for calcLogPostProb function
  */
 template<class TestClass, class RetVal, class Arg0, class Arg1, class Arg2, class Arg3>
-struct CheckCalcUpdateWalker : decltype( Detail::testSignature_updateWalker<TestClass, RetVal, Arg0, Arg1, Arg2, Arg3>(0ULL) ){};
+struct CheckCalcUpdateWalker : decltype(Detail::testSignature_updateWalker<TestClass, RetVal, Arg0, Arg1, Arg2, Arg3>(0ULL) ){};
 }
 }
 #endif  //MCMC_UTILITY_USEROBJECTTEST_H
