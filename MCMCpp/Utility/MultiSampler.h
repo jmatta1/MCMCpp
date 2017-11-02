@@ -49,61 +49,61 @@ public:
      * \brief setPrngSeed Sets the random number engines seed to see
      * \param seed The new seed for the random number engine
      */
-    void setPrngSeed(long long seed){engine.seed(seed);}
+    inline void setPrngSeed(long long seed){engine.seed(seed);}
     
     /*!
      * \brief getCustomSample returns a sample from the given probability distribution
      * \return ParamType floating point number drawn from the given distribution
      */
-    ParamType getCustomSample(){return customDist(realDist(engine));}
+    inline ParamType getCustomSample(){return customDist(realDist(engine));}
     /*!
      * \brief getUniformReal returns a sample from the flat probability distribution between 0 and 1
      * \return ParamType floating point drawn from the flat distribution between 0 and 1
      */
-    ParamType getUniformReal(){return realDist(engine);}
+    inline ParamType getUniformReal(){return realDist(engine);}
     
     /*!
      * \brief getExponentialReal returns a sample from the exponential probability distribution with parameter 1
      * \return ParamType floating point drawn from the exponential distribution
      */
-    ParamType getExponentialReal(){return expDist(engine);}
+    inline ParamType getExponentialReal(){return expDist(engine);}
     
     /*!
      * \brief getNegExponentialReal returns the negative of asample from the exponential probability distribution with parameter 1
      * \return ParamType floating point drawn from the exponential distribution, then made negative, which gives it the same shape as Log(x) where x is uniform on [0,1)
      */
-    ParamType getNegExponentialReal(){return -expDist(engine);}
+    inline ParamType getNegExponentialReal(){return -expDist(engine);}
     
     /*!
      * \brief getNormalReal returns a sample from the normal probability distribution centered at 0 and with variance 1
      * \return ParamType floating point drawn from the normal distribution centered at 0 and with variance 1
      */
-    ParamType getNormalReal(){return normDist(engine);}
+    inline ParamType getNormalReal(){return normDist(engine);}
     
     /*!
      * \brief getNonOffSetInt Gets a random integer in the range [0, max)
      * \param max The maximum value of the range plus 1
      * \return A pseudo random integer in the range [0, max)
      */
-    int getNonOffSetInt(int max){return (engine()%max);}
+    inline int getNonOffSetInt(int max){return (engine()%max);}
     /*!
      * \brief getNonOffSetInt Gets a random integer in the range [offset, max)
      * \param max The maximum value of the range plus 1
      * \return A pseudo random integer in the range [offset, max)
      */
-    int getOffSetInt(int offset, int max){return ((engine()%(max-offset))+offset);}
+    inline int getOffSetInt(int offset, int max){return ((engine()%(max-offset))+offset);}
     /*!
      * \brief getNonOffSetInt Gets a random 64-bit integer in the range [0, max)
      * \param max The maximum value of the range plus 1
      * \return A pseudo random 64-bit integer in the range [0, max)
      */
-    long long getNonOffSetLongLong(long long max){return (engine()%max);}
+    inline long long getNonOffSetLongLong(long long max){return (engine()%max);}
     /*!
      * \brief getNonOffSetInt Gets a random 64-bit integer in the range [offset, max)
      * \param max The maximum value of the range plus 1
      * \return A pseudo random 64-bit integer in the range [offset, max)
      */
-    long long getOffSetLongLong(long long offset, long long max){return ((engine()%(max-offset))+offset);}
+    inline long long getOffSetLongLong(long long offset, long long max){return ((engine()%(max-offset))+offset);}
 private:
     std::mt19937_64 engine;///<The base random number generator engine that is used for everything
     std::uniform_real_distribution<ParamType> realDist;///<The adapter that gives uniform real numbers between 0 and 1

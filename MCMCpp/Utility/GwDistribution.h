@@ -47,7 +47,7 @@ public:
     constexpr static ParamType InvSqrtAlpha = (static_cast<ParamType>(1)/std::sqrt(Alpha));
     constexpr static ParamType Term1 = (SqrtAlpha - InvSqrtAlpha);
 
-    ParamType operator()(ParamType in){ParamType temp = (Term1*in + InvSqrtAlpha); return (temp*temp);}
+    inline ParamType operator()(ParamType in){ParamType temp = (Term1*in + InvSqrtAlpha); return (temp*temp);}
 private:
 };
 
