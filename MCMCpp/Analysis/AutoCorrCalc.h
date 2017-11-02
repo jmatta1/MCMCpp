@@ -42,6 +42,7 @@ const unsigned long long PiDenomenator = 1000000000000000000ULL;///<Stores the d
 template<class ParamType>
 class AutoCorrCalc
 {
+public:
     typedef Chain::ChainStepIterator<ParamType> IttType;
     /*!
      * \brief AutoCorrCalc constructs a new AutoCorrCalc object
