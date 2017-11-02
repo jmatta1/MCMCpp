@@ -62,7 +62,15 @@ public:
         proposal = new ParamType[paramCount];
     }
     
-    ~WalkMove(){delete[] selectedWalkers; delete[] randoms;}
+    ~WalkMove(){delete[] randoms; delete[] walkerIndices; delete[] proposal;}
+    
+    WalkMove(const WalkMove<ParamType, Calculator>& rhs):
+        numPoints(rhs.numPoints), paramCount(rhs.paramCount), calc(rhs.calc)
+    {
+        walkerIndices = new int[numPoints];
+        randoms = new ParamType[numPoints];
+        proposal = new ParamType[paramCount];
+    }
     
     /*!
      * \brief setPrngSeed Sets the seed of the underlying prng

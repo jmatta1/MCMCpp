@@ -63,6 +63,12 @@ public:
     
     ~StretchMove(){delete[] proposal;}
     
+    StrethMove(const StretchMove<ParamType, Calculator, CustomDistribution>& rhs):
+    paramCount(rhs.paramCount), calc(rhs.calc)
+    {
+        proposal = new ParamType[paramCount];
+    }
+    
     /*!
      * \brief setPrngSeed Sets the seed of the underlying prng
      * \param seed The seed for the prng
