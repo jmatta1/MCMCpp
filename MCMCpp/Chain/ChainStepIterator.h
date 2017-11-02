@@ -120,7 +120,7 @@ public:
      */
     ParamType* operator*(){return (curr->chainArray + stepIndex*(curr->cellsPerStep));}
     
-    template<class ParamType>
+    template<typename ParamType>
     friend class Chain;
     
 private:
