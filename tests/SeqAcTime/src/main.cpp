@@ -12,10 +12,10 @@ int main()
     const int numParams = 5;
     float offsets[numParams] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     float phis[numParams] = {0.8f,  // AC = 9
-                     0.904761904762f,  // AC = 20
-                     0.9354838709677f,  // AC = 30
-                     0.9672131147541f,  // AC = 60
-                     0.990050200903734685f};  // AC = 200
+                             0.904761904762f,  // AC = 20
+                             0.9354838709677f,  // AC = 30
+                             0.9672131147541f,  // AC = 60
+                             0.990050200903734685f};  // AC = 200
     float vars[numParams] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     
     std::cout<<"Building initial mover"<<std::endl;
@@ -40,9 +40,9 @@ int main()
     auto endItt = sampler.getStepIttEnd();
     acCalc.allAutoCorrTime(startItt, endItt, 200000);
     
-    std::cout<<"Paramater 0 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(0)<<" Actual:   9"<<std::endl;
-    std::cout<<"Paramater 1 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(1)<<" Actual:  20"<<std::endl;
-    std::cout<<"Paramater 2 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(2)<<" Actual:  30"<<std::endl;
-    std::cout<<"Paramater 3 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(3)<<" Actual:  60"<<std::endl;
-    std::cout<<"Paramater 4 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(4)<<" Actual: 200"<<std::endl;
+    std::cout<<"P0 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(0)<<" Actual:   9"<<std::endl;
+    std::cout<<"P1 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(1)<<" Actual:  20"<<std::endl;
+    std::cout<<"P2 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(2)<<" Actual:  30"<<std::endl;
+    std::cout<<"P3 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(3)<<" Actual:  60"<<std::endl;
+    std::cout<<"P4 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(4)<<" Actual: 200"<<std::endl;
 }

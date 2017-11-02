@@ -14,8 +14,9 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<complex>//needed for the FFT and iFFT
-#include<cmath>
-#include<random>
+#include<cmath>//needed for ceiling and log 2
+#include<random>//needed for random number generator
+#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/ChainStepIterator.h"
@@ -140,9 +141,11 @@ void AutoCorrCalc<ParamType>::allAutoCorrTime(const IttType& start, const IttTyp
     //first do the checks on scratch size
     checkScratchSizes(numSamples);
     //do the first one seperately to force the setting of the walker indice array
+    std::cout<<"Calculating acorr for param 0"<<std::endl;
     acorrTimeList[0] = sampleParamAutoCorrTimesInternal(start, end, numSamples, 0, walkerCount, false);
     for(int i=1; i<= paramCount; ++i)
     {//simply apply the more limited autocorrelation time calculator multiple times, storing the result
+        std::cout<<"Calculating acorr for param "<<i<<std::endl;
         acorrTimeList[i] = sampleParamAutoCorrTimesInternal(start, end, numSamples, i, walkerCount, true);
     }
 }
@@ -160,6 +163,7 @@ ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimesInternal(const IttTyp
     {
         acovFuncAvgArray[i] = static_cast<ParamType>(0);
     }
+    std::cout<<"Generating walker autocovariance function"<<std::endl;
     //now calculate the autocovariance function of the appropriate parameter in the selected chains
     for(int i=0; i<walkersToSelect; ++i)
     {
@@ -215,14 +219,19 @@ template<class ParamType>
 void AutoCorrCalc<ParamType>::genWalkerAutoCovFunc(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber, int walkersToSelect)
 {
     // First calculate the average of the chain and center it
+    std::cout<<"Making centered walker function"<<std::endl;
     makeCenteredWalkerChain(start, end, walkerNum, numSamples, paramNumber);
     // take the fft of the centered, zero-extended, walker chain 
+    std::cout<<"Doing FFT"<<std::endl;
     fft();
     // transfer/bitreverse and square the fft
+    std::cout<<"Transfer inverse magnitudes"<<std::endl;
     copyBitInverseMagnitudes();
     // do the inverse fast fourier transform of the norms of the forward fft
+    std::cout<<"Doing Inverse FFT"<<std::endl;
     ifft();
     //normalize the ifft and add it to the averaged data
+    std::cout<<"Averaging acov function"<<std::endl;
     averageAutocovarianceFunctions(walkersToSelect);
 }
 
@@ -303,6 +312,7 @@ void AutoCorrCalc<ParamType>::fft()
 template<class ParamType>
 void AutoCorrCalc<ParamType>::makeCenteredWalkerChain(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber)
 {
+    std::cout<<"Finding Average"<<std::endl;
     ParamType sum = 0.0;
     ParamType compensation = 0.0;
     int offset = (walkerNum*paramCount + paramNumber);
@@ -320,11 +330,13 @@ void AutoCorrCalc<ParamType>::makeCenteredWalkerChain(const IttType& start, cons
         sum = temp2;
     }
     ParamType avg = (sum/static_cast<ParamType>(numSamples));
+    std::cout<<"Subtracting Average"<<std::endl;
     for(int i=0; i<numSamples; ++i)
     {
-        interFuncArray[i] -= avg;
+        interFuncArray[bitReverse(i)] -= avg;
     }
     //pretend that we have zero extended the data array before we did this whole copy, subtract, and bit-reversal thing
+    std::cout<<"Zeroing remainder"<<std::endl;
     for(; index<fftSize; ++index)
     {
         interFuncArray[bitReverse(index)] = 0.0;
