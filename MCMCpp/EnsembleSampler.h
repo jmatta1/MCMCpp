@@ -50,7 +50,7 @@ public:
     static_assert(Utility::CheckCalcUpdateWalker<Mover, void, WalkerType&, WalkerType*, int, bool>(),
                   "The Mover class does not have the necessary member function with signature:\n"
                   "  'void updateWalker(Walker::Walker<ParamType>&, Walker::Walker<ParamType>*, int, bool)'");
-    static_assert(Utility::CheckPerformAction<PostStepAction, void, PsetItt, PsetItt>(),
+    static_assert(Utility::CheckPerformAction<PostStepAction, void, const StepItt&, const StepItt&>(),
                   "The PostStepAction class does not have the necessary member function with signature:\n"
                   "  'void PerformAction(Chain::ChainPsetIterator<ParamType>& start, Chain::ChainPsetIterator<ParamType>& end)'");
     static_assert(std::is_copy_constructible<Mover>::value, "The Mover class needs to be copy constructible.");
