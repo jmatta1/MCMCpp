@@ -98,10 +98,11 @@ public:
      * \param initArray The array to hold the initial points
      * \param numWalkers The number of walkers to generate initial points for
      */
-    void getInitialPoints(ParamType* initArray, int numWalkers)
+    void getInitialPoints(ParamType* initArray, ParamType* auxArray, int numWalkers)
     {
         for(int i=0; i<paramCount; ++i)
         {
+            auxArray[0] = static_cast<ParamType>(0);
             ParamType phi = phis.get()[i];
             ParamType totalStdDev = prngStdDev.get()[i]/std::sqrt(static_cast<ParamType>(1)-phi*phi);
             for(int j=0; j<numWalkers; ++j)
