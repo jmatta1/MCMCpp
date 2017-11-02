@@ -66,7 +66,7 @@ public:
      * \param maxChainSizeBytes The maximum size of the sample chain in bytes
      * \param stepAction An instance of the post step action class
      */
-    EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes,
+    EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, const Mover& move,
                     PostStepAction& stepAct=Utility::NoAction<ParamType>());
     
     /*!
@@ -158,10 +158,10 @@ private:
 
 template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
 EnsembleSampler<ParamType, Mover, PostStepAction>::
-EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, PostStepAction& stepAct):
+EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, const MarkovChainMonteCarlo::Mover& move, PostStepAction& stepAct):
     numParams(numParameter), numWalkers(numWalker), walkersPerSet(numWalker/2),
     markovChain(numWalkers, numParams, maxChainSizeBytes),
-    moveProposer(numParams), prng(runNumber), stepAction(stepAct)
+    moveProposer(move), stepAction(stepAct)
 {
     assert(numWalkers%2 == 0);
     assert(numWalkers > (2*numParams));
