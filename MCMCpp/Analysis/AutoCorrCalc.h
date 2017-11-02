@@ -104,7 +104,7 @@ private:
     void checkScratchSizes(int numSamples);
     void genWalkerAutoCovFunc(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber, int walkersToSelect);
     void makeCenteredWalkerChain(const IttType& start, const IttType& end, int walkerNum, int numSamples, int paramNumber);
-    int bitReverse(int input);
+    inline unsigned int bitReverse(unsigned int input);
     void fft();
     void copyBitInverseMagnitudes();
     void ifft();
@@ -277,7 +277,7 @@ void AutoCorrCalc<ParamType>::ifft()
 template<class ParamType>
 void AutoCorrCalc<ParamType>::copyBitInverseMagnitudes()
 {
-    for(int i=0; i<fftSize; ++i)
+    for(unsigned int i=0; i<fftSize; ++i)
     {
         acovFuncArray[bitReverse(i)] = std::norm(interFuncArray[i]);
     }
@@ -316,7 +316,7 @@ void AutoCorrCalc<ParamType>::makeCenteredWalkerChain(const IttType& start, cons
     ParamType sum = 0.0;
     ParamType compensation = 0.0;
     int offset = (walkerNum*paramCount + paramNumber);
-    int index = 0;
+    unsigned int index = 0;
     for(IttType itt(start); itt != end; ++itt)
     {
         //Sample copying
@@ -344,16 +344,17 @@ void AutoCorrCalc<ParamType>::makeCenteredWalkerChain(const IttType& start, cons
 }
 
 template<class ParamType>
-int AutoCorrCalc<ParamType>::bitReverse(int input)
+unsigned int AutoCorrCalc<ParamType>::bitReverse(unsigned int input)
 {
-    int output = 0;
-    for(int i=0; i<logFftSize; ++i)
-    {
-        output <<= 1;
-        output |= (input & 0x1);
-        input >>= 1;
-    }
-    return output;
+    //swap even and odd bits
+    input = ((input >> 1) & 0x55555555) | ((input & 0x55555555) << 1);
+    input = ((input >> 2) & 0x33333333) | ((input & 0x33333333) << 2);
+    input = ((input >> 4) & 0x0F0F0F0F) | ((input & 0x0F0F0F0F) << 4);
+    input = ((input >> 8) & 0x00FF00FF) | ((input & 0x00FF00FF) << 8);
+    input = (input >> 16) | (input << 16);
+    //now we have the 32-bit number reversed, bit shift it down by the number of unused bits
+    input >>= (32 - logFftSize);
+    return input;
 }
 
 template<class ParamType>

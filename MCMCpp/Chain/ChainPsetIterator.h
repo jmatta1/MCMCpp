@@ -125,18 +125,20 @@ ChainPsetIterator<ParamType> ChainPsetIterator<ParamType>::operator++()
     if(index < lastCell)
     {//not at the end of a block, easy peasy
         ++index;
+        return *this;
     }
     else if((index>endCell) && (curr->nextBlock != nullptr))
     {//at the end of a block, there is a next block, jump to the next block
         curr = curr->nextBlock;
         index = 0;
         lastCell = (curr->firstEmptyStep*curr->walkerCount - 1);
+        return *this;
     }
     else
     {//at the end of the chain
         index = (lastCell + 1);
+        return *this;
     }
-    return *this;
 }
 
 template <class ParamType>
@@ -146,18 +148,20 @@ ChainPsetIterator<ParamType> ChainPsetIterator<ParamType>::operator--()
     if(index > 0)
     {//not at the start of a block, easy peasy
         --index;
+        return *this;
     }
     else if(curr->nextBlock != nullptr)
     {//at the start of a block, jump to the end of the previous block
         curr = curr->lastBlock;
         lastCell = (curr->firstEmptyStep*curr->walkerCount - 1);
         index = lastCell;
+        return *this;
     }
     else
     {//at the start of the chain
         index = 0;
+        return *this;
     }
-    return *this;
 }
 
 }
