@@ -85,10 +85,10 @@ public:
      */
     void updateWalker(WalkType& currWalker, WalkType* walkerSet, int numWalkers, bool storePoint)
     {
-        ParamType* currState = currWalker.getCurrState();
+        const ParamType* currState = currWalker.getCurrState();
         for(int i=0; i<paramCount; ++i)
         {
-            proposal.get()[i] = (offs.get()[i] + (phis.get()[i]*currState.get()[i]) + (prngStdDev.get()[i]*prng.getNormalReal()));
+            proposal.get()[i] = (offs.get()[i] + (phis.get()[i]*currState[i]) + (prngStdDev.get()[i]*prng.getNormalReal()));
         }
         currWalker.jumpToNewPoint(proposal.get(), static_cast<ParamType>(0), storePoint);
     }
