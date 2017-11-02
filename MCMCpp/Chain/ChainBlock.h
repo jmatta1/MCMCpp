@@ -80,8 +80,13 @@ public:
      */
     void reset(){firstEmptyStep = 0;}
     
+    template<class ParamType>
     friend class Chain;
+    
+    template<class ParamType>
     friend class ChainStepIterator;
+    
+    template<class ParamType>
     friend class ChainPsetIterator;
 private:
     //Linked list book-keeping
