@@ -38,7 +38,7 @@ template <class ArrayType>
 class ArrayDeleter
 {
 public:
-    void operator()(ArrayType const* arrPtr){delete[] arrayPtr;}
+    void operator()(ArrayType const* arrayPtr){delete[] arrayPtr;}
 private:
 };
 

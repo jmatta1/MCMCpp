@@ -279,7 +279,7 @@ void Chain<ParamType>::resetChainForSubSampling(int burnInSamples, int autoCorre
     //it needs before the block is reset
     curr->reset();
     //now loop and copy walker parameter sets
-    while(reeadLocation != end)
+    while(readLocation != end)
     {
         curr->copyWalkerSet(*readLocation);
         incrementChainStepSubSampleReset();
