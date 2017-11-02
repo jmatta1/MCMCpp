@@ -66,7 +66,8 @@ public:
      * \param maxChainSizeBytes The maximum size of the sample chain in bytes
      * \param stepAction An instance of the post step action class
      */
-    EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes, PostStepAction& stepAct);
+    EnsembleSampler(int runNumber, int numWalker, int numParameter, unsigned long long maxChainSizeBytes,
+                    PostStepAction& stepAct=Utility::NoAction<ParamType>());
     
     /*!
      * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
