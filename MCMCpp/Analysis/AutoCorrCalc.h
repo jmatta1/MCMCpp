@@ -282,7 +282,7 @@ void AutoCorrCalc<ParamType>::fft()
         int m1 = 0x1<<s;
         int m2 = m1 >> 1;
         std::complex<ParamType> freqStep(std::polar(static_cast<ParamType>(1), -Pi/static_cast<ParamType>(m2)));
-        for(unsigned int i=0; i<fftSize; i+=m1)
+        for(unsigned int k=0; k<fftSize; k+=m1)
         {
             std::complex<ParamType> baseFreq(1, 0);
             for(unsigned int j=0; j<m2; ++j)

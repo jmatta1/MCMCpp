@@ -156,7 +156,7 @@ private:
 
 template<class ParamType, class Mover, class PostStepAction>
 EnsembleSampler<ParamType, Mover, PostStepAction>::
-EnsembleSampler(int runNumber, int numWalker, int numParameter, const MarkovChainMonteCarlo::Mover& move,
+EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& move,
                 unsigned long long maxChainSizeBytes, PostStepAction& stepAct):
     numParams(numParameter), numWalkers(numWalker), walkersPerSet(numWalker/2),
     markovChain(numWalkers, numParams, maxChainSizeBytes),
