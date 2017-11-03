@@ -67,8 +67,8 @@ public:
     ~AutoRegressiveMove(){std::cout<<"In ARM dest "<<proposal<<std::endl; delete[] proposal;}
     
     AutoRegressiveMove(const AutoRegressiveMove<ParamType>& rhs):
-        paramCount(rhs.paramCount), proposal(new ParamType[numParam]), phis(rhs.phis),
-        offs(rhs.offs), prngStdDev(rhs.prngStdDev){}
+        paramCount(rhs.paramCount), proposal(new ParamType[rhs.paramCount]),
+        phis(rhs.phis), offs(rhs.offs), prngStdDev(rhs.prngStdDev){}
     
     /*!
      * \brief setPrngSeed Sets the seed of the underlying prng
