@@ -60,7 +60,7 @@ public:
      */
     ChainStepIterator(ChainBlock<ParamType>* block, int blockStep):
         curr(block), stepIndex(blockStep), lastFullStep(block->firstEmptyStep - 1)
-    {std::cout<<"Step Itt: "<<block<<", "<<blockStep<<std::endl;}
+    {std::cout<<"Step Itt: "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;}
     /*!
      * \brief ChainStepIterator Copy constructor to make a copy of an iterator
      * \param copy The original iterator to be copied into the iterator being constructed
