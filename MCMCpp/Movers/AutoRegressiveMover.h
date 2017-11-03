@@ -64,7 +64,7 @@ public:
         }
     }
     
-    ~AutoRegressiveMove(){std::cout<<"In ARM dest "<<proposal<<std::endl; delete[] proposal;}
+    ~AutoRegressiveMove(){delete[] proposal;}
     
     AutoRegressiveMove(const AutoRegressiveMove<ParamType>& rhs):
         paramCount(rhs.paramCount), proposal(new ParamType[rhs.paramCount]),
