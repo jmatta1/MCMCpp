@@ -174,11 +174,6 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& mov
         walkerRedSet[i].init(&markovChain, 2*i,   numParams);
         walkerBlkSet[i].init(&markovChain, 2*i+1, numParams);
     }
-    //if nullptr, then default allocate a poststepaction
-    if(stepAct==nullptr)
-    {
-        stepAct = new PostStepAction;
-    }
 }
 
 template<class ParamType, class Mover, class PostStepAction>
@@ -273,7 +268,10 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::performStep(bool save)
         moveProposer.updateWalker(walkerRedSet[i], walkerBlkSet, walkersPerSet, save);
     }
     //now perform the poststep action
-    stepAction->performAction(markovChain.getStepIteratorBegin(), markovChain.getStepIteratorEnd());
+    if(stepAction != nullptr)
+    {
+        stepAction->performAction(markovChain.getStepIteratorBegin(), markovChain.getStepIteratorEnd());
+    }
 }
 
 }
