@@ -13,6 +13,7 @@
 #define MCMC_CHAIN_CHAINSTEPITERATOR_H
 // includes for C system headers
 // includes for C++ system headers
+#include"iostream"
 // includes from other libraries
 // includes from MCMC
 #include"ChainBlock.h"
@@ -57,7 +58,7 @@ public:
      * \param block The block the iterator is starting pointed to
      * \param blockStep The step within the block that the iterator starts pointing to
      */
-    ChainStepIterator(ChainBlock<ParamType>* block, int blockStep):curr(block), stepIndex(blockStep){}
+    ChainStepIterator(ChainBlock<ParamType>* block, int blockStep):curr(block), stepIndex(blockStep){std::cout<<"Step Itt: "<<block<<", "<<blockStep<<std::endl;}
     /*!
      * \brief ChainStepIterator Copy constructor to make a copy of an iterator
      * \param copy The original iterator to be copied into the iterator being constructed
