@@ -71,7 +71,7 @@ public:
     /*!
      * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
      */
-    ~EnsembleSampler(){std::cout<<"In ED dest"<<std::endl; delete[] walkerRedSet; delete[] walkerBlkSet;}
+    ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet;}
     
     /*!
      * \brief setInitialWalkerPos Gives an initial position to every walker.
