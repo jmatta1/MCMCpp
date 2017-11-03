@@ -46,5 +46,4 @@ int main()
     std::cout<<"P2 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(2)<<" Actual:  30"<<std::endl;
     std::cout<<"P3 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(3)<<" Actual:  60"<<std::endl;
     std::cout<<"P4 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(4)<<" Actual: 200"<<std::endl;
-    std::cout<<"In Main dest"<<std::endl; 
 }
