@@ -60,7 +60,7 @@ public:
      */
     ChainStepIterator(ChainBlock<ParamType>* block, int blockStep):
         curr(block), stepIndex(blockStep), lastFullStep(block->firstEmptyStep - 1)
-    {std::cout<<"Step Itt: "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;}
+    {}
     /*!
      * \brief ChainStepIterator Copy constructor to make a copy of an iterator
      * \param copy The original iterator to be copied into the iterator being constructed
@@ -251,7 +251,6 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator-=(int steps)
 template <class ParamType>
 ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator++()
 {
-    std::cout<<"Before increment: "<<curr<<", "<<lastFullStep<<", "<<stepIndex<<std::endl;
     //check if we are not at the end of a block
     if(stepIndex < lastFullStep)
     {//not at the end of a block, easy peasy
@@ -275,7 +274,6 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator++()
 template <class ParamType>
 ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator--()
 {
-    std::cout<<"Before decrement: "<<curr<<", "<<lastFullStep<<", "<<stepIndex<<std::endl;
     //check if we are not at the end of a block
     if(stepIndex > 0)
     {//not at the start of a block, easy peasy

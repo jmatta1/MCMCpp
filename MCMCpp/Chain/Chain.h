@@ -13,7 +13,6 @@
 #define MCMC_CHAIN_CHAIN_H
 // includes for C system headers
 // includes for C++ system headers
-#include"iostream"
 // includes from other libraries
 // includes from MCMC
 #include"ChainBlock.h"
@@ -123,7 +122,7 @@ public:
      * \brief getPsetIteratorBegin Gets a parameter set iterator pointed at the very first parameter set
      * \return ChainPsetIterator pointed to the very beginning of the chain's parameter sets
      */
-    ChainPsetIterator<ParamType> getPsetIteratorBegin(){std::cout<<"Making start Pset Itt"<<std::endl; return PsetIterator(head, 0);}
+    ChainPsetIterator<ParamType> getPsetIteratorBegin(){return PsetIterator(head, 0);}
     /*!
      * \brief getPsetIteratorEnd Gets a parameter set iterator pointed just after the very last parameter set
      * \return ChainPsetIterator pointed to just past the last of the chain's parameter sets
@@ -134,7 +133,7 @@ public:
      * \brief getStepIteratorBegin Gets a step iterator pointed at the very first step in the chain
      * \return ChainStepIterator pointed to the beginning of the chain
      */
-    ChainStepIterator<ParamType> getStepIteratorBegin(){std::cout<<"Making start Step Itt"<<std::endl; return StepIterator(head, 0);}
+    ChainStepIterator<ParamType> getStepIteratorBegin(){return StepIterator(head, 0);}
     /*!
      * \brief getStepIteratorEnd Gets a step iterator pointed to just past the end of the chain
      * \return ChainStepIterator pointed to just after the end of the chain
