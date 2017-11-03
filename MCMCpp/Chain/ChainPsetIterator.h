@@ -53,8 +53,9 @@ public:
      * \param blockStep The step within the block that the iterator starts pointing to
      */
     ChainPsetIterator(ChainBlock<ParamType>* block, int blockStep):
-        curr(block), lastCell(block->firstEmptyStep*block->walkerCount - 1),
-        endCell(Detail::BlockSize*block->walkerCount - 1){std::cout<<"Pset Itt: "<<block<<", "<<blockStep<<", "<<lastCell<<", "<<endCell<<std::endl;}
+        curr(block), index(blockStep), lastCell(block->firstEmptyStep*block->walkerCount - 1),
+        endCell(Detail::BlockSize*block->walkerCount - 1)
+    {std::cout<<"Pset Itt: "<<block<<", "<<blockStep<<", "<<lastCell<<", "<<endCell<<std::endl;}
     
     /*!
      * \brief ChainPsetIterator Copy constructor to make a copy of an iterator
