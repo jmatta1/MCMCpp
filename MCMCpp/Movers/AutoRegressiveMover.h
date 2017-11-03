@@ -15,6 +15,7 @@
 // includes for C++ system headers
 #include<cmath>
 #include<memory>
+#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"../Walker/Walker.h"
@@ -63,7 +64,7 @@ public:
         }
     }
     
-    ~AutoRegressiveMove(){delete[] proposal;}
+    ~AutoRegressiveMove(){std::cout<<"In ARM dest "<<proposal<<std::endl; delete[] proposal;}
     
     AutoRegressiveMove(const AutoRegressiveMove<ParamType>& rhs):
     paramCount(rhs.paramCount), proposal(rhs.proposal), phis(rhs.phis),
