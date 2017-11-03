@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
+#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"Chain/Chain.h"
@@ -70,7 +71,7 @@ public:
     /*!
      * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
      */
-    ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet;}
+    ~EnsembleSampler(){std::cout<<"In ED dest"<<std::endl; delete[] walkerRedSet; delete[] walkerBlkSet;}
     
     /*!
      * \brief setInitialWalkerPos Gives an initial position to every walker.
