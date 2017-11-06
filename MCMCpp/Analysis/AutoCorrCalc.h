@@ -16,9 +16,6 @@
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
 #include<random>//needed for random number generator
-#include<iostream>
-#include<fstream>
-#include<sstream>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/ChainStepIterator.h"
@@ -144,11 +141,9 @@ void AutoCorrCalc<ParamType>::allAutoCorrTime(const IttType& start, const IttTyp
     //first do the checks on scratch size
     checkScratchSizes(numSamples);
     //do the first one seperately to force the setting of the walker indice array
-    std::cout<<"Calculating acorr for param 0"<<std::endl;
     acorrTimeList[0] = sampleParamAutoCorrTimesInternal(start, end, numSamples, 0, walkerCount, false);
     for(int i=1; i< paramCount; ++i)
     {//simply apply the more limited autocorrelation time calculator multiple times, storing the result
-        std::cout<<"Calculating acorr for param "<<i<<std::endl;
         acorrTimeList[i] = sampleParamAutoCorrTimesInternal(start, end, numSamples, i, walkerCount, true);
     }
 }
@@ -172,7 +167,6 @@ ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimesInternal(const IttTyp
         //generate the autocorrelation function for a single walker
         genWalkerAutoCovFunc(start, end, randomWalkerIndices[i], numSamples, paramNumber, walkersToSelect);
     }
-    ++callNum;
     //now that we have the averaged autocovariance function, extract the autocorrelation time from the cumulative sum
     ParamType autoCorrSum = acovFuncAvgArray[0]; // initialize to this so we only count the first cell once
     ParamType factor = static_cast<ParamType>(windowScaling);
@@ -259,7 +253,7 @@ void AutoCorrCalc<ParamType>::ifft()
         std::complex<ParamType> freqStep(std::polar(static_cast<ParamType>(1), Pi/static_cast<ParamType>(m2)));
         for(unsigned int k=0; k<fftSize; k+=m1)
         {
-            std::complex<ParamType> baseFreq(1, 0);
+            std::complex<ParamType> baseFreq(static_cast<ParamType>(1), static_cast<ParamType>(0));
             for(unsigned int j=0; j<m2; ++j)
             {
                 std::complex<ParamType> temp1 = (baseFreq * acovFuncArray[k+j+m2]);
@@ -302,17 +296,6 @@ void AutoCorrCalc<ParamType>::fft()
             }
         }
     }
-    std::ostringstream namer;
-    namer << "t" << callNum << ".csv";
-    std::ofstream output(namer.str(), std::ios_base::out|std::ios_base::app);
-    output << interFuncArray[0];
-    for(int i=1; i<fftSize; ++i)
-    {
-        output << ", " << interFuncArray[i];
-    }
-    output << "\n";
-    output << std::flush;
-    output.close();
 }
 
 //Since chains might be long and have weird values, use the Kahan summation to reduce the floating point error
