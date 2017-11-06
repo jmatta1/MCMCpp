@@ -1,5 +1,5 @@
 #include<iostream>
-#include"Movers/AutoRegressiveMover.h"
+#include"Movers/AutoRegressiveMove.h"
 #include"Analysis/AutoCorrCalc.h"
 #include"EnsembleSampler.h"
 #include<fstream>
