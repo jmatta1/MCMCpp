@@ -9,8 +9,8 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_MOVERS_STRETCHMOVE_H
-#define MCMC_WALKER_MOVERS_STRETCHMOVE_H
+#ifndef MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
+#define MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
 // includes for C system headers
 // includes for C++ system headers
 #include<cmath>
@@ -122,4 +122,4 @@ private:
 };
 }
 }
-#endif  //MCMC_WALKER_MOVERS_STRETCHMOVE_H
+#endif  //MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
