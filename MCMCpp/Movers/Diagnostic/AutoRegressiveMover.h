@@ -17,11 +17,11 @@
 #include<memory>
 // includes from other libraries
 // includes from MCMC
-#include"../Walker/Walker.h"
-#include"../Utility/ArrayDeleter.h"
-#include"../Utility/MultiSampler.h"
-#include"../Utility/GwDistribution.h"
-#include"../Utility/UserOjbectsTest.h"
+#include"../../Walker/Walker.h"
+#include"../../Utility/ArrayDeleter.h"
+#include"../../Utility/MultiSampler.h"
+#include"../../Utility/GwDistribution.h"
+#include"../../Utility/UserOjbectsTest.h"
 
 namespace MarkovChainMonteCarlo
 {
