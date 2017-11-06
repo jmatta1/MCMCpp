@@ -1,10 +1,17 @@
 # ignore data files
 *.csv
+
 # ignore aux testing of tests files that I wrote quickly for debugging
 *.py
+
 # ignore shell script I set up for performance testing
 *.sh
+
+# QT Creator meta-data file
+CMakeLists.txt.user
+
 # ignore executables built in the testing and example codes
 acTest
+
 # ignore build directories
 build
