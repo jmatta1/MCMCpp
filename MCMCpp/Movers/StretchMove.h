@@ -63,6 +63,10 @@ public:
     
     ~StretchMove(){delete[] proposal;}
     
+    /*!
+     * \brief StrethMove Copy constructor
+     * \param rhs Original StretchMove object to be copied
+     */
     StrethMove(const StretchMove<ParamType, Calculator, CustomDistribution>& rhs):
     paramCount(rhs.paramCount), calc(rhs.calc)
     {

@@ -27,7 +27,7 @@ namespace MarkovChainMonteCarlo
 namespace Mover
 {
 /**
- * @class StretchMove
+ * @class SequenceMove
  * @ingroup Movers
  * @brief An object merely increments the current walker position using a known step size for each parameter
  * @author James Till Matta
@@ -43,7 +43,7 @@ public:
     typedef Walker::Walker<ParamType> WalkType;
     
     /*!
-     * \brief StretchMove Constructs a new stretch move object
+     * \brief SequenceMove Constructs a new sequence move object
      * \param numParams The number of parameters to work with
      * \param prngInit The seed for the random number generator
      * \param orig The original calculator class that will be copied to make the one stored internally
@@ -60,6 +60,10 @@ public:
     
     ~SequenceMove(){delete[] proposal;}
     
+    /*!
+     * \brief SequenceMove Copy constructor
+     * \param rhs Original mover to be copied
+     */
     SequenceMove(const SequenceMove<ParamType>& rhs):
         paramCount(rhs.paramCount), proposal(new ParamType[rhs.paramCount]),
         stepSizes(rhs.stepSizes){}

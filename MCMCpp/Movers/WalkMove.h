@@ -64,6 +64,10 @@ public:
     
     ~WalkMove(){delete[] randoms; delete[] walkerIndices; delete[] proposal;}
     
+    /*!
+     * \brief WalkMove Copy Constructor
+     * \param rhs Original WalkMove object to be copied
+     */
     WalkMove(const WalkMove<ParamType, Calculator>& rhs):
         numPoints(rhs.numPoints), paramCount(rhs.paramCount), calc(rhs.calc)
     {

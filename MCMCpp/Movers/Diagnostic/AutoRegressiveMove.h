@@ -28,7 +28,7 @@ namespace MarkovChainMonteCarlo
 namespace Mover
 {
 /**
- * @class StretchMove
+ * @class AutoRegressiveMove
  * @ingroup Movers
  * @brief An object that calculates the next proposed step for a walker by using an AR1 model, useful for testing
  * @author James Till Matta
@@ -44,7 +44,7 @@ public:
     typedef Walker::Walker<ParamType> WalkType;
     
     /*!
-     * \brief StretchMove Constructs a new stretch move object
+     * \brief AutoRegressiveMove Constructs a new autoregressive move object
      * \param numParams The number of parameters to work with
      * \param prngInit The seed for the random number generator
      * \param orig The original calculator class that will be copied to make the one stored internally
@@ -65,6 +65,10 @@ public:
     
     ~AutoRegressiveMove(){delete[] proposal;}
     
+    /*!
+     * \brief AutoRegressiveMove Copy constructor
+     * \param rhs Original mover to be copied
+     */
     AutoRegressiveMove(const AutoRegressiveMove<ParamType>& rhs):
         paramCount(rhs.paramCount), proposal(new ParamType[rhs.paramCount]),
         phis(rhs.phis), offs(rhs.offs), prngStdDev(rhs.prngStdDev){}
