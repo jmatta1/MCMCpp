@@ -214,7 +214,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator-=(int steps)
     if(blocks > 0)
     {//we stopped because we hit the end
         stepIndex = 0;
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator pe1, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
     //if we are here we stopped because we hit our block count, now see if we need to jump one more block
@@ -233,7 +233,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator-=(int steps)
         else
         {//We are in the first block
             stepIndex = 0;
-            std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+            std::cout<<"Step Iterator pe2, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
             return *this;
         }
     }
@@ -242,7 +242,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator-=(int steps)
     stepIndex -= steps;
     if(stepIndex >= 0)
     {
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator pe3, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
     else
@@ -250,7 +250,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator-=(int steps)
         //the beginning we should have gotten stopped earlier in this function
         //this is here to cover my butt / and for symmetry with +=
         stepIndex = 0;
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator pe4, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
 }
@@ -263,7 +263,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator++()
     if(stepIndex < lastFullStep)
     {//not at the end of a block, easy peasy
         ++stepIndex;
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator i1, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
     else if((stepIndex==Detail::BlockSize) && (curr->nextBlock != nullptr))
@@ -271,13 +271,13 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator++()
         curr = curr->nextBlock;
         stepIndex = 0;
         lastFullStep = (curr->firstEmptyStep - 1);
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator i2, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
     else
     {//at the end of a block, and there is no next block, set step index to the first available step in the block
         stepIndex = (lastFullStep + 1);
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator i3, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
 }
@@ -289,7 +289,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator--()
     if(stepIndex > 0)
     {//not at the start of a block, easy peasy
         --stepIndex;
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator d1, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
     else if(curr->lastBlock != nullptr)
@@ -297,13 +297,13 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator--()
         curr = curr->lastBlock;
         lastFullStep = (curr->firstEmptyStep - 1);
         stepIndex = lastFullStep;
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator d2, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
     else
     {//otherwise we are at the beginning of the first block
         stepIndex = 0;
-        std::cout<<"Step Iterator, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
+        std::cout<<"Step Iterator d3, "<<curr<<", "<<stepIndex<<", "<<lastFullStep<<std::endl;
         return *this;
     }
 }
