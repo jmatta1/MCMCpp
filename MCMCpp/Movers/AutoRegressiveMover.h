@@ -15,7 +15,6 @@
 // includes for C++ system headers
 #include<cmath>
 #include<memory>
-#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"../Walker/Walker.h"
