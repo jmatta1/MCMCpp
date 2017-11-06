@@ -17,6 +17,8 @@
 #include<cmath>//needed for ceiling and log 2
 #include<random>//needed for random number generator
 #include<iostream>
+#include<fstream>
+#include<sstream>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/ChainStepIterator.h"
@@ -133,6 +135,7 @@ private:
     int windowScaling = 4; ///<Minimum number of autocorrelation times to be processed to consider the result correct
     //has enough digits that it will be truncated to whatever precision is necessary (assuming the options are 32, 64, 80, or even 128 bit floats)
     const ParamType Pi = (static_cast<ParamType>(Detail::PiNumerator)/static_cast<ParamType>(Detail::PiDenomenator));
+    int callNum = 0;
 };
 
 template<class ParamType>
@@ -169,6 +172,7 @@ ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimesInternal(const IttTyp
         //generate the autocorrelation function for a single walker
         genWalkerAutoCovFunc(start, end, randomWalkerIndices[i], numSamples, paramNumber, walkersToSelect);
     }
+    ++callNum;
     //now that we have the averaged autocovariance function, extract the autocorrelation time from the cumulative sum
     ParamType autoCorrSum = acovFuncAvgArray[0]; // initialize to this so we only count the first cell once
     ParamType factor = static_cast<ParamType>(windowScaling);
@@ -248,7 +252,7 @@ void AutoCorrCalc<ParamType>::ifft()
     //however this IFFT does not do the 1/N factor (that will be taken into account later,
     //during the averaging process, because otherwise it is an unnecessary loop through the array
     //which can be deferred to be combined with the necessary loop through the array to do the averaging)
-    for(int s=0; s<logFftSize; ++s)    
+    for(int s=1; s<=logFftSize; ++s)    
     {
         int m1 = 0x1<<s;
         int m2 = m1 >> 1;
@@ -280,7 +284,7 @@ void AutoCorrCalc<ParamType>::copyBitInverseMagnitudes()
 template<class ParamType>
 void AutoCorrCalc<ParamType>::fft()
 {//simple implementation of Cooley-Tukey
-    for(int s=0; s<logFftSize; ++s)    
+    for(int s=1; s<=logFftSize; ++s)    
     {
         int m1 = 0x1<<s;
         int m2 = m1 >> 1;
@@ -298,6 +302,17 @@ void AutoCorrCalc<ParamType>::fft()
             }
         }
     }
+    std::ostringstream namer;
+    namer << "t" << callNum << ".csv";
+    std::ofstream output(namer.str(), std::ios_base::out|std::ios_base::app);
+    output << interFuncArray[0];
+    for(int i=1; i<fftSize; ++i)
+    {
+        output << ", " << interFuncArray[i];
+    }
+    output << "\n";
+    output << std::flush;
+    output.close();
 }
 
 //Since chains might be long and have weird values, use the Kahan summation to reduce the floating point error
