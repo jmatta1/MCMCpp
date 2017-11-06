@@ -14,7 +14,6 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
-#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"Chain/Chain.h"
@@ -172,8 +171,8 @@ EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& mov
     walkerBlkSet = new WalkerType[walkersPerSet];
     for(int i=0; i<walkersPerSet; ++i)
     {
-        walkerRedSet[i].init(&markovChain, 2*i,   numParams);
-        walkerBlkSet[i].init(&markovChain, 2*i+1, numParams);
+        walkerRedSet[i].init(&markovChain, i,   numParams);
+        walkerBlkSet[i].init(&markovChain, i+walkersPerSet, numParams);
     }
 }
 
@@ -266,7 +265,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::performStep(bool save)
     for(int i=0; i<walkersPerSet; ++i)
     {
         //first get a proposed new point to move to
-        moveProposer.updateWalker(walkerRedSet[i], walkerBlkSet, walkersPerSet, save);
+        moveProposer.updateWalker(walkerBlkSet[i], walkerRedSet, walkersPerSet, save);
     }
     //now perform the poststep action
     if(stepAction != nullptr)
