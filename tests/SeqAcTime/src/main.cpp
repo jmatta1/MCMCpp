@@ -2,15 +2,19 @@
 #include"Movers/AutoRegressiveMover.h"
 #include"Analysis/AutoCorrCalc.h"
 #include"EnsembleSampler.h"
+#include<fstream>
+using std::ofstream;
 using MarkovChainMonteCarlo::EnsembleSampler;
 namespace Mover=MarkovChainMonteCarlo::Mover;
 namespace Analysis=MarkovChainMonteCarlo::Analysis;
 
+static const char* FileNames[5]={"p0.csv", "p1.csv", "p2.csv", "p3.csv", "p4.csv"};
+
 int main()
 {
-    const int numWalkers = 100;
+    const int numWalkers = 12;
     const int numParams = 5;
-    const int numSteps = 200000;
+    const int numSteps = 20;
     float offsets[numParams] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     float phis[numParams] = {0.8f,  // AC = 9
                              0.904761904762f,  // AC = 20
@@ -40,7 +44,21 @@ int main()
     auto startItt = sampler.getStepIttBegin();
     auto endItt = sampler.getStepIttEnd();
     acCalc.allAutoCorrTime(startItt, endItt, numSteps);
-    
+    for(int j=0; j<numParams; ++j)
+    {
+        ofstream output(FileNames[j]);
+        for(auto itt = startItt; itt != endItt; ++itt)
+        {
+            output << (*itt)[j];
+            for(int i=1; i<numWalkers; ++i)
+            {
+                output << ", " << (*itt)[(i*numParams) + j];
+            }
+            output << "\n";
+        }
+        output << std::flush;
+        output.close();
+    }
     std::cout<<"P0 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(0)<<" Actual:   9"<<std::endl;
     std::cout<<"P1 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(1)<<" Actual:  20"<<std::endl;
     std::cout<<"P2 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(2)<<" Actual:  30"<<std::endl;
