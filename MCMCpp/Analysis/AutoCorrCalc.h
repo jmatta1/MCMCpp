@@ -53,8 +53,12 @@ public:
     {acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount]; for(int i=0; i<paramCount; ++i) acorrTimeList[i] = 0.0;}
     
     ~AutoCorrCalc()
-    {delete[] acorrTimeList; delete[] randomWalkerIndices; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray; if(acovFuncArray!=nullptr) delete[] acovFuncArray;
-    if(interFuncArray!=nullptr) delete[] interFuncArray;}
+    {
+        delete[] acorrTimeList;
+        delete[] randomWalkerIndices;
+        if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
+        if(acovFuncArray!=nullptr) delete[] acovFuncArray;
+        if(interFuncArray!=nullptr) delete[] interFuncArray;}
     /*!
      * \brief allAutoCorrTime Calculates the auto correlation time for each parameter using the full set of walkers
      * \param start The iterator pointing at the start of the time series
@@ -260,7 +264,7 @@ void AutoCorrCalc<ParamType>::ifft()
                 std::complex<ParamType> temp2 = acovFuncArray[k+j];
                 acovFuncArray[k+j] = (temp2 + temp1);
                 acovFuncArray[k+j+m2] = (temp2 - temp1);
-                baseFreq *= freqStep;
+                baseFreq = (baseFreq * freqStep);
             }
         }
     }
@@ -292,7 +296,7 @@ void AutoCorrCalc<ParamType>::fft()
                 std::complex<ParamType> temp2 = interFuncArray[k+j];
                 interFuncArray[k+j] = (temp2 + temp1);
                 interFuncArray[k+j+m2] = (temp2 - temp1);
-                baseFreq *= freqStep;
+                baseFreq = (baseFreq * freqStep);
             }
         }
     }
