@@ -355,7 +355,7 @@ void AutoCorrCalc<ParamType>::genWalkerIndexList(int walkersToSelect)
 {
     if(walkerCount == walkersToSelect)
     {
-        for(int i=0; i<=walkerCount; ++i)
+        for(int i=0; i<walkerCount; ++i)
         {
             randomWalkerIndices[i] = i;
         }
