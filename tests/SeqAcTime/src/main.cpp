@@ -14,19 +14,22 @@ static const char* FileNames[5]={"p0.csv", "p1.csv", "p2.csv", "p3.csv", "p4.csv
 int main()
 {
     const int runNumber = 0;
-    const int numWalkers = 100;
-    const int numParams = 5;
-    const int numSteps = 200000;
-    double offsets[numParams] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    const int numWalkers = 6;
+    //const int numParams = 5;
+    const int numParams = 2;
+    const int numSteps = 65535;
+    /*double offsets[numParams] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     double phis[numParams] = {0.8f,  // AC = 9
                              0.904761904762f,  // AC = 20
                              0.9354838709677f,  // AC = 30
                              0.9672131147541f,  // AC = 60
                              0.990050200903734685f};  // AC = 200
-    double vars[numParams] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    double vars[numParams] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};*/
+    double steps[numParams] = {1.0f, 2.0f};
     
     std::cout<<"Building initial mover"<<std::endl;
-    Mover::AutoRegressiveMove<double> mover(numParams, offsets, phis, vars);
+    //Mover::AutoRegressiveMove<double> mover(numParams, offsets, phis, vars);
+    Mover::SequenceMove<double> mover(numParams, steps);
     
     std::cout<<"Getting initial values"<<std::endl;
     double* initVals = new double[numWalkers*numParams];
@@ -34,8 +37,8 @@ int main()
     mover.getInitialPoints(initVals, auxVals, numWalkers);
     
     std::cout<<"Building sampler"<<std::endl;
-    EnsembleSampler<double, Mover::AutoRegressiveMove<double> > sampler(runNumber, numWalkers, numParams, mover);
-
+    //EnsembleSampler<double, Mover::AutoRegressiveMove<double> > sampler(runNumber, numWalkers, numParams, mover);
+    EnsembleSampler<double, Mover::SequenceMove<double> > sampler(runNumber, numWalkers, numParams, mover);
     std::cout<<"Setting initial values"<<std::endl;
     sampler.setInitialWalkerPos(initVals, auxVals);
     
@@ -48,11 +51,9 @@ int main()
     auto endItt = sampler.getStepIttEnd();
     //num steps +1 to include the init location
     acCalc.allAutoCorrTime(startItt, endItt, numSteps+1);
-
-    //dump the data to the screen
     std::cout<<"P0 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(0)<<" Actual:   9"<<std::endl;
     std::cout<<"P1 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(1)<<" Actual:  20"<<std::endl;
-    std::cout<<"P2 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(2)<<" Actual:  30"<<std::endl;
+    /*std::cout<<"P2 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(2)<<" Actual:  30"<<std::endl;
     std::cout<<"P3 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(3)<<" Actual:  60"<<std::endl;
-    std::cout<<"P4 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(4)<<" Actual: 200"<<std::endl;
+    std::cout<<"P4 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(4)<<" Actual: 200"<<std::endl;*/
 }
