@@ -26,12 +26,6 @@ namespace MarkovChainMonteCarlo
 namespace Analysis
 {
 
-namespace Detail
-{
-const unsigned long long PiNumerator =   3141592653589793239ULL;///<Stores the numerator of Pi in rational form
-const unsigned long long PiDenomenator = 1000000000000000000ULL;///<Stores the denomenator of Pi in rational form
-}
-
 /*!
  * @class AutoCorrCalc
  * @ingroup Analysis
@@ -52,7 +46,7 @@ public:
      */
     AutoCorrCalc(int numParams, int numWalkers) : paramCount(numParams), walkerCount(numWalkers)
     {acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
-        chainAverages = new ParamType[paramCount];  for(int i=0; i<paramCount; ++i) acorrTimeList[i] = 0.0;}
+        chainAverages = new ParamType[paramCount*numWalkers];  for(int i=0; i<paramCount; ++i) acorrTimeList[i] = 0.0;}
     
     ~AutoCorrCalc()
     {delete[] acorrTimeList; delete[] randomWalkerIndices; delete[] chainAverages; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
@@ -174,7 +168,7 @@ ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimes(const IttType& start
 template<class ParamType>
 void AutoCorrCalc<ParamType>::averageAutocovarianceFunctions(int walkersToSelect)
 {
-    ParamType normVal = (static_cast<ParamType>(1)/(static_cast<ParamType>(walkersToSelect));
+    ParamType normVal = (static_cast<ParamType>(1)/(static_cast<ParamType>(walkersToSelect)));
     for(int i=0; i<acovSize; ++i)
     {
         acovFuncAvgArray[i] += (normVal*(acovFuncArray[i]));
@@ -196,10 +190,10 @@ void AutoCorrCalc<ParamType>::transferWalker(const IttType& start, const IttType
 template<class ParamType>
 void AutoCorrCalc<ParamType>::calculateChainAverages(const IttType& start, const IttType& end, int numSamples, int numWalkersToUse)
 {
-    ParamType norm = (static_cast<ParamType>(1)/static_cast<ParamType>(numWalkersToUse));
+    ParamType norm = (static_cast<ParamType>(1)/static_cast<ParamType>(numSamples));
     for(IttType itt(start); itt != end; ++itt)
     {
-        for(int i=0; i<numSamples; ++i)
+        for(int i=0; i<numWalkersToUse; ++i)
         {
             int offset = randomWalkerIndices[i]*paramCount;
             int endset = (offset+paramCount);
