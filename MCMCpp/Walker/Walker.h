@@ -13,6 +13,7 @@
 #define MCMC_WALKER_WALKER_H
 // includes for C system headers
 // includes for C++ system headers
+#include<algorithm>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/Chain.h"
@@ -71,13 +72,13 @@ public:
      * \brief jumpToNewPoint Tells the walker that the step to this point has been rejected and that it should stay at the current point
      * \param storePoint If false, do not store the new point in the Markov chain
      */
-    void stayAtCurrentPoint(bool storePoint=true){++totalSteps; if(storePoint) markovChain->storeWalker(walkerNumber, currState);}
+    void stayAtCurrentPoint(bool storePoint=true){++diffSteps; if(storePoint) markovChain->storeWalker(walkerNumber, currState);}
     
     /*!
      * \brief getTotalSteps Gets the total number of steps taken (initial position not counted)
      * \return The total number of steps taken
      */
-    int getTotalSteps(){return totalSteps;}
+    int getTotalSteps(){return (acceptedSteps+diffSteps);}
     
     /*!
      * \brief getAcceptedProposals Gets the number of times a new proposal was taken (initial position not counted)
@@ -88,7 +89,7 @@ public:
     /*!
      * \brief resetSteps Resets the accepted and total steps to 0
      */
-    void resetSteps(){acceptedSteps = 0; totalSteps = 0;}
+    void resetSteps(){acceptedSteps = 0; diffSteps = 0;}
     
     /*!
      * \brief getCurrState returns the current point that the walker is at
@@ -109,19 +110,15 @@ private:
     int walkerNumber = 0; ///<Holds the integer index of the walker, unique between walkers
     int numParams = 0; ///<holds the number of parameters for the post prob function
     int acceptedSteps = 0; ///< holds the number of times that a new parameter set was accepted
-    int totalSteps = 0; ///< holds the number of times that a new parameter set was proposed
+    int diffSteps = 0; ///< holds the number of times that a new parameter set was proposed and not accepted
 };
 
 template <class ParamType>
 void Walker<ParamType>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint)
 {
-    for(int i=0; i<numParams; ++i)
-    {
-        currState[i] = newPos[i];
-    }
+    std::copy(newPos, (newPos+numParams), currState);
     auxData = auxVal;
     ++acceptedSteps;
-    ++totalSteps;
     if(storePoint) markovChain->storeWalker(walkerNumber, currState);
 }
 
