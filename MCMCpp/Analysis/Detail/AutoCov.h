@@ -116,11 +116,14 @@ private:
     
     int fftSize = 0; ///<stores the number of points in the FFT
     int lgFftSize = -1; ///< stores the log2 of the number of points in the fft size
-    std::complex<ParamType>* negRootsOfUnity = nullptr; ///<Stores e^(-i*2*n/N) twiddle factors used in fft
-    std::complex<ParamType>* posRootsOfUnity = nullptr; ///<Stores e^(i*2*pi*k*n/N) twiddle factors used in ifft
+    ParamType* rootsOfUnityReal = nullptr; ///<Stores the real part of e^((+/-)i*2*n/N) twiddle factors used in fft
+    ParamType* negRootsOfUnityImag = nullptr; ///<Stores the imaginary part of e^(i*2*pi*k*n/N) twiddle factors used in ifft
+    ParamType* posRootsOfUnityImag = nullptr; ///<Stores the imaginary part of e^(i*2*pi*k*n/N) twiddle factors used in ifft
     
-    std::complex<ParamType>* firstTransform = nullptr; ///<Location where the chain is initially copied to undergo its first transform (and for its conversion to a power spectrum)
-    std::complex<ParamType>* secondTransform = nullptr; ///<Location where the chain undergoes its second transform
+    ParamType* firstTransformReal = nullptr; ///<Where the real part of the chain is initially copied to undergo its first transform (and for its conversion to a power spectrum)
+    ParamType* firstTransformImag = nullptr; ///<Where the imaginary part of the chain is initially copied to undergo its first transform (and for its conversion to a power spectrum)
+    ParamType* secondTransformReal = nullptr; ///<Where the real part of the chain undergoes its second transform
+    ParamType* secondTransformImag = nullptr; ///<Where the imaginary part of the chain undergoes its second transform
     
     const ParamType TwoPi = (static_cast<ParamType>(2)*(static_cast<ParamType>(PiNumerator)/static_cast<ParamType>(PiDenomenator)));///<Storage of 2*pi
 };
@@ -128,10 +131,13 @@ private:
 template<class ParamType>
 AutoCov<ParamType>::~AutoCov()
 {
-    if(negRootsOfUnity != nullptr) free(negRootsOfUnity);
-    if(posRootsOfUnity != nullptr) free(posRootsOfUnity);
-    if(firstTransform != nullptr) free(firstTransform);
-    if(secondTransform != nullptr) free(secondTransform);
+    if(rootsOfUnityReal != nullptr) free(rootsOfUnityReal);
+    if(negRootsOfUnityImag != nullptr) free(negRootsOfUnityImag);
+    if(posRootsOfUnityImag != nullptr) free(posRootsOfUnityImag);
+    if(firstTransformReal != nullptr) free(firstTransformReal);
+    if(firstTransformImag != nullptr) free(firstTransformImag);
+    if(secondTransformReal != nullptr) free(secondTransformReal);
+    if(secondTransformImag != nullptr) free(secondTransformImag);
 }
 
 template<class ParamType>
@@ -148,17 +154,19 @@ void AutoCov<ParamType>::calcNormAutoCov(ParamType* chain, const ParamType& avg,
 template<class ParamType>
 void AutoCov<ParamType>::normalizeAndCopyAutoCov(ParamType* output, int chainLength)
 {
-    ParamType normValue = (static_cast<ParamType>(1)/secondTransform[0].real());
+    ParamType normValue = (static_cast<ParamType>(1)/secondTransformReal[0]);
     for(int i=0; i<chainLength; ++i)
     {
-        output[i] = (normValue * secondTransform[i].real());
+        output[i] = (normValue * secondTransformReal[i]);
     }
 }
 
 template<class ParamType>
 void AutoCov<ParamType>::performInverseFft()
 {
-    for(int s=1; s<=lgFftSize; ++s)    
+    alignas(16) ParamType tDat1[2] = {0.0, 0.0};
+    alignas(16) ParamType tDat2[2] = {0.0, 0.0};
+    for(int s=1; s<=lgFftSize; ++s)
     {
         int m1 = 0x1<<s;
         int m2 = m1 >> 1;
@@ -168,10 +176,18 @@ void AutoCov<ParamType>::performInverseFft()
             int twiddleIndex = 0;
             for(unsigned int j=0; j<m2; ++j)
             {
-                std::complex<ParamType> temp1 = (posRootsOfUnity[twiddleIndex] * secondTransform[k+j+m2]);
-                std::complex<ParamType> temp2 = secondTransform[k+j];
-                secondTransform[k+j] = (temp2 + temp1);
-                secondTransform[k+j+m2] = (temp2 - temp1);
+                tDat1[0] = rootsOfUnityReal[twiddleIndex]*firstTransformReal[k+j+m2] - posRootsOfUnityImag[twiddleIndex]*firstTransformImag[k+j+m2];
+                tDat1[1] = rootsOfUnityReal[twiddleIndex]*firstTransformImag[k+j+m2] + posRootsOfUnityImag[twiddleIndex]*firstTransformReal[k+j+m2];
+                //std::complex<ParamType> temp1 = (negRootsOfUnity[twiddleIndex] * firstTransform[k+j+m2]);
+                tDat2[0] = firstTransformReal[k+j];
+                tDat2[1] = firstTransformImag[k+j];
+                //std::complex<ParamType> temp2 = firstTransform[k+j];
+                firstTransformReal[k+j] = (tDat2[0] + tDat1[0]);
+                firstTransformImag[k+j] = (tDat2[1] + tDat1[1]);
+                //firstTransform[k+j] = (temp2 + temp1);
+                firstTransformReal[k+j+m2] = (tDat2[0] - tDat1[0]);
+                firstTransformImag[k+j+m2] = (tDat2[1] - tDat1[1]);
+                //firstTransform[k+j+m2] = (temp2 - temp1);
                 twiddleIndex += twiddleStride;
             }
         }
@@ -183,14 +199,19 @@ void AutoCov<ParamType>::copyBitReversedPowerSpectrum()
 {
     for(int i=0; i<fftSize; ++i)
     {
-        secondTransform[bitReverse(i)] = std::norm(firstTransform[i]);
+        int bitRev = bitReverse(i);
+        secondTransformReal[bitRev] = ((firstTransformReal[i]*firstTransformReal[i]) +
+                                       (firstTransformImag[i]*firstTransformImag[i]));
+        secondTransformReal[bitRev] = static_cast<ParamType>(0);
     }
 }
 
 template<class ParamType>
 void AutoCov<ParamType>::performForwardFft()
-{//simple implementation of Cooley-Tukey
-    for(int s=1; s<=lgFftSize; ++s)    
+{//implementation of Cooley-Tukey
+    alignas(16) ParamType tDat1[2] = {0.0, 0.0};
+    alignas(16) ParamType tDat2[2] = {0.0, 0.0};
+    for(int s=1; s<=lgFftSize; ++s)
     {
         int m1 = 0x1<<s;
         int m2 = m1 >> 1;
@@ -200,10 +221,18 @@ void AutoCov<ParamType>::performForwardFft()
             int twiddleIndex = 0;
             for(unsigned int j=0; j<m2; ++j)
             {
-                std::complex<ParamType> temp1 = (negRootsOfUnity[twiddleIndex] * firstTransform[k+j+m2]);
-                std::complex<ParamType> temp2 = firstTransform[k+j];
-                firstTransform[k+j] = (temp2 + temp1);
-                firstTransform[k+j+m2] = (temp2 - temp1);
+                tDat1[0] = rootsOfUnityReal[twiddleIndex]*firstTransformReal[k+j+m2] - negRootsOfUnityImag[twiddleIndex]*firstTransformImag[k+j+m2];
+                tDat1[1] = rootsOfUnityReal[twiddleIndex]*firstTransformImag[k+j+m2] + negRootsOfUnityImag[twiddleIndex]*firstTransformReal[k+j+m2];
+                //std::complex<ParamType> temp1 = (negRootsOfUnity[twiddleIndex] * firstTransform[k+j+m2]);
+                tDat2[0] = firstTransformReal[k+j];
+                tDat2[1] = firstTransformImag[k+j];
+                //std::complex<ParamType> temp2 = firstTransform[k+j];
+                firstTransformReal[k+j] = (tDat2[0] + tDat1[0]);
+                firstTransformImag[k+j] = (tDat2[1] + tDat1[1]);
+                //firstTransform[k+j] = (temp2 + temp1);
+                firstTransformReal[k+j+m2] = (tDat2[0] - tDat1[0]);
+                firstTransformImag[k+j+m2] = (tDat2[1] - tDat1[1]);
+                //firstTransform[k+j+m2] = (temp2 - temp1);
                 twiddleIndex += twiddleStride;
             }
         }
@@ -215,12 +244,16 @@ void AutoCov<ParamType>::copyCenterAndBitReverseChain(const ParamType* chain, co
 {
     for(int i=0; i<chainLength; ++i)
     {
-        firstTransform[bitReverse(i)] = (chain[i] - avg);
+        int bitRev = bitReverse(i);
+        firstTransformReal[bitRev] = (chain[i] - avg);
+        firstTransformImag[bitRev] = static_cast<ParamType>(0);
     }
     
     for(int i=chainLength; i<fftSize; ++i)
     {
-        firstTransform[bitReverse(i)] = static_cast<ParamType>(0);
+        int bitRev = bitReverse(i);
+        firstTransformReal[bitRev] = static_cast<ParamType>(0);
+        firstTransformImag[bitRev] = static_cast<ParamType>(0);
     }
 }
 
@@ -246,14 +279,21 @@ void AutoCov<ParamType>::checkSizeAndHandleChanges(int chainLength)
     {
         lgFftSize = tempLgFftSize;
         fftSize = (1 << lgFftSize);
-        if(negRootsOfUnity != nullptr) free(negRootsOfUnity);
-        if(posRootsOfUnity != nullptr) free(posRootsOfUnity);
-        if(firstTransform != nullptr) free(firstTransform);
-        if(secondTransform != nullptr) free(secondTransform);
-        negRootsOfUnity = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize/2));
-        posRootsOfUnity = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize/2));
-        firstTransform = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize));
-        secondTransform = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize));
+        if(rootsOfUnityReal    != nullptr) free(rootsOfUnityReal);
+        if(negRootsOfUnityImag != nullptr) free(negRootsOfUnityImag);
+        if(posRootsOfUnityImag != nullptr) free(posRootsOfUnityImag);
+        if(firstTransformReal  != nullptr) free(firstTransformReal);
+        if(firstTransformImag  != nullptr) free(firstTransformImag);
+        if(secondTransformReal != nullptr) free(secondTransformReal);
+        if(secondTransformImag != nullptr) free(secondTransformImag);
+        int twiddleSize = (fftSize/2);
+        rootsOfUnityReal    = reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, sizeof(ParamType)*twiddleSize));
+        negRootsOfUnityImag = reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, sizeof(ParamType)*twiddleSize));
+        posRootsOfUnityImag = reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, sizeof(ParamType)*twiddleSize));
+        firstTransformReal  = reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, sizeof(ParamType)*fftSize));
+        firstTransformImag  = reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, sizeof(ParamType)*fftSize));
+        secondTransformReal = reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, sizeof(ParamType)*fftSize));
+        secondTransformImag = reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, sizeof(ParamType)*fftSize));
         calculateRootsOfUnity();
     }
     
@@ -266,10 +306,10 @@ void AutoCov<ParamType>::calculateRootsOfUnity()
     for(int i=0; i<rootsSize; ++i)
     {
         ParamType angle = TwoPi*static_cast<ParamType>(i)/static_cast<ParamType>(fftSize);
-        ParamType cosPart = std::cos(angle);
         ParamType sinPart = std::sin(angle);
-        negRootsOfUnity[i] = std::complex<ParamType>{cosPart, -sinPart};
-        posRootsOfUnity[i] = std::complex<ParamType>{cosPart, sinPart};
+        rootsOfUnityReal[i] = std::cos(angle);
+        posRootsOfUnityImag[i] = sinPart;
+        negRootsOfUnityImag[i] = -sinPart;
     }
 }
 
