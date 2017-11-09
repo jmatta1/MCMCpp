@@ -213,7 +213,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
         {
             performStep(true);
             ++storedSteps;
-            if(IncrementStatus::EndOfChain == markovChain.incrementChainStep())
+            if(Chain::IncrementStatus::EndOfChain == markovChain.incrementChainStep())
             {
                 break;
             }
@@ -222,16 +222,16 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
     else
     {
         for(int i=0; i<numSteps; ++i)
-        {
-            performStep(true);
-            ++storedSteps;
-            if(IncrementStatus::EndOfChain == markovChain.incrementChainStep())
-            {
-                break;
-            }
+        {//since the initialization is counted do the subSamplingInterval-1 steps without storing
             for(int j=1; j<subSamplingInterval; ++j)
             {
                 performStep(false);
+            }
+            performStep(true);
+            ++storedSteps;
+            if(Chain::IncrementStatus::EndOfChain == markovChain.incrementChainStep())
+            {
+                break;
             }
         }
     }
