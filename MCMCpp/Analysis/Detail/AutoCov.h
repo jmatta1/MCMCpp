@@ -250,8 +250,8 @@ void AutoCov<ParamType>::checkSizeAndHandleChanges(int chainLength)
         if(posRootsOfUnity != nullptr) free(posRootsOfUnity);
         if(firstTransform != nullptr) free(firstTransform);
         if(secondTransform != nullptr) free(secondTransform);
-        negRootsOfUnity = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize));
-        posRootsOfUnity = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize));
+        negRootsOfUnity = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize/2));
+        posRootsOfUnity = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize/2));
         firstTransform = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize));
         secondTransform = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize));
         calculateRootsOfUnity();
@@ -262,7 +262,8 @@ void AutoCov<ParamType>::checkSizeAndHandleChanges(int chainLength)
 template<class ParamType>
 void AutoCov<ParamType>::calculateRootsOfUnity()
 {
-    for(int i=0; i<fftSize; ++i)
+    int rootsSize = (fftSize/2);
+    for(int i=0; i<rootsSize; ++i)
     {
         ParamType angle = TwoPi*static_cast<ParamType>(i)/static_cast<ParamType>(fftSize);
         ParamType cosPart = std::cos(angle);
