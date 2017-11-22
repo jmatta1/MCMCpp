@@ -93,12 +93,12 @@ public:
      * \brief operator++ Prefix increment of the iterator, move it to the next walker parameter set in the chain
      * \return The iterator that was incremented
      */
-    ChainPsetIterator<ParamType> operator++();
+    ChainPsetIterator<ParamType>& operator++();
     /*!
      * \brief operator++ Prefix decrement of the iterator, move it to the previous walker parameter set in the chain
      * \return The iterator that was decremented
      */
-    ChainPsetIterator<ParamType> operator--();
+    ChainPsetIterator<ParamType>& operator--();
     
     /*!
      * \brief operator* Dereference the iterator to get a pointer to the walker parameter array for this walker parameter set
@@ -120,7 +120,7 @@ private:
 };
 
 template <class ParamType>
-ChainPsetIterator<ParamType> ChainPsetIterator<ParamType>::operator++()
+ChainPsetIterator<ParamType>& ChainPsetIterator<ParamType>::operator++()
 {
     //check if we are not at the end of a block
     if(index < lastCell)
@@ -143,7 +143,7 @@ ChainPsetIterator<ParamType> ChainPsetIterator<ParamType>::operator++()
 }
 
 template <class ParamType>
-ChainPsetIterator<ParamType> ChainPsetIterator<ParamType>::operator--()
+ChainPsetIterator<ParamType>& ChainPsetIterator<ParamType>::operator--()
 {
     //check if we are not at the end of a block
     if(index > 0)

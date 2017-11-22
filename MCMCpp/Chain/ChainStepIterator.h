@@ -94,24 +94,24 @@ public:
      * \brief operator++ Prefix increment of the iterator, move it to the next step in the chain
      * \return The iterator that was incremented
      */
-    ChainStepIterator<ParamType> operator++();
+    ChainStepIterator<ParamType>& operator++();
     /*!
      * \brief operator++ Prefix decrement of the iterator, move it to the previous step in the chain
      * \return The iterator that was decremented
      */
-    ChainStepIterator<ParamType> operator--();
+    ChainStepIterator<ParamType&> operator--();
     
     /*!
      * \brief operator+= Increase the iterator by some number of steps (stopping at the end if needed)
      * \return The iterator that was increased
      */
-    ChainStepIterator<ParamType> operator+=(int steps);
+    ChainStepIterator<ParamType>& operator+=(int steps);
     
     /*!
      * \brief operator-= Decrease the iterator by some number of steps (stopping at the Beginning if needed)
      * \return The iterator that was decreased
      */
-    ChainStepIterator<ParamType> operator-=(int steps);
+    ChainStepIterator<ParamType>& operator-=(int steps);
     
     /*!
      * \brief operator* Dereference the iterator to get a pointer to the walker parameter array for this step
@@ -132,7 +132,7 @@ private:
 };
 
 template <class ParamType>
-ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator+=(int steps)
+ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator+=(int steps)
 {
     /*!
      * @remark This increment *will* stop at the end of the chain, even if steps
@@ -189,7 +189,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator+=(int steps)
 }
 
 template <class ParamType>
-ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator-=(int steps)
+ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator-=(int steps)
 {
     /*!
      * @remark This increment *will* stop at the beginning of the chain, even if steps
@@ -247,7 +247,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator-=(int steps)
 }
 
 template <class ParamType>
-ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator++()
+ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator++()
 {
     //check if we are not at the end of a block
     if(stepIndex < lastFullStep)
@@ -270,7 +270,7 @@ ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator++()
 }
 
 template <class ParamType>
-ChainStepIterator<ParamType> ChainStepIterator<ParamType>::operator--()
+ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator--()
 {
     //check if we are not at the end of a block
     if(stepIndex > 0)
