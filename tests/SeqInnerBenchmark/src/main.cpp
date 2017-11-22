@@ -3,7 +3,6 @@
 #include"EnsembleSampler.h"
 using MarkovChainMonteCarlo::EnsembleSampler;
 namespace Mover=MarkovChainMonteCarlo::Mover;
-namespace Analysis=MarkovChainMonteCarlo::Analysis;
 
 int main()
 {
@@ -14,7 +13,7 @@ int main()
     double stepSize[numParams] = {1.0, 2.0, 3.0, 4.0, 5.0};
     
     std::cout<<"Building initial mover"<<std::endl;
-    Mover::SequenceMover<double> mover(numParams, stepSize);
+    Mover::SequenceMove<double> mover(numParams, stepSize);
     
     std::cout<<"Setting initial values"<<std::endl;
     double* initVals = new double[numWalkers*numParams];
@@ -22,7 +21,7 @@ int main()
     for(int i=0; i<numWalkers; ++i)
     {
         auxVals[i] = 0.0;
-        int limit = ((i*numParams + numParms);
+        int limit = ((i*numParams) + numParams);
         for(int j=(i*numParams); j<limit; ++j)
         {
             initVals[j] = 0.0;
@@ -30,7 +29,7 @@ int main()
     }
     
     std::cout<<"Building sampler"<<std::endl;
-    EnsembleSampler<double, Mover::AutoRegressiveMove<double> > sampler(runNumber, numWalkers, numParams, mover);
+    EnsembleSampler<double, Mover::SequenceMove<double> > sampler(runNumber, numWalkers, numParams, mover);
     
     std::cout<<"Setting initial values"<<std::endl;
     sampler.setInitialWalkerPos(initVals, auxVals);
