@@ -69,6 +69,11 @@ public:
         stepSizes(rhs.stepSizes){}
     
     /*!
+     * \brief deleted assignment operator
+     */
+    SequenceMove<ParamType>& operator=(SequenceMove<ParamType>& rhs) = delete;
+    
+    /*!
      * \brief setPrngSeed Sets the seed of the underlying prng, does nothing for this walker
      * \param seed The seed for the prng
      */
@@ -109,9 +114,9 @@ public:
     }
     
 private:
-    int paramCount; ///<Holds the total number of parameters
     ParamType* proposal; ///Holds the new parameter set for the walker
     std::shared_ptr<ParamType> stepSizes; ///<Holds the array of step sizes, doesn't need to be replicated
+    int paramCount; ///<Holds the total number of parameters
 };
 
 }
