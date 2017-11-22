@@ -99,7 +99,7 @@ public:
      * \brief operator++ Prefix decrement of the iterator, move it to the previous step in the chain
      * \return The iterator that was decremented
      */
-    ChainStepIterator<ParamType&> operator--();
+    ChainStepIterator<ParamType>& operator--();
     
     /*!
      * \brief operator+= Increase the iterator by some number of steps (stopping at the end if needed)
