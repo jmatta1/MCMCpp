@@ -15,3 +15,10 @@ acTest
 
 # ignore build directories
 build
+
+# ignore callgrind output
+callgrind.out.*
+
+# ignore notes files
+callgrind.txt
+posOptOpp.txt
