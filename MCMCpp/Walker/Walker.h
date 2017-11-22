@@ -44,6 +44,16 @@ public:
     ~Walker(){if(currState != nullptr) delete[] currState;}
     
     /*!
+     * \brief Delete copy constructor
+     */
+    Walker(const Walker<ParamType>& rhs) = delete;
+    
+    /*!
+     * \brief Delete assignment operator
+     */
+    Walker<ParamType>& operator=(const Walker<ParamType>& rhs) = delete;
+    
+    /*!
      * \brief init Initializes the walker in question so that it can be used
      * \param chain A pointer to the chain that will store parameter sets
      * \param walkerIndex The index of the current walker

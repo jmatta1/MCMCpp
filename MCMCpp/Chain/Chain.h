@@ -77,6 +77,15 @@ public:
     ~Chain();
     
     /*!
+     * \brief Deleted chain copy constructor
+     */
+    Chain(const Chain<ParamType>& rhs) = delete;
+    /*!
+     * \brief Delete assignment operator
+     */
+    Chain<ParamType>& operator=(const Chain<ParamType>& rhs) = delete;
+    
+    /*!
      * \brief storeWalker Stores the walker's parameter set in the current step
      * \param walkerNum The index of the walker
      * \param walkerData The data array of the walker
@@ -157,18 +166,18 @@ private:
      */
     ChainBlock<ParamType>* curr = nullptr;
     //Chain book-keeping
+    unsigned long long maxBlocks; ///<Calculated maximum number of blocks to allocate
+    unsigned long long blockCount = 0; ///<Number of blocks allocated so far
     int walkerCount; ///<Number of walkers included in this chain
     int cellsPerWalker; ///<Number of cells needed by each walker
-    int maxBlocks; ///<Calculated maximum number of blocks to allocate
     int stepCount = 0; ///<Number of steps stored so far
-    int blockCount = 0; ///<Number of blocks allocated so far
 };
 
 
 template <class ParamType>
 Chain<ParamType>::Chain(int numWalkers, int numParams, unsigned long long maxSize):
-    walkerCount(numWalkers), cellsPerWalker(numParams),
-    maxBlocks(maxSize/(sizeof(ParamType)*Detail::BlockSize*numWalkers*cellsPerWalker))
+    maxBlocks(maxSize/(sizeof(ParamType)*Detail::BlockSize*numWalkers*cellsPerWalker)),
+    walkerCount(numWalkers), cellsPerWalker(numParams)
 {
     //allocate the first block
     head = new ChainBlock<ParamType>(nullptr, walkerCount, cellsPerWalker);

@@ -58,19 +58,29 @@ public:
     
     /*!
      * \brief EnsembleSampler Constructs the ensemble sampler
-     * \param runNumber RunNumber, used to seed the random number generator
+     * \param randSeed The random seed used to seed the random number generator (for parallel generators, the stream number will be used)
      * \param numWalker The number of walkers to use, must be a multiple of 2 and exceed 2*numParameter
      * \param numParameter The number of parameters in the problem
      * \param maxChainSizeBytes The maximum size of the sample chain in bytes
      * \param stepAction An instance of the post step action class
      */
-    EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& move,
+    EnsembleSampler(int randSeed, int numWalker, int numParameter, const Mover& move,
                     unsigned long long maxChainSizeBytes=2147483648, PostStepAction* stepAct=nullptr);
     
     /*!
      * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
      */
     ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet;}
+    
+    /*!
+     * \brief Delete copy constructor
+     */
+    EnsembleSampler(const EnsembleSampler<ParamType, Mover, PostStepAction>& rhs) = delete;
+    
+    /*!
+     * \brief Deleted assignment operator
+     */
+    EnsembleSampler<ParamType, Mover, PostStepAction>& operator=(const EnsembleSampler<ParamType, Mover, PostStepAction>& rhs) = delete;
     
     /*!
      * \brief setInitialWalkerPos Gives an initial position to every walker.
@@ -83,7 +93,7 @@ public:
      * \brief runMCMC Runs the Markov chain Monte Carlo for a set number of samples
      * \param numSteps The number of steps to store
      * 
-     * In normal sampling mode, this function will run the ensemble for numSamples per walker
+    a * In normal sampling mode, this function will run the ensemble for numSamples per walker
      * In subSampling mode, this function will run the ensemble numSamples*subSamplingInterval and store numSamples
      */
     void runMCMC(int numSteps);
@@ -139,41 +149,39 @@ private:
      */
     void performStep(bool save);
     
+    
+    WalkerType* walkerRedSet; ///<Set one of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
+    WalkerType* walkerBlkSet; ///<Set two of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
+    PostStepAction* stepAction; ///<Action to perform at the end of every step
+    ChainType markovChain; ///<The Markov Chain storage class
+    Mover moveProposer; ///<The class that proposes a new move position, expects a single numParams constructor parameter
+    
     int numParams; ///<The number of parameters being searched on
     int numWalkers; ///<The number of walkers, must be a multiple of 2, and greater than 2*numParams
     int walkersPerSet; ///<The number of walkers in the two sets (numWalkers/2)
     int subSamplingInterval=1; ///<The interval to store samples on if we are subsampling
     int storedSteps=0; ///<The number of steps stored in the chain
-    
-    ChainType markovChain; ///<The Markov Chain storage class
-    WalkerType* walkerRedSet; ///<Set one of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
-    WalkerType* walkerBlkSet; ///<Set two of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
-    Mover moveProposer; ///<The class that proposes a new move position, expects a single numParams constructor parameter
 
     bool subSampling = false; ///<Toggle for performing subsampling
-
-    PostStepAction* stepAction; ///<Action to perform at the end of every step
 };
 
 template<class ParamType, class Mover, class PostStepAction>
 EnsembleSampler<ParamType, Mover, PostStepAction>::
-EnsembleSampler(int runNumber, int numWalker, int numParameter, const Mover& move,
+EnsembleSampler(int randSeed, int numWalker, int numParameter, const Mover& move,
                 unsigned long long maxChainSizeBytes, PostStepAction* stepAct):
-    numParams(numParameter), numWalkers(numWalker), walkersPerSet(numWalker/2),
-    markovChain(numWalkers, numParams, maxChainSizeBytes),
-    moveProposer(move), stepAction(stepAct)
+    walkerRedSet(new WalkerType[walkersPerSet]), walkerBlkSet(new WalkerType[walkersPerSet]),
+    stepAction(stepAct), markovChain(numWalkers, numParams, maxChainSizeBytes),
+    moveProposer(move), numParams(numParameter), numWalkers(numWalker),
+    walkersPerSet(numWalker/2)
 {
     assert(numWalkers%2 == 0);
     assert(numWalkers > (2*numParams));
-    //allocate the walker arrays
-    //for the red set, allocate half the walkers
-    walkerRedSet = new WalkerType[walkersPerSet];
-    walkerBlkSet = new WalkerType[walkersPerSet];
     for(int i=0; i<walkersPerSet; ++i)
     {
         walkerRedSet[i].init(&markovChain, i,   numParams);
         walkerBlkSet[i].init(&markovChain, i+walkersPerSet, numParams);
     }
+    moveProposer.setPrngSeed(randSeed);
 }
 
 template<class ParamType, class Mover, class PostStepAction>

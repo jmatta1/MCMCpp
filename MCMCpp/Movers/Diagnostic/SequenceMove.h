@@ -49,8 +49,9 @@ public:
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
     SequenceMove(int numParams, const ParamType* steps):
-        paramCount(numParams), proposal(new ParamType[numParams]),
-        stepSizes(new ParamType[numParams], Utility::ArrayDeleter<ParamType>())
+        proposal(new ParamType[numParams]),
+        stepSizes(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
+        paramCount(numParams)
     {
         for(int i=0; i<paramCount; ++i)
         {
@@ -65,13 +66,13 @@ public:
      * \param rhs Original mover to be copied
      */
     SequenceMove(const SequenceMove<ParamType>& rhs):
-        paramCount(rhs.paramCount), proposal(new ParamType[rhs.paramCount]),
-        stepSizes(rhs.stepSizes){}
+        proposal(new ParamType[rhs.paramCount]), stepSizes(rhs.stepSizes),
+        paramCount(rhs.paramCount){}
     
     /*!
      * \brief deleted assignment operator
      */
-    SequenceMove<ParamType>& operator=(SequenceMove<ParamType>& rhs) = delete;
+    SequenceMove<ParamType>& operator=(const SequenceMove<ParamType>& rhs) = delete;
     
     /*!
      * \brief setPrngSeed Sets the seed of the underlying prng, does nothing for this walker

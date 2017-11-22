@@ -65,7 +65,7 @@ public:
      * \param copy The original iterator to be copied into the iterator being constructed
      */
     ChainStepIterator(const ChainStepIterator<ParamType>& copy):
-        curr(copy.curr), lastFullStep(copy.lastFullStep), stepIndex(copy.stepIndex)
+        curr(copy.curr), stepIndex(copy.stepIndex), lastFullStep(copy.lastFullStep)
     {}
     
     ~ChainStepIterator(){}
@@ -127,8 +127,8 @@ public:
 private:
     //Linked list book-keeping
     ChainBlock<ParamType>* curr = nullptr; ///<pointer to the current block
-    int lastFullStep; ///<Proportional to the firstEmptyStep parameter of the current block
     int stepIndex;///<step index within the current block
+    int lastFullStep; ///<Proportional to the firstEmptyStep parameter of the current block
 };
 
 template <class ParamType>

@@ -55,6 +55,16 @@ public:
     ~ChainBlock(){delete[] chainArray;}
     
     /*!
+     * \brief Deleted copy constructor
+     */
+    ChainBlock(const ChainBlock<ParamType>& rhs) = delete;
+    
+    /*!
+     * \brief Deleted assignment operator
+     */
+    ChainBlock<ParamType>& operator=(const ChainBlock<ParamType>& rhs) = delete;
+    
+    /*!
      * \brief storeWalker transfers a walkers point into the chain storage, undefined behavior if the block is full
      * \param walkerNum index of the walker to transfer
      * \param walkerData array of data representing the walker's parameters and auxilliary data
