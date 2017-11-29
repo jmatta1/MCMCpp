@@ -18,8 +18,6 @@
 // includes from MCMC
 #include"../../Walker/Walker.h"
 #include"../../Utility/ArrayDeleter.h"
-#include"../../Utility/MultiSampler.h"
-#include"../../Utility/GwDistribution.h"
 #include"../../Utility/UserOjbectsTest.h"
 
 namespace MarkovChainMonteCarlo
@@ -66,7 +64,8 @@ public:
      * \param rhs Original mover to be copied
      */
     SequenceMove(const SequenceMove<ParamType>& rhs):
-        proposal(new ParamType[rhs.paramCount]), stepSizes(rhs.stepSizes),
+        proposal(new ParamType[rhs.paramCount]),
+        stepSizes(rhs.stepSizes),
         paramCount(rhs.paramCount){}
     
     /*!
@@ -78,7 +77,7 @@ public:
      * \brief setPrngSeed Sets the seed of the underlying prng, does nothing for this walker
      * \param seed The seed for the prng
      */
-    void setPrngSeed(long long seed){}
+    void setPrng(long long seed, long long stream){}
     
     /*!
      * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates, assumes that

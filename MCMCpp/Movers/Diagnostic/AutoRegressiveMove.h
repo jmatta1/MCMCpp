@@ -72,7 +72,12 @@ public:
     AutoRegressiveMove(const AutoRegressiveMove<ParamType>& rhs):
         paramCount(rhs.paramCount), proposal(new ParamType[rhs.paramCount]),
         phis(rhs.phis), offs(rhs.offs), prngStdDev(rhs.prngStdDev){}
-    
+
+    /*!
+     * \brief Deleted assignment operator
+     */
+    AutoRegressiveMove<ParamType>& operator=(const AutoRegressiveMove<ParamType>& rhs) = delete;
+
     /*!
      * \brief setPrngSeed Sets the seed of the underlying prng
      * \param seed The seed for the prng
@@ -117,8 +122,8 @@ public:
     }
     
 private:
-    int paramCount; ///<Holds the total number of parameters
     ParamType* proposal; ///Holds the new parameter set for the walker
+    int paramCount; ///<Holds the total number of parameters
     std::shared_ptr<ParamType> phis; ///<Holds the array of recursion parameters, doesn't need to be replicated
     std::shared_ptr<ParamType> offs; ///<Holds the array of offsets to the AR(1) model), doesn't need to be replicated
     std::shared_ptr<ParamType> prngStdDev; ///<Holds the standard deviation of each parameters needed normal distributed random number, doesn't need to be replicated
