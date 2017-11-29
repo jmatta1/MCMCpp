@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<algorithm>
+#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/Chain.h"
@@ -22,6 +23,12 @@
 
 namespace MarkovChainMonteCarlo
 {
+
+namespace Mover
+{
+
+}
+
 namespace Walker
 {
 /**
@@ -61,14 +68,22 @@ public:
      * \param numCell The number of cells to be stored per walker in the chain
      */
     void init(Chain::Chain<ParamType>* chain, int walkerIndex, int numParam)
-    {markovChain = chain; walkerNumber = walkerIndex; numParams = numParam; currState = new ParamType[numParam];}
+    {
+        markovChain = chain;
+        walkerNumber = walkerIndex; 
+        numParams = numParam;
+        currState = new ParamType[numParam];
+    }
     
     /*!
      * \brief setFirstPoint Initializes the walker with its very first point (which is counted as an accepted step (and a normal step))
      * \param init The parameter set for the initial value
      * \param calc The log post prob calculator, see Walker::proposePoint for why it is passed and not stored
      */
-    void setFirstPoint(ParamType* init, const ParamType& auxVal, bool storePoint=true){jumpToNewPoint(init, auxVal, storePoint);}
+    void setFirstPoint(ParamType* init, const ParamType& auxVal, bool storePoint=true)
+    {
+        jumpToNewPoint(init, auxVal, storePoint);
+    }
     
     /*!
      * \brief jumpToNewPoint Tells the walker there has been a new point accepted and that it should jump to it
@@ -113,6 +128,7 @@ public:
      */
     const ParamType getCurrAuxData(){return auxData;}
     
+    int getWalkerNum(){return walkerNumber;}
 private:
     Chain::Chain<ParamType>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
     ParamType* currState = nullptr; ///<Holds the current position, should have at least one extra cell to hold the post prob for that position when written to the chain
