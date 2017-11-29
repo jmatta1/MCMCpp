@@ -1,0 +1,3 @@
+[submodule "MCMCpp/Utility/pcg-cpp"]
+	path = MCMCpp/Utility/pcg-cpp
+	url = git@github.com:imneme/pcg-cpp.git

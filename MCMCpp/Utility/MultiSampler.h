@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<random>
+#include"pcg-cpp/include/pcg_random.hpp"
 // includes from other libraries
 // includes from MCMC
 
@@ -47,9 +48,10 @@ public:
     
     /*!
      * \brief setPrngSeed Sets the random number engines seed to see
-     * \param seed The new seed for the random number engine
+     * \param seed The seed for the random number engine
+     * \param stream The stream for the random number engine
      */
-    inline void setPrngSeed(long long seed){engine.seed(seed);}
+    inline void setPrng(unsigned long long seed, unsigned long long stream){engine.seed(seed, stream);}
     
     /*!
      * \brief getCustomSample returns a sample from the given probability distribution
@@ -85,27 +87,28 @@ public:
      * \param max The maximum value of the range plus 1
      * \return A pseudo random integer in the range [0, max)
      */
-    inline int getNonOffSetInt(int max){return (engine()%max);}
+    inline int getNonOffSetInt(int max){return engine(max);}
     /*!
      * \brief getNonOffSetInt Gets a random integer in the range [offset, max)
      * \param max The maximum value of the range plus 1
      * \return A pseudo random integer in the range [offset, max)
      */
-    inline int getOffSetInt(int offset, int max){return ((engine()%(max-offset))+offset);}
+    inline int getOffSetInt(int offset, int max){return (engine(max-offset)+offset);}
     /*!
      * \brief getNonOffSetInt Gets a random 64-bit integer in the range [0, max)
      * \param max The maximum value of the range plus 1
      * \return A pseudo random 64-bit integer in the range [0, max)
      */
-    inline long long getNonOffSetLongLong(long long max){return (engine()%max);}
+    inline long long getNonOffSetLongLong(long long max){return engine(max);}
     /*!
      * \brief getNonOffSetInt Gets a random 64-bit integer in the range [offset, max)
      * \param max The maximum value of the range plus 1
      * \return A pseudo random 64-bit integer in the range [offset, max)
      */
-    inline long long getOffSetLongLong(long long offset, long long max){return ((engine()%(max-offset))+offset);}
+    inline long long getOffSetLongLong(long long offset, long long max){return (engine(max-offset)+offset);}
 private:
-    std::mt19937_64 engine;///<The base random number generator engine that is used for everything
+    //std::mt19937_64 engine;///<The base random number generator engine that is used for everything
+    pcg32 engine;///<The base random number generator engine that is used for everything
     std::uniform_real_distribution<ParamType> realDist;///<The adapter that gives uniform real numbers between 0 and 1
     std::exponential_distribution<ParamType> expDist;///<This adapter gives an exponential distribution with form e^-x, which is the shape of -log(x) when x is a uniform distribution
     std::normal_distribution<ParamType> normDist;///<The adapter that gives normally distributed real numbers with mean 0 and variance 1
