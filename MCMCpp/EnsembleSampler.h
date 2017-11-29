@@ -14,12 +14,12 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
+#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"Chain/Chain.h"
 #include"Walker/Walker.h"
 #include"Utility/NoAction.h"
-#include"Utility/GwDistribution.h"
 #include"Utility/UserOjbectsTest.h"
 
 namespace MarkovChainMonteCarlo
@@ -92,11 +92,12 @@ public:
     /*!
      * \brief runMCMC Runs the Markov chain Monte Carlo for a set number of samples
      * \param numSteps The number of steps to store
+     * \return True if the sampling went to the end before the max chain size was reached, false otherwise
      * 
     a * In normal sampling mode, this function will run the ensemble for numSamples per walker
      * In subSampling mode, this function will run the ensemble numSamples*subSamplingInterval and store numSamples
      */
-    void runMCMC(int numSteps);
+    bool runMCMC(int numSteps);
     
     /*!
      * \brief reset Returns the sampler to it's original state except that the walkers retain their current positions
@@ -149,9 +150,8 @@ private:
      */
     void performStep(bool save);
     
-    
-    WalkerType* walkerRedSet; ///<Set one of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
-    WalkerType* walkerBlkSet; ///<Set two of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
+    WalkerType* walkerRedSet=nullptr; ///<Set one of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
+    WalkerType* walkerBlkSet=nullptr; ///<Set two of the walkers, the sequential mode does not need two sets of walkers, but it is more convenient
     PostStepAction* stepAction; ///<Action to perform at the end of every step
     ChainType markovChain; ///<The Markov Chain storage class
     Mover moveProposer; ///<The class that proposes a new move position, expects a single numParams constructor parameter
@@ -169,19 +169,21 @@ template<class ParamType, class Mover, class PostStepAction>
 EnsembleSampler<ParamType, Mover, PostStepAction>::
 EnsembleSampler(int randSeed, int numWalker, int numParameter, const Mover& move,
                 unsigned long long maxChainSizeBytes, PostStepAction* stepAct):
-    walkerRedSet(new WalkerType[walkersPerSet]), walkerBlkSet(new WalkerType[walkersPerSet]),
-    stepAction(stepAct), markovChain(numWalkers, numParams, maxChainSizeBytes),
+    stepAction(stepAct), markovChain(numWalker, numParameter, maxChainSizeBytes),
     moveProposer(move), numParams(numParameter), numWalkers(numWalker),
     walkersPerSet(numWalker/2)
 {
     assert(numWalkers%2 == 0);
     assert(numWalkers > (2*numParams));
+    walkerRedSet = new WalkerType[walkersPerSet];
+    walkerBlkSet = new WalkerType[walkersPerSet];
     for(int i=0; i<walkersPerSet; ++i)
     {
         walkerRedSet[i].init(&markovChain, i,   numParams);
         walkerBlkSet[i].init(&markovChain, i+walkersPerSet, numParams);
     }
-    moveProposer.setPrngSeed(randSeed);
+    //set the random seed to what was given to the user and the stream number to 0
+    moveProposer.setPrng(randSeed, 0);
 }
 
 template<class ParamType, class Mover, class PostStepAction>
@@ -189,8 +191,8 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(Para
 {
     for(int i=0; i<walkersPerSet; ++i)
     {
-        walkerRedSet[i].setFirstPoint(positions+2*i*numParams, auxValues[2*i], storeInit);
-        walkerBlkSet[i].setFirstPoint(positions+(2*i+1)*numParams, auxValues[2*i+1], storeInit);
+        walkerRedSet[i].setFirstPoint(positions+(i*numParams), auxValues[i], storeInit);
+        walkerBlkSet[i].setFirstPoint(positions+((i+walkersPerSet)*numParams), auxValues[(i+walkersPerSet)], storeInit);
     }
     ++storedSteps;
     markovChain.incrementChainStep();
@@ -213,7 +215,7 @@ ParamType EnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptanceFracti
 }
 
 template<class ParamType, class Mover, class PostStepAction>
-void EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
+bool EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
 {
     if(!subSampling)
     {
@@ -221,10 +223,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
         {
             performStep(true);
             ++storedSteps;
-            if(Chain::IncrementStatus::EndOfChain == markovChain.incrementChainStep())
-            {
-                break;
-            }
+            if(Chain::IncrementStatus::EndOfChain == markovChain.incrementChainStep()) return false;
         }
     }
     else
@@ -237,12 +236,10 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
             }
             performStep(true);
             ++storedSteps;
-            if(Chain::IncrementStatus::EndOfChain == markovChain.incrementChainStep())
-            {
-                break;
-            }
+            if(Chain::IncrementStatus::EndOfChain == markovChain.incrementChainStep()) return false;
         }
     }
+    return true;
 }
 
 template<class ParamType, class Mover, class PostStepAction>
