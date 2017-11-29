@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<algorithm>
+#include<iostream>
 // includes from other libraries
 // includes from MCMC
 
@@ -97,23 +98,22 @@ public:
     template<class> friend class ChainPsetIterator;
 private:
     //Linked list book-keeping
-    ChainBlock<ParamType>* lastBlock = nullptr; ///<pointer to the previous block in the chain linked list
+    ChainBlock<ParamType>* lastBlock; ///<pointer to the previous block in the chain linked list
     ChainBlock<ParamType>* nextBlock = nullptr; ///<pointer to the next block in the chain linked list
+    //the chain chunk
+    ParamType* chainArray;///<Pointer into the array that stores the parameter set for every walker for every step in the block
     //Chain book-keeping
     int walkerCount; ///<Number of walkers included in this chain
     int cellsPerWalker; ///<Number of cells needed by each walker
     int cellsPerStep; ///<Number of cells for all the walkers in a single step
     int firstEmptyStep = 0; ///<Index (in units of cellsPerStep) of the next empty step
-    ParamType* chainArray = nullptr;///<Pointer into the array that stores the parameter set for every walker for every step in the block
 };
 
 template <class ParamType>
 ChainBlock<ParamType>::ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker):
-    lastBlock(prev), walkerCount(numWalkers), cellsPerWalker(numCellsPerWalker),
-    cellsPerStep(numWalkers*numCellsPerWalker)
-{
-    chainArray = new ParamType[Detail::BlockSize*cellsPerStep];
-}
+    lastBlock(prev), chainArray(new ParamType[Detail::BlockSize*numCellsPerWalker*numWalkers]),
+    walkerCount(numWalkers), cellsPerWalker(numCellsPerWalker),
+    cellsPerStep(numWalkers*numCellsPerWalker) {}
 
 template <class ParamType>
 void ChainBlock<ParamType>::storeWalker(int walkerNum, ParamType* walkerData)

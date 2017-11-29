@@ -166,17 +166,18 @@ private:
      */
     ChainBlock<ParamType>* curr = nullptr;
     //Chain book-keeping
-    unsigned long long maxBlocks; ///<Calculated maximum number of blocks to allocate
-    unsigned long long blockCount = 0; ///<Number of blocks allocated so far
+    int maxBlocks; ///<Calculated maximum number of blocks to allocate
+    int blockCount = 0; ///<Number of blocks allocated so far
     int walkerCount; ///<Number of walkers included in this chain
     int cellsPerWalker; ///<Number of cells needed by each walker
     int stepCount = 0; ///<Number of steps stored so far
 };
 
+typedef unsigned long long ULL;
 
 template <class ParamType>
 Chain<ParamType>::Chain(int numWalkers, int numParams, unsigned long long maxSize):
-    maxBlocks(maxSize/(sizeof(ParamType)*Detail::BlockSize*numWalkers*cellsPerWalker)),
+    maxBlocks(maxSize/(sizeof(ParamType)*numParams*Detail::BlockSize*numWalkers)),
     walkerCount(numWalkers), cellsPerWalker(numParams)
 {
     //allocate the first block

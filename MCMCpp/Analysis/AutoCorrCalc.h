@@ -89,25 +89,26 @@ private:
     void transferWalker(const IttType& start, const IttType& end, int paramNumber, int walkerNumber);
     void averageAutocovarianceFunctions(int walkersToSelect);
     
-    //General bookkeeping parameters
-    int paramCount; ///<stores the number of parameters per sample
-    int walkerCount; ///<stores the number of walkers in the chain
-    
-    //storage array for precalculated autocorrelation times
-    ParamType* acorrTimeList; ///<stores the list of computed autocorrelation times calculated by allAutoCorrTime
-    
     //general use random number generator stuff
     std::mt19937_64 engine;///<The base random number generator engine that is used for selecting walkers randomly
     std::normal_distribution<ParamType> normDist;///<The adapter that gives normally distributed real numbers with mean 0 and variance 1
     
+    Detail::AutoCov<ParamType> autoCovCalc; ///<Performs the calculation of the autocovariance function
+    
+    //storage array for precalculated autocorrelation times
+    ParamType* acorrTimeList; ///<stores the list of computed autocorrelation times calculated by allAutoCorrTime
+    
     //Parameters for calculation of autocorellations
     ParamType* acovFuncAvgArray = nullptr; ///<Stores the sum of the autocovariance functions as they are calculated for every walker in the chain
     ParamType* acovFuncArray = nullptr; ///<Stores the chain, and the autocovariance function that is calculated by the object
-    int acovSize = 0; ///<Stores the size of the autocovariance function arrays
     ParamType* chainAverages = nullptr; ///<Stores the computed averages of the chains selected for calculation
     int* randomWalkerIndices = nullptr; ///<Stores the array of randomly chosen walker indices
+    int acovSize = 0; ///<Stores the size of the autocovariance function arrays
     int windowScaling = 4; ///<Minimum number of autocorrelation times to be processed to consider the result correct
-    Detail::AutoCov<ParamType> autoCovCalc; ///<Performs the calculation of the autocovariance function
+
+    //General bookkeeping parameters
+    int paramCount; ///<stores the number of parameters per sample
+    int walkerCount; ///<stores the number of walkers in the chain
 };
 
 template<class ParamType>
