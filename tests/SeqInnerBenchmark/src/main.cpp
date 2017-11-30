@@ -1,8 +1,8 @@
 #include<iostream>
 #include"Movers/Diagnostic/SequenceMove.h"
 #include"EnsembleSampler.h"
-using MarkovChainMonteCarlo::EnsembleSampler;
-namespace Mover=MarkovChainMonteCarlo::Mover;
+using MCMC::EnsembleSampler;
+namespace Mover=MCMC::Mover;
 
 int main()
 {

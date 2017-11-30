@@ -3,9 +3,9 @@
 #include"Analysis/AutoCorrCalc.h"
 #include"EnsembleSampler.h"
 
-using MarkovChainMonteCarlo::EnsembleSampler;
-namespace Mover=MarkovChainMonteCarlo::Mover;
-namespace Analysis=MarkovChainMonteCarlo::Analysis;
+using MCMC::EnsembleSampler;
+namespace Mover=MCMC::Mover;
+namespace Analysis=MCMC::Analysis;
 
 int main()
 {
