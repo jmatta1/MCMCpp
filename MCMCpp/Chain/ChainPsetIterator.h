@@ -17,7 +17,7 @@
 // includes from MCMC
 #include"ChainBlock.h"
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 
 namespace Chain

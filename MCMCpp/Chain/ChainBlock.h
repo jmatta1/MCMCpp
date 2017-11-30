@@ -17,7 +17,7 @@
 // includes from other libraries
 // includes from MCMC
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 
 namespace Chain

@@ -21,7 +21,7 @@
 #include"../Chain/ChainStepIterator.h"
 #include"Detail/AutoCov.h"
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 namespace Analysis
 {

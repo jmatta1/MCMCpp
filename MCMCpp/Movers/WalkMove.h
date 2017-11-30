@@ -21,7 +21,7 @@
 #include"../Utility/GwDistribution.h"
 #include"../Walker/Walker.h"
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 namespace Mover
 {

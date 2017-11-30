@@ -20,7 +20,7 @@
 #include"../Utility/MultiSampler.h"
 
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 namespace Walker
 {

@@ -23,7 +23,7 @@
 #include"../Chain/Chain.h"
 
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 namespace Threading
 {
@@ -52,8 +52,8 @@ template<class ParamType, class EndOfStepAction>
 class RedBlackCtrler
 {
 public:
-    RedBlackCtrler(int numThreads, Chain::Chain<ParamType>& chainRef,
-                   EndOfStepAction* ptr = nullptr):threadCount(numThreads){}
+    RedBlackCtrler(int numThreads, Chain::Chain<ParamType>& chainRef, EndOfStepAction* ptr = nullptr):
+        threadCount(numThreads), lastThread(numThreads-1), chain(chainRef), stepAction(ptr){}
     
     //functions for the controller thread
     void controllerWaitForContinue();
@@ -66,6 +66,25 @@ public:
     
 private:
     int threadCount; ///<Number of worker threads
+    Chain::Chain<ParamType>& chain; ///<The chain reference for incrementing and getting itterators for the end of step action
+    EndOfStepAction* stepAction = nullptr; ///<Pointer to the end of step action object
+    
+    int stepsTaken = 0; ///<Number of saved steps taken in this sampling run
+    int stepsToTake; ///<Number of saved steps to be taken in this sampling run
+    int stepsSkipped = 0; ///<Number of steps skipped in this round of the sampling run
+    int stepsToSkip; ///<Number of steps to skip per round of the sampling run
+
+    MainStatus ctrlStatus; ///<Status for the controller thread
+    std::mutex ctrlMutex; ///<Mutex for the controller thread
+    std::condition_variable ctrlWait; ///<Wait condition for the controller thread
+    
+    WorkerStatus wrkrStatus; ///<Status/command for the worker threads
+    int numWorkersAtMidStep = 0; ///<Number of workers that are waiting at the mid step point
+    std::mutex midStepMutex; ///<Mutex for workers to wait at the mid step point
+    std::condition_variable midStepWait; ///<condition variable for workers to wait at the mid step point
+    int numWorkersAtMainWait = 0; ///<Number of workers at the main wait location
+    std::mutex wrkrMutex; ///<Mutex for workers to wait at the beginning / end of a step
+    std::condition_variable wrkrWait; ///<Wait condition variable to hold workers at the beginning / end of a step
 };
 
 }
