@@ -22,7 +22,7 @@
 #include"Utility/NoAction.h"
 #include"Utility/UserOjbectsTest.h"
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 /*!
  * @class EnsembleSampler

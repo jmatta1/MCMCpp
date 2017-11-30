@@ -19,7 +19,7 @@
 #include"ChainPsetIterator.h"
 #include"ChainStepIterator.h"
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 
 namespace Chain

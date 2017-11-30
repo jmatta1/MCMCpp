@@ -17,7 +17,7 @@
 // includes from MCMC
 #include"../Chain/ChainStepIterator.h"
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 
 namespace Utility

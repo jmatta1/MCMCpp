@@ -23,7 +23,7 @@
 #include"../../Utility/GwDistribution.h"
 #include"../../Utility/UserOjbectsTest.h"
 
-namespace MarkovChainMonteCarlo
+namespace MCMC
 {
 namespace Mover
 {
