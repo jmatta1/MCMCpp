@@ -13,6 +13,8 @@
 #define MCMC_CHAIN_CHAINBLOCK_H
 // includes for C system headers
 // includes for C++ system headers
+#include<stdlib.h>//needed for aligned allocation
+#include<cstring>//for memcpy
 #include<algorithm>
 #include<iostream>
 // includes from other libraries
@@ -27,6 +29,7 @@ namespace Chain
 namespace Detail
 {
 static const int BlockSize = 1000; ///<Number of steps to store in one chain block
+static const unsigned int AlignmentLength = 64;///<Stores the memory boundary to force memory alignment to, 64 is sufficient for cache lines and up to the 256-bit AVX instructions, 128 will handle AVX-512 instructions as well
 }
 
 /**
@@ -53,7 +56,7 @@ public:
      * \param numCellsPerWalker Number of parameters plus overhead that the walker needs
      */
     ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker);
-    ~ChainBlock(){delete[] chainArray;}
+    ~ChainBlock(){free(chainArray);}
     
     /*!
      * \brief Deleted copy constructor
@@ -111,7 +114,10 @@ private:
 
 template <class ParamType>
 ChainBlock<ParamType>::ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker):
-    lastBlock(prev), chainArray(new ParamType[Detail::BlockSize*numCellsPerWalker*numWalkers]),
+    lastBlock(prev),
+    chainArray(reinterpret_cast<ParamType*>(aligned_alloc(Detail::AlignmentLength,
+                                                          sizeof(ParamType)*Detail::BlockSize*numCellsPerWalker*numWalkers)
+                                            )),
     walkerCount(numWalkers), cellsPerWalker(numCellsPerWalker),
     cellsPerStep(numWalkers*numCellsPerWalker) {}
 
@@ -119,14 +125,16 @@ template <class ParamType>
 void ChainBlock<ParamType>::storeWalker(int walkerNum, ParamType* walkerData)
 {
     ParamType* offset = chainArray + (firstEmptyStep*cellsPerStep + walkerNum*cellsPerWalker);
-    std::copy(walkerData, (walkerData+cellsPerWalker), offset);
+    //std::copy(walkerData, (walkerData+cellsPerWalker), offset);
+    std::memcpy(offset, walkerData, cellsPerWalker*sizeof(ParamType));
 }
 
 template <class ParamType>
 void ChainBlock<ParamType>::copyWalkerSet(ParamType* walkerData)
 {
     ParamType* offset = chainArray + (firstEmptyStep*cellsPerStep);
-    std::copy(walkerData, (walkerData+(walkerCount*cellsPerWalker)), offset);
+    //std::copy(walkerData, (walkerData+(walkerCount*cellsPerWalker)), offset);
+    std::memcpy(offset, walkerData, walkerCount*cellsPerWalker*sizeof(ParamType));
 }
 
 }
