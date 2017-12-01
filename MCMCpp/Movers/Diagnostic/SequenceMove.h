@@ -74,8 +74,9 @@ public:
     SequenceMove<ParamType>& operator=(const SequenceMove<ParamType>& rhs) = delete;
     
     /*!
-     * \brief setPrngSeed Sets the seed of the underlying prng, does nothing for this walker
+     * \brief setPrngSeed Sets the seed and stream number of the underlying prng
      * \param seed The seed for the prng
+     * \param stream The stream number for the prng
      */
     void setPrng(long long seed, long long stream){}
     

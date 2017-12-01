@@ -74,10 +74,11 @@ public:
     }
     
     /*!
-     * \brief setPrngSeed Sets the seed of the underlying prng
+     * \brief setPrngSeed Sets the seed and stream number of the underlying prng
      * \param seed The seed for the prng
+     * \param stream The stream number for the prng
      */
-    void setPrngSeed(long long seed){prng.setPrngSeed(seed);}
+    void setPrng(long long seed, long long stream){prng.setPrng(seed, stream);}
     
     /*!
      * \brief getProposal Takes the curent walker, a set of walkers to draw a target from and calculates, assumes that
