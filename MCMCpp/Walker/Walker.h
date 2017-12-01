@@ -86,12 +86,22 @@ public:
     }
     
     /*!
-     * \brief jumpToNewPoint Tells the walker there has been a new point accepted and that it should jump to it
+     * \brief jumpToNewPoint Tells the walker there has been a new point accepted and that it should jump to it, this version copies values
      * \param newPos The new point for the walker
      * \param auxVal the value of the auxilliary data to be stored with the new position
      * \param storePoint If false, do not store the new point in the Markov chain
      */
     void jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint=true);
+    
+    /*!
+     * \brief jumpToNewPoint Tells the walker there has been a new point accepted and that it should jump to it, this version swaps pointers with the mover
+     * \param newPos The new point for the walker
+     * \param auxVal the value of the auxilliary data to be stored with the new position
+     * \param storePoint If false, do not store the new point in the Markov chain
+     * 
+     * \note If you use this, your newPos pointer needs to have been allocated using the c++ new[] operator, not calloc, malloc, or aligned_alloc
+     */
+    void jumpToNewPointSwap(ParamType*& newPos, const ParamType& auxVal, bool storePoint=true);
     
     /*!
      * \brief jumpToNewPoint Tells the walker that the step to this point has been rejected and that it should stay at the current point
@@ -143,6 +153,15 @@ template <class ParamType>
 void Walker<ParamType>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint)
 {
     std::copy(newPos, (newPos+numParams), currState);
+    auxData = auxVal;
+    ++acceptedSteps;
+    if(storePoint) markovChain->storeWalker(walkerNumber, currState);
+}
+
+template <class ParamType>
+void Walker<ParamType>::jumpToNewPointSwap(ParamType* &newPos, const ParamType& auxVal, bool storePoint)
+{
+    std::swap(currState, newPos);
     auxData = auxVal;
     ++acceptedSteps;
     if(storePoint) markovChain->storeWalker(walkerNumber, currState);

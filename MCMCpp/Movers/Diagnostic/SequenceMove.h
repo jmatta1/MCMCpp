@@ -94,7 +94,8 @@ public:
         {
             proposal[i] = (currState[i] + stepSizes.get()[i]);
         }
-        currWalker.jumpToNewPoint(proposal, static_cast<ParamType>(0), storePoint);
+        //currWalker.jumpToNewPoint(proposal, static_cast<ParamType>(0), storePoint);
+        currWalker.jumpToNewPointSwap(proposal, static_cast<ParamType>(0), storePoint);
     }
 
     /*!

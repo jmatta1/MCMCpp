@@ -98,7 +98,8 @@ public:
         ParamType logProbDiff = (newProb - currWalker.getCurrAuxData());
         if(prng.getNegExponentialReal() < logProbDiff)
         {
-            currWalker.jumpToNewPoint(proposal, newProb, storePoint);
+            //currWalker.jumpToNewPoint(proposal, newProb, storePoint);
+            currWalker.jumpToNewPointSwap(proposal, auxVal, storePoint);
         }
         else
         {
