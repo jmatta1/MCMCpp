@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<stdlib.h>//needef for aligned allocation
+#include<algorithm>
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
 // includes from other libraries
@@ -128,10 +129,10 @@ private:
 template<class ParamType>
 AutoCov<ParamType>::~AutoCov()
 {
-    if(negRootsOfUnity != nullptr) free(negRootsOfUnity);
-    if(posRootsOfUnity != nullptr) free(posRootsOfUnity);
-    if(firstTransform != nullptr) free(firstTransform);
-    if(secondTransform != nullptr) free(secondTransform);
+    if(negRootsOfUnity != nullptr) delete[] negRootsOfUnity;
+    if(posRootsOfUnity != nullptr) delete[] posRootsOfUnity;
+    if(firstTransform != nullptr) delete[] firstTransform;
+    if(secondTransform != nullptr) delete[] secondTransform;
 }
 
 template<class ParamType>
@@ -149,10 +150,8 @@ template<class ParamType>
 void AutoCov<ParamType>::normalizeAndCopyAutoCov(ParamType* output, int chainLength)
 {
     ParamType normValue = (static_cast<ParamType>(1)/secondTransform[0].real());
-    for(int i=0; i<chainLength; ++i)
-    {
-        output[i] = (normValue * secondTransform[i].real());
-    }
+    std::transform(secondTransform, secondTransform+chainLength, output,
+                   [&normValue](const std::complex<ParamType>& v) -> ParamType {return normValue*v.real();});
 }
 
 template<class ParamType>
@@ -246,14 +245,14 @@ void AutoCov<ParamType>::checkSizeAndHandleChanges(int chainLength)
     {
         lgFftSize = tempLgFftSize;
         fftSize = (1 << lgFftSize);
-        if(negRootsOfUnity != nullptr) free(negRootsOfUnity);
-        if(posRootsOfUnity != nullptr) free(posRootsOfUnity);
-        if(firstTransform != nullptr) free(firstTransform);
-        if(secondTransform != nullptr) free(secondTransform);
-        negRootsOfUnity = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize/2));
-        posRootsOfUnity = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize/2));
-        firstTransform = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize));
-        secondTransform = reinterpret_cast<std::complex<ParamType>*>(aligned_alloc(AlignmentLength, sizeof(std::complex<ParamType>)*fftSize));
+        if(negRootsOfUnity != nullptr) delete[] negRootsOfUnity;
+        if(posRootsOfUnity != nullptr) delete[] posRootsOfUnity;
+        if(firstTransform != nullptr) delete[] firstTransform;
+        if(secondTransform != nullptr) delete[] secondTransform;
+        negRootsOfUnity = new std::complex<ParamType>[fftSize/2];
+        posRootsOfUnity = new std::complex<ParamType>[fftSize/2];
+        firstTransform = new std::complex<ParamType>[fftSize];
+        secondTransform = new std::complex<ParamType>[fftSize];
         calculateRootsOfUnity();
     }
     

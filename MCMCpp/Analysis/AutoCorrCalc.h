@@ -15,6 +15,7 @@
 // includes for C++ system headers
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
+#include<algorithm>//used for
 #include<random>//needed for random number generator
 // includes from other libraries
 // includes from MCMC
@@ -46,7 +47,7 @@ public:
      */
     AutoCorrCalc(int numParams, int numWalkers) : paramCount(numParams), walkerCount(numWalkers)
     {acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
-        chainAverages = new ParamType[paramCount*numWalkers];  for(int i=0; i<paramCount; ++i) acorrTimeList[i] = 0.0;}
+        chainAverages = new ParamType[paramCount*numWalkers];  std::fill_n(acorrTimeList, acorrTimeList+paramCount, static_cast<ParamType>(0));}
     
     ~AutoCorrCalc()
     {delete[] acorrTimeList; delete[] randomWalkerIndices; delete[] chainAverages; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
@@ -123,8 +124,9 @@ void AutoCorrCalc<ParamType>::calcAutoCorrTimes(const IttType& start, const IttT
     calculateChainAverages(start, end, numSamples, numWalkersToUse);
     //do the first one seperately to force the setting of the walker indice array
     acorrTimeList[0] = sampleParamAutoCorrTimes(start, end, numSamples, 0, numWalkersToUse);
+    //simply apply the more limited single parameter autocorrelation time calculator multiple times, storing the result
     for(int i=1; i< paramCount; ++i)
-    {//simply apply the more limited autocorrelation time calculator multiple times, storing the result
+    {
         acorrTimeList[i] = sampleParamAutoCorrTimes(start, end, numSamples, i, numWalkersToUse);
     }
 }
@@ -133,10 +135,7 @@ template<class ParamType>
 ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int paramNumber, int walkersToSelect)
 {
     //clear the autocovariance function average array
-    for(int i=0; i<acovSize; ++i)
-    {
-        acovFuncAvgArray[i] = static_cast<ParamType>(0);
-    }
+    std::fill_n(acovFuncAvgArray, acovSize, static_cast<ParamType>(0));
     
     //now calculate the autocovariance function for every selected walker and add it to the average
     for(int i=0; i<walkersToSelect; ++i)
@@ -170,10 +169,8 @@ template<class ParamType>
 void AutoCorrCalc<ParamType>::averageAutocovarianceFunctions(int walkersToSelect)
 {
     ParamType normVal = (static_cast<ParamType>(1)/(static_cast<ParamType>(walkersToSelect)));
-    for(int i=0; i<acovSize; ++i)
-    {
-        acovFuncAvgArray[i] += (normVal*(acovFuncArray[i]));
-    }
+    std::transform(acovFuncArray, acovFuncArray+acovSize, acovFuncAvgArray, acovFuncAvgArray,
+                   [&normVal] (const ParamType& acv, const ParamType& avg) -> ParamType {return (avg+(normVal*acv));});
 }
 
 template<class ParamType>
@@ -181,11 +178,9 @@ void AutoCorrCalc<ParamType>::transferWalker(const IttType& start, const IttType
 {
     int index = 0;
     int offset = (walkerNumber*paramCount+paramNumber);
-    for(IttType itt(start); itt != end; ++itt)
-    {
-        acovFuncArray[index] += (*itt)[offset];
-        ++index;
-    }
+    IttType itt(start);
+    std::transform(itt, end, acovFuncArray, acovFuncArray,
+                   [&offset](ParamType* ptr, const ParamType& acv) -> ParamType {return (ptr[offset]+acv);});
 }
 
 template<class ParamType>
