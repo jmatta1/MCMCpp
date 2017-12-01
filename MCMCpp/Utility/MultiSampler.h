@@ -43,7 +43,7 @@ public:
      * \brief MultiSampler Constructs a multisampler with a given seed
      * \param seed The 64 bit integer that will serve the engine as a seed
      */
-    MultiSampler(long long seed=0):engine(seed),realDist(), normDist(){}
+    MultiSampler(long long seed=0):engine(seed), realDist(), expDist(), normDist(), customDist(){}
     ~MultiSampler(){}
     
     /*!

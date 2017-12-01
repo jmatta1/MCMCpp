@@ -173,8 +173,6 @@ private:
     int stepCount = 0; ///<Number of steps stored so far
 };
 
-typedef unsigned long long ULL;
-
 template <class ParamType>
 Chain<ParamType>::Chain(int numWalkers, int numParams, unsigned long long maxSize):
     maxBlocks(maxSize/(sizeof(ParamType)*numParams*Detail::BlockSize*numWalkers)),

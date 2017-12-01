@@ -77,6 +77,11 @@ public:
     }
     
     /*!
+     * \brief Deleted assignment operator
+     */
+    WalkMove<ParamType>& operator=(const WalkMove<ParamType>& rhs) = delete;
+    
+    /*!
      * \brief setPrngSeed Sets the seed and stream number of the underlying prng
      * \param seed The seed for the prng
      * \param stream The stream number for the prng

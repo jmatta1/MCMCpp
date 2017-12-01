@@ -41,6 +41,7 @@ template <class ParamType>
 class AutoRegressiveMove
 {
 public:
+    
     typedef Walker::Walker<ParamType> WalkType;
     
     /*!
@@ -50,10 +51,12 @@ public:
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
     AutoRegressiveMove(int numParams, const ParamType* offsets, const ParamType* phiValues, const ParamType* paramVariance):
-        paramCount(numParams), proposal(new ParamType[numParams]),
         phis(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
         offs(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
-        prngStdDev(new ParamType[numParams], Utility::ArrayDeleter<ParamType>())
+        prngStdDev(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
+        proposal(new ParamType[numParams]),
+        prng(0), //doesn't really matter, just stops the compiler warnings for Weffc++
+        paramCount(numParams)
     {
         for(int i=0; i<paramCount; ++i)
         {
@@ -70,8 +73,9 @@ public:
      * \param rhs Original mover to be copied
      */
     AutoRegressiveMove(const AutoRegressiveMove<ParamType>& rhs):
-        paramCount(rhs.paramCount), proposal(new ParamType[rhs.paramCount]),
-        phis(rhs.phis), offs(rhs.offs), prngStdDev(rhs.prngStdDev){}
+        phis(rhs.phis), offs(rhs.offs), prngStdDev(rhs.prngStdDev),
+        proposal(new ParamType[rhs.paramCount]), prng(rhs.prng), paramCount(rhs.paramCount)
+        {}
 
     /*!
      * \brief Deleted assignment operator
@@ -124,12 +128,12 @@ public:
     }
     
 private:
-    ParamType* proposal; ///Holds the new parameter set for the walker
-    int paramCount; ///<Holds the total number of parameters
     std::shared_ptr<ParamType> phis; ///<Holds the array of recursion parameters, doesn't need to be replicated
     std::shared_ptr<ParamType> offs; ///<Holds the array of offsets to the AR(1) model), doesn't need to be replicated
     std::shared_ptr<ParamType> prngStdDev; ///<Holds the standard deviation of each parameters needed normal distributed random number, doesn't need to be replicated
+    ParamType* proposal; ///Holds the new parameter set for the walker
     Utility::MultiSampler<ParamType, Utility::GwDistribution<ParamType, 2, 1> > prng;  ///<The random number generator with an unused distribution transformer
+    int paramCount; ///<Holds the total number of parameters
 };
 }
 }

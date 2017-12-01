@@ -46,7 +46,9 @@ public:
      * \param numParams The number of parameters in each sample
      * \param numWalkers The number of walkers in the ensemble
      */
-    AutoCorrCalc(int numParams, int numWalkers) : engine(std::random_device()()), paramCount(numParams), walkerCount(numWalkers)
+    AutoCorrCalc(int numParams, int numWalkers) :
+        engine(std::random_device()()), normDist(static_cast<ParamType>(0),static_cast<ParamType>(1)),
+        autoCovCalc(), paramCount(numParams), walkerCount(numWalkers)
     {   acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
         chainAverages = new ParamType[paramCount*numWalkers];  std::fill_n(acorrTimeList, paramCount, static_cast<ParamType>(0));}
     
@@ -54,6 +56,16 @@ public:
     {delete[] acorrTimeList; delete[] randomWalkerIndices; delete[] chainAverages; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
         if(acovFuncArray!=nullptr) delete[] acovFuncArray;}
 
+    /*!
+     * \brief Deleted copy constructor
+     */
+    AutoCorrCalc(const AutoCorrCalc<ParamType>& rhs) = delete;
+    
+    /*!
+     * \brief Deleted assignment operator
+     */
+    AutoCorrCalc<ParamType>& operator=(const AutoCorrCalc<ParamType>& rhs) = delete;
+    
     /*!
      * \brief calcAutoCorrTimes Calculates the auto correlation time for each parameter using the full set of walkers
      * \param start The iterator pointing at the start of the time series
@@ -98,7 +110,7 @@ private:
     Detail::AutoCov<ParamType> autoCovCalc; ///<Performs the calculation of the autocovariance function
     
     //storage array for precalculated autocorrelation times
-    ParamType* acorrTimeList; ///<stores the list of computed autocorrelation times calculated by allAutoCorrTime
+    ParamType* acorrTimeList = nullptr; ///<stores the list of computed autocorrelation times calculated by allAutoCorrTime
     
     //Parameters for calculation of autocorellations
     ParamType* acovFuncAvgArray = nullptr; ///<Stores the sum of the autocovariance functions as they are calculated for every walker in the chain
@@ -177,7 +189,6 @@ void AutoCorrCalc<ParamType>::averageAutocovarianceFunctions(int walkersToSelect
 template<class ParamType>
 void AutoCorrCalc<ParamType>::transferWalker(const IttType& start, const IttType& end, int paramNumber, int walkerNumber)
 {
-    int index = 0;
     int offset = (walkerNumber*paramCount+paramNumber);
     IttType itt(start);
     std::transform(itt, end, acovFuncArray, acovFuncArray,

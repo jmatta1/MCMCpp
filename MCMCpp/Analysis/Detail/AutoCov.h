@@ -50,6 +50,16 @@ public:
     ~AutoCov();
     
     /*!
+     * \brief Deleted copy constructor
+     */
+    AutoCov(const AutoCov<ParamType>& rhs) = delete;
+    
+    /*!
+     * \brief Deleted assignment operator
+     */
+    AutoCov<ParamType>& operator=(const AutoCov<ParamType>& rhs) = delete;
+    
+    /*!
      * \brief calcNormAutoCov Calculates the normalized autocovariance for a centered chain and places it in the input
      * \param centeredChain Pointer to the start of an array containing the chain which will also contain the output when finished
      * \param avg Average value of the chain
