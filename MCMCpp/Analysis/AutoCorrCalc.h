@@ -16,8 +16,9 @@
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
 #include<algorithm>//used for
-#include<random>//needed for random number generator
+#include<random>//needed for normal distribution
 // includes from other libraries
+#include"../Utility/pcg-cpp/include/pcg_random.hpp"
 // includes from MCMC
 #include"../Chain/ChainStepIterator.h"
 #include"Detail/AutoCov.h"
@@ -45,9 +46,9 @@ public:
      * \param numParams The number of parameters in each sample
      * \param numWalkers The number of walkers in the ensemble
      */
-    AutoCorrCalc(int numParams, int numWalkers) : paramCount(numParams), walkerCount(numWalkers)
-    {acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
-        chainAverages = new ParamType[paramCount*numWalkers];  std::fill_n(acorrTimeList, acorrTimeList+paramCount, static_cast<ParamType>(0));}
+    AutoCorrCalc(int numParams, int numWalkers) : engine(std::random_device()()), paramCount(numParams), walkerCount(numWalkers)
+    {   acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
+        chainAverages = new ParamType[paramCount*numWalkers];  std::fill_n(acorrTimeList, paramCount, static_cast<ParamType>(0));}
     
     ~AutoCorrCalc()
     {delete[] acorrTimeList; delete[] randomWalkerIndices; delete[] chainAverages; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
@@ -91,7 +92,7 @@ private:
     void averageAutocovarianceFunctions(int walkersToSelect);
     
     //general use random number generator stuff
-    std::mt19937_64 engine;///<The base random number generator engine that is used for selecting walkers randomly
+    pcg32 engine;///<The base random number generator engine that is used for selecting walkers randomly
     std::normal_distribution<ParamType> normDist;///<The adapter that gives normally distributed real numbers with mean 0 and variance 1
     
     Detail::AutoCov<ParamType> autoCovCalc; ///<Performs the calculation of the autocovariance function
