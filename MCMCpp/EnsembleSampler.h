@@ -119,6 +119,12 @@ public:
     void setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0);
     
     /*!
+     * \brief getStoredSteps retrieves the number of steps that are stored in the chain
+     * \return The number of steps stored in the chain
+     */
+    int getStoredSteps(){return storedSteps;}
+    
+    /*!
      * \brief getParamSetIttBegin Gets an iterator pointing to the beginning of the chain
      * that traverses the chain individual parameter set by individual parameter set. Incrementing
      * the iterator gets you the parameter set of the next walker, not paying attention to which parameter set
@@ -260,8 +266,7 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(bool use
     subSampling=useSubSampling;
     subSamplingInterval = subSamplingInt;
     markovChain.resetChainForSubSampling(burnIn, subSamplingInt);
-    int tempSteps = (storedSteps - burnIn);
-    storedSteps = (tempSteps/subSamplingInterval);
+    storedSteps = markovChain.getStoredStepCount();
 }
 
 template<class ParamType, class Mover, class PostStepAction>
