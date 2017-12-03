@@ -45,7 +45,7 @@ int main()
     auto endItt = sampler.getStepIttEnd();
     
     //num steps +1 to include the init location
-    acCalc.calcAutoCorrTimes(startItt, endItt, numSteps+1);
+    acCalc.calcAutoCorrTimes(startItt, endItt, sampler.getStoredSteps());
     std::cout<<"P0 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(0)<<" Actual:   9"<<std::endl;
     std::cout<<"P1 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(1)<<" Actual:  20"<<std::endl;
     std::cout<<"P2 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(2)<<" Actual:  30"<<std::endl;
