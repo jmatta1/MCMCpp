@@ -86,6 +86,14 @@ public:
     }
     
     /*!
+     * \brief storeCurrentPoint Stores the walker's current position into the chain, no questions asked
+     */
+    void storeCurrentPoint()
+    {
+        markovChain->storeWalker(walkerNumber, currState);
+    }
+    
+    /*!
      * \brief jumpToNewPoint Tells the walker there has been a new point accepted and that it should jump to it, this version copies values
      * \param newPos The new point for the walker
      * \param auxVal the value of the auxilliary data to be stored with the new position
