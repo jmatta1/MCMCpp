@@ -67,7 +67,7 @@ public:
                     unsigned long long maxChainSizeBytes=2147483648, PostStepAction* stepAct=nullptr);
     
     /*!
-     * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
+     * @brief ~EnsembleSampler Delete the walker lists then allow the rest to die normally
      */
     ~EnsembleSampler(){delete[] walkerRedSet; delete[] walkerBlkSet;}
     
@@ -86,14 +86,22 @@ public:
      * \param positions An array of floating point types with length numParameters*numWalker representing a starting point for every walker
      * \param auxValues An array of floating point types with length numWalker representing the auxillary data for every walker
      */
-    void setInitialWalkerPos(ParamType* positions, ParamType* auxValues, bool storeInit=true);
+    void setInitialWalkerPos(ParamType* positions, ParamType* auxValues);
+    
+    /*!
+     * \brief storeWalkerPositions Takes the current position for each walker and stores it into the chain
+     * 
+     * This is useful for if you have reset the chain but wish to use the current
+     * position that each walker is at
+     */
+    void storeCurrentWalkerPositions();
     
     /*!
      * \brief runMCMC Runs the Markov chain Monte Carlo for a set number of samples
      * \param numSteps The number of steps to store
      * \return True if the sampling went to the end before the max chain size was reached, false otherwise
      * 
-    a * In normal sampling mode, this function will run the ensemble for numSamples per walker
+     * In normal sampling mode, this function will run the ensemble for numSamples per walker
      * In subSampling mode, this function will run the ensemble numSamples*subSamplingInterval and store numSamples
      */
     bool runMCMC(int numSteps);
@@ -192,12 +200,24 @@ EnsembleSampler(int randSeed, int numWalker, int numParameter, const Mover& move
 }
 
 template<class ParamType, class Mover, class PostStepAction>
-void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(ParamType* positions, ParamType* auxValues, bool storeInit)
+void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(ParamType* positions, ParamType* auxValues)
 {
     for(int i=0; i<walkersPerSet; ++i)
     {
-        walkerRedSet[i].setFirstPoint(positions+(i*numParams), auxValues[i], storeInit);
-        walkerBlkSet[i].setFirstPoint(positions+((i+walkersPerSet)*numParams), auxValues[(i+walkersPerSet)], storeInit);
+        walkerRedSet[i].setFirstPoint(positions+(i*numParams), auxValues[i], true);
+        walkerBlkSet[i].setFirstPoint(positions+((i+walkersPerSet)*numParams), auxValues[(i+walkersPerSet)], true);
+    }
+    ++storedSteps;
+    markovChain.incrementChainStep();
+}
+
+template<class ParamType, class Mover, class PostStepAction>
+void EnsembleSampler<ParamType, Mover, PostStepAction>::storeCurrentWalkerPositions()
+{
+    for(int i=0; i<walkersPerSet; ++i)
+    {
+        walkerRedSet[i].storeCurrentPoint();
+        walkerBlkSet[i].storeCurrentPoint();
     }
     ++storedSteps;
     markovChain.incrementChainStep();
@@ -206,8 +226,8 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(Para
 template<class ParamType, class Mover, class PostStepAction>
 ParamType EnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptanceFraction()
 {
-    unsigned long long accepted;
-    unsigned long long total;
+    unsigned long long accepted = 0ULL;
+    unsigned long long total = 0ULL;
     for(int i=0; i<walkersPerSet; ++i)
     {
         accepted += walkerRedSet[i].getAcceptedProposals();
@@ -262,6 +282,8 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::reset()
 template<class ParamType, class Mover, class PostStepAction>
 void EnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(bool useSubSampling, int subSamplingInt, int burnIn)
 {
+    assert(subSamplingInt>0);
+    assert(burnIn>=0);
     subSampling=useSubSampling;
     subSamplingInterval = subSamplingInt;
     markovChain.resetChainForSubSampling(burnIn, subSamplingInt);
