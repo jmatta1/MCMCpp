@@ -54,7 +54,7 @@ public:
      * \param mvr The mover class that will be copied to become the mover for this particular thread
      * \param ctrl A reference to the RedBlack controller (which will be stored)
      */
-    RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, MoverType& mvr, ControllerType& ctrl);
+    RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, const MoverType& mvr, ControllerType& ctrl);
     
     /*!
      * \brief operator() The entry point for the thread, carries out all the threads basic tasks
@@ -87,7 +87,8 @@ private:
 };
 
 template<class ParamType, class MoverType, class EndOfStepAction>
-RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::RedBlkUpdater(int runNum, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, MoverType& mvr, ControllerType& ctrl):
+RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::
+RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, const MoverType& mvr, ControllerType& ctrl):
     mover(mvr), controller(ctrl)
 {
     std::tie(redWalkers, blkWalkers, redSize, blkSize) = walkerSets;

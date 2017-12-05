@@ -51,9 +51,17 @@ template<class ParamType, class EndOfStepAction>
 class RedBlackCtrler
 {
 public:
+    /*!
+     * \brief RedBlackCtrler Constructor for the controller class that acts as the central switchyard for the worker threads
+     * \param numThreads the number of threads to be controlled
+     * \param chainRef A reference to the chain object
+     * \param ptr A pointer to the EndOfStepAction class, nullptr if there will be no end of step action
+     */
     RedBlackCtrler(int numThreads, Chain::Chain<ParamType>& chainRef, EndOfStepAction* ptr = nullptr):
-        chain(chainRef), stepAction(ptr), threadCount(numThreads), ctrlMutex(),
-        ctrlWait(), midStepWait(), wrkrMutex(), wrkrWait(){}
+        chain(chainRef), stepAction(ptr), threadCount(numThreads), ctrlStatus(MainStatus::Continue),
+        ctrlMutex(), ctrlWait(), wrkrStatus(WorkerStatus::Wait), savePoints(true),
+        numWorkersAtMainWait(0), wrkrMutex(), wrkrWait(), wrkrTerm(0), midStepWait(),
+        endStepWait(){}
     
     //functions for the controller thread
     /*!
@@ -62,6 +70,12 @@ public:
      * \param skipPoints the number of points to skip before saving a point to the chain
      */
     void runSampling(int numSteps, int skipPoints=0);
+    
+    /*!
+     * \brief samplingComplete Returns true if the requested number of samples has been taken, otherwise false
+     * \return True if the number of steps taken is equal to the number of steps requested, false otherwise
+     */
+    bool samplingComplete(){return (stepsTaken == stepsToTake);}
     
     /*!
      * \brief getNumWorkersWaiting returns the number of worker threads waiting for work
@@ -121,16 +135,16 @@ private:
     int stepsToTake = 0; ///<Number of saved steps to be taken in this sampling run, set at start of run by control thread
     int stepsSkipped = 0; ///<Number of steps skipped in this round of the sampling run
     int stepsToSkip = 0; ///<Number of steps to skip per round of the sampling run, set at start of run by control thread
-
+    
     //Main thread control
-    std::atomic<MainStatus> ctrlStatus = MainStatus::Continue; ///<Status for the controller thread
+    std::atomic<MainStatus> ctrlStatus; ///<Status for the controller thread
     std::mutex ctrlMutex; ///<Mutex for the controller thread
     std::condition_variable ctrlWait; ///<Wait condition for the controller thread
     
     //worker control
-    std::atomic<WorkerStatus> wrkrStatus = WorkerStatus::Wait; ///<Status/command for the worker threads
-    std::atomic_bool savePoints = true; ///<Whether or not worker threads should tell their walkers to save this step
-    std::atomic_int numWorkersAtMainWait = 0; ///<Number of workers at the main wait location, queryable from the outside, so it is atomic
+    std::atomic<WorkerStatus> wrkrStatus; ///<Status/command for the worker threads
+    std::atomic_bool savePoints; ///<Whether or not worker threads should tell their walkers to save this step
+    std::atomic_int numWorkersAtMainWait; ///<Number of workers at the main wait location, queryable from the outside, so it is atomic
     std::mutex wrkrMutex; ///<Mutex for workers to wait at the beginning / end of a step
     std::condition_variable wrkrWait; ///<Wait condition variable to hold workers when they are not stepping
     std::atomic_int wrkrTerm = 0;
@@ -161,8 +175,8 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
 {
     //Check for critical errors
     //Where Either the number of steps to sample or the number of points to skip was less than 1
-    assert(numSteps <= 0);
-    assert(skipPoints <= 0);
+    assert(numSteps > 0);
+    assert(skipPoints >= 0);
     //lock the control thread mutex
     std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
     
@@ -247,8 +261,11 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
         bool endOfSampling = false;
         //lock the control mutex to prevent unforseen races, this should be basicly contention free and thus fast
         std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
-        //first increment the chain
-        chain.incrementChainStep();
+        //first increment the chain, if we have reached the max memory allowable for the chain, declare sampling at an end
+        if(Chain::IncrementStatus::EndOfChain == chain.incrementChainStep())
+        {
+            endOfSampling = true;
+        }
         //now call the post step action if there is one
         if(stepAction != nullptr)
         {
