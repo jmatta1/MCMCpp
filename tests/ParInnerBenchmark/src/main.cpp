@@ -1,7 +1,7 @@
 #include<iostream>
 #include"Movers/Diagnostic/SequenceMove.h"
-#include"EnsembleSampler.h"
-using MCMC::EnsembleSampler;
+#include"ParallelEnsembleSampler.h"
+using MCMC::ParallelEnsembleSampler;
 namespace Mover=MCMC::Mover;
 
 int main()
@@ -15,7 +15,11 @@ int main()
     std::cout<<"Building initial mover"<<std::endl;
     Mover::SequenceMove<double> mover(numParams, stepSize);
     
-    std::cout<<"Setting initial values"<<std::endl;
+    std::cout<<"Building sampler"<<std::endl;
+    //give the sampler a size larger than normal in order to accomodate the full chain size
+    ParallelEnsembleSampler<double, Mover::SequenceMove<double> > sampler(runNumber, 3, numWalkers, numParams, mover, 3300000000);
+    
+    std::cout<<"Getting initial values"<<std::endl;
     double* initVals = new double[numWalkers*numParams];
     double* auxVals = new double[numWalkers];
     for(int i=0; i<numWalkers; ++i)
@@ -26,10 +30,6 @@ int main()
             initVals[i*numParams+j] = 0.0;
         }
     }
-    
-    std::cout<<"Building sampler"<<std::endl;
-    //give the sampler a size larger than normal in order to accomodate the full chain size
-    EnsembleSampler<double, Mover::SequenceMove<double> > sampler(runNumber, numWalkers, numParams, mover, 3300000000);
     
     std::cout<<"Setting initial values"<<std::endl;
     sampler.setInitialWalkerPos(initVals, auxVals);
