@@ -13,12 +13,14 @@ CMakeLists.txt.user
 # ignore executables built in the testing and example codes
 acTest
 seqBenchmark
+parBenchmark
 
 # ignore build directories
 build
 
-# ignore callgrind output
+# ignore valgrind related stuff
 callgrind.out.*
+test.cfg
 
 # ignore notes files
 callgrind.txt
