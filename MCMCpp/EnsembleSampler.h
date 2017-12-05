@@ -14,7 +14,6 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
-#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"Chain/Chain.h"
