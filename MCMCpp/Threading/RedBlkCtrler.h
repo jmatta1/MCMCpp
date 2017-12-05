@@ -36,10 +36,6 @@ enum class WorkerStatus {ProcessRed,  ///<Tells the threads to process the red b
                          Terminate ///< Worker thread cease execution state
                         };
 
-enum class WorkerWriteMode {SkipPoint, ///<Tells the threads to skip saving this point when they jump
-                            SavePoint, ///<Tells the threads to save this point to the chain
-                           };
-
 enum class MainStatus {Wait, ///<If the main thread sees this status, it waits to be woken
                        Continue ///<If the main thread sees this, it resumes its flow
                       };
@@ -56,8 +52,8 @@ class RedBlackCtrler
 {
 public:
     RedBlackCtrler(int numThreads, Chain::Chain<ParamType>& chainRef, EndOfStepAction* ptr = nullptr):
-        chain(chainRef), stepAction(ptr), threadCount(numThreads), lastThread(numThreads-1), ctrlMutex(),
-        ctrlWait(), midStepMutex(), midStepWait(), wrkrMutex(), wrkrWait(){}
+        chain(chainRef), stepAction(ptr), threadCount(numThreads), ctrlMutex(),
+        ctrlWait(), midStepWait(), wrkrMutex(), wrkrWait(){}
     
     //functions for the controller thread
     /*!
@@ -73,7 +69,16 @@ public:
      */
     int getNumWorkersWaiting(){return numWorkersAtMainWait.load();}
     
+    /*!
+     * \brief terminateWorkers Sets the status of all workers to terminate and ensures that all worker condition variables are notified
+     */
     void terminateWorkers();
+    
+    /*!
+     * \brief getTerminatedWorkerCount Returns the number of worker threads that have terminated
+     * \return The number of threads that have terminated
+     */
+    int getTerminatedWorkerCount(){return wrkrTerm;}
     
     //functions for the worker threads
     /*!
@@ -92,15 +97,20 @@ public:
     void workerEndStepWait();
     
     /*!
+     * \brief workerAckTerminate Used by the worker threads to signal that they have exited their event loop
+     */
+    void workerAckTerminate(){wrkrTerm.fetch_add(1);}
+    
+    /*!
      * \brief workerGetStatus Returns the current state the worker should be in
      * \return The currently set worker state
      */
     WorkerStatus workerGetStatus(){return wrkrStatus.load();}
     /*!
-     * \brief workerGetWriteMode Returns the current worker write mode
-     * \return The currently set worker write mode
+     * \brief workerGetSavingPoint Returns if the worker should be saving points or not
+     * \return The current setting for saving points
      */
-    WorkerWriteMode workerGetWriteMode(){return writeMode.load();}
+    bool workerGetSavingPoint(){return savePoints.load();}
     
 private:
     Chain::Chain<ParamType>& chain; ///<The chain reference for incrementing and getting itterators for the end of step action
@@ -119,10 +129,11 @@ private:
     
     //worker control
     std::atomic<WorkerStatus> wrkrStatus = WorkerStatus::Wait; ///<Status/command for the worker threads
-    std::atomic<WorkerWriteMode> writeMode = WorkerWriteMode::SavePoint; ///<Whether or not worker threads should tell their walkers to save this step
+    std::atomic_bool savePoints = true; ///<Whether or not worker threads should tell their walkers to save this step
     std::atomic_int numWorkersAtMainWait = 0; ///<Number of workers at the main wait location, queryable from the outside, so it is atomic
     std::mutex wrkrMutex; ///<Mutex for workers to wait at the beginning / end of a step
-    std::condition_variable wrkrWait; ///<Wait condition variable to hold workers at the beginning / end of a step
+    std::condition_variable wrkrWait; ///<Wait condition variable to hold workers when they are not stepping
+    std::atomic_int wrkrTerm = 0;
     
     //worker mid step control
     int numWorkersAtMidStep = 0; ///<Number of workers that are waiting at the mid step point
@@ -138,6 +149,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::terminateWorkers()
 {
     std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
     std::unique_lock<std::mutex> wrkrLock(wrkrMutex);
+    wrkrTerm.store(0);
     wrkrStatus.store(WorkerStatus::Terminate);
     wrkrWait.notify_all();
     midStepWait.notify_all();
@@ -154,7 +166,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
     //lock the control thread mutex
     std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
     
-    {//artificial scope to force destruction of lock on worker mutex when done modifying variables that workers can see
+    {//artificial scope to force destruction of lock on worker mutex when done modifying variables that workers can use
         //lock the worker mutex to prevent unforseen races
         std::unique_lock<std::mutex> wrkrLock(wrkrMutex);
         //change the control status and set up the sampling parameters
@@ -167,11 +179,11 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
         //otherwise set to a skip step
         if(stepsToSkip == 0)
         {
-            writeMode.store(WorkerWriteMode::SavePoint);
+            savePoints.store(true);
         }
         else
         {
-            writeMode.store(WorkerWriteMode::SkipPoint);
+            savePoints.store(false);
         }
         //Set the number of threads at the midstep checkpoint to zero
         numWorkersAtMidStep = 0;
@@ -243,7 +255,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
              stepAction->performAction(chain.getStepIteratorBegin(), chain.getStepIteratorEnd());
         }
         //next increment the appropriate step counter and adjust the write mode as needed
-        if(writeMode.load() == WorkerWriteMode::SavePoint)
+        if(savePoints.load())
         {
             ++stepsTaken;
             //check if we are done sampling (since we can only finish sampling on a written point
@@ -254,7 +266,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
             //check if we need to shift to skip mode for the next X points
             if(stepsToSkip != 0)
             {//whenever we write a point we need to skip the next batch before writing again
-                writeMode.store(WorkerWriteMode::SkipPoint);
+                savePoints.store(false);
                 stepsSkipped = 0;
             }
         }
@@ -265,7 +277,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
             //check if we need to save the next step
             if(stepsToSkip == stepsSkipped)
             {
-                writeMode.store(WorkerWriteMode::SavePoint);
+                savePoints.store(false);
             }
         }
         //handle if we are at the end of sampling
