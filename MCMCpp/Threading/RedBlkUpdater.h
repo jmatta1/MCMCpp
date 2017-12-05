@@ -41,14 +41,24 @@ public:
     
     /*!
      * \brief RedBlkUpdater Constructor for the Red Black updater thread
-     * \param threadNum The index of this thread
-     * \param walkerSets 
-     * \param updateSets
-     * \param mvr
-     * \param ctrl
+     * \param rndSeed The seed for the random number generator
+     * \param threadNum The index of this thread, also the stream number for the rng
+     * \param walkerSets A tuple of Walker::Walker<ParamType>*, Walker::Walker<ParamType>*, int, and int. The first pointer
+     * is a pointer to the full set of red walkers, the second pointer is a pointer to the full set of black walkers, the first
+     * integer is the total number of red walkers, the second integer is the total number of black walkers
+     * \param updateSetsA tuple of Walker::Walker<ParamType>*, Walker::Walker<ParamType>*, int, and int. The first pointer
+     * is a pointer to the set of red walkers that this thread is responsible for updating, the second pointer is a pointer
+     * to the set of black walkers that this thread is responsible for updating. The first integer is the number of red
+     * walkers that this thread is responsible for updating, the second integer is the number of black walkers that this
+     * thread is responsible for updating
+     * \param mvr The mover class that will be copied to become the mover for this particular thread
+     * \param ctrl A reference to the RedBlack controller (which will be stored)
      */
-    RedBlkUpdater(int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, MoverType& mvr, ControllerType& ctrl);
+    RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, MoverType& mvr, ControllerType& ctrl);
     
+    /*!
+     * \brief operator() The entry point for the thread, carries out all the threads basic tasks
+     */
     void operator()();
     
 private:
@@ -77,11 +87,12 @@ private:
 };
 
 template<class ParamType, class MoverType, class EndOfStepAction>
-RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::RedBlkUpdater(int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, MoverType& mvr, ControllerType& ctrl):
+RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::RedBlkUpdater(int runNum, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, MoverType& mvr, ControllerType& ctrl):
     mover(mvr), controller(ctrl)
 {
     std::tie(redWalkers, blkWalkers, redSize, blkSize) = walkerSets;
-    std::tie(redSet, blkSet, numRed, numBlk) = walkerSets;
+    std::tie(redSet, blkSet, numRed, numBlk) = updateSets;
+    mover.setPrng(rndSeed, threadNum);
 }
 
 template<class ParamType, class MoverType, class EndOfStepAction>
@@ -132,7 +143,7 @@ void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::doRedUpdates()
 template<class ParamType, class MoverType, class EndOfStepAction>
 void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::doBlackUpdates()
 {
-    for(int i=0; i<numRed; ++i)
+    for(int i=0; i<numBlk; ++i)
     {
         mover.updateWalker(blkSet[i], redWalkers, redSize, writeChain);
     }
