@@ -12,9 +12,9 @@
 #ifndef MCMC_WALKER_WALKER_H
 #define MCMC_WALKER_WALKER_H
 // includes for C system headers
+#include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
 #include<algorithm>
-#include<cstdlib>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/Chain.h"
@@ -75,8 +75,12 @@ public:
         markovChain = chain;
         walkerNumber = walkerIndex; 
         numParams = numParam;
-        currState = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
-                                                                    sizeof(ParamType)*paramCount));
+        size_t allocSize = (sizeof(ParamType)*numParam);
+        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
+        {
+            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
+        }
+        currState = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
     }
     
     /*!

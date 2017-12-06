@@ -12,8 +12,8 @@
 #ifndef MCMC_WALKER_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
 #define MCMC_WALKER_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
 // includes for C system headers
+#include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
-#include<cstdlib>//needed for aligned allocation
 #include<memory>//shared pointer
 #include<algorithm>
 // includes from other libraries
@@ -59,8 +59,12 @@ public:
         {
             stepSizes.get()[i] = steps[i];
         }
-        proposal = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
-                                                                   sizeof(ParamType)*paramCount));
+        size_t allocSize = (sizeof(ParamType)*paramCount);
+        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
+        {
+            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
+        }
+        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
     }
     
     ~SequenceMove(){free(proposal);}

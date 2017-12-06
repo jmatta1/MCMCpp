@@ -12,9 +12,9 @@
 #ifndef MCMC_WALKER_MOVERS_STRETCHMOVE_H
 #define MCMC_WALKER_MOVERS_STRETCHMOVE_H
 // includes for C system headers
+#include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
 #include<cmath>
-#include<cstdlib>
 // includes from other libraries
 // includes from MCMC
 #include"../Walker/Walker.h"
@@ -61,8 +61,14 @@ public:
      */
     StretchMove(int numParams, long long prngInit, const Calculator& orig):
         paramCount(numParams), prng(prngInit), calc(orig)
-    {proposal = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
-                                                                sizeof(ParamType)*paramCount));}
+    {
+        size_t allocSize = (sizeof(ParamType)*paramCount);
+        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
+        {
+            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
+        }
+        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
+    }
     
     ~StretchMove(){free(proposal);}
     

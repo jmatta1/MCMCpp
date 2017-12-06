@@ -12,9 +12,9 @@
 #ifndef MCMC_WALKER_MOVERS_WALKMOVE_H
 #define MCMC_WALKER_MOVERS_WALKMOVE_H
 // includes for C system headers
+#include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
 #include<cassert>
-#include<cstdlib>
 // includes from other libraries
 // includes from MCMC
 #include"../Utility/MultiSampler.h"
@@ -61,8 +61,12 @@ public:
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
-        proposal = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
-                                                                   sizeof(ParamType)*paramCount));
+        size_t allocSize = (sizeof(ParamType)*paramCount);
+        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
+        {
+            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
+        }
+        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
     }
     
     ~WalkMove(){delete[] randoms; delete[] walkerIndices; free(proposal);}

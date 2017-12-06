@@ -114,12 +114,17 @@ private:
 
 template <class ParamType>
 ChainBlock<ParamType>::ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker):
-    lastBlock(prev),
-    chainArray(reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
-                                                               sizeof(ParamType)*Detail::BlockSize*numCellsPerWalker*numWalkers)
-                                            )),
+    lastBlock(prev),chainArray(nullptr),
     walkerCount(numWalkers), cellsPerWalker(numCellsPerWalker),
-    cellsPerStep(numWalkers*numCellsPerWalker) {}
+    cellsPerStep(numWalkers*numCellsPerWalker)
+{
+    size_t allocSize = (sizeof(ParamType)*Detail::BlockSize*numCellsPerWalker*numWalkers);
+    if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
+    {
+        allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
+    }
+    chainArray = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength, allocSize));
+}
 
 template <class ParamType>
 void ChainBlock<ParamType>::storeWalker(int walkerNum, ParamType* walkerData)
