@@ -1,13 +1,23 @@
 #include<iostream>
+#include<sstream>
 #include"Movers/Diagnostic/SequenceMove.h"
 #include"ParallelEnsembleSampler.h"
 using MCMC::ParallelEnsembleSampler;
 namespace Mover=MCMC::Mover;
 
-int main()
+int main(int argc, char* argv[])
 {
+    if(argc != 2)
+    {
+        std::cout<<"Usage:\n\t"<<argv[0]<<" <thread_count>"<<std::endl;
+        return 1;
+    }
+    std::istringstream converter;
+    converter.str(argv[1]);
+    int numThreads = 1;
+    converter >> numThreads;
     const int runNumber = 0;
-    const int numWalkers = 100;
+    const int numWalkers = 224; //Chosen so that 1, 2, 3, or 4 threads will not have false sharing
     const int numParams = 4;
     const int numSteps = 200000;
     double stepSize[numParams] = {1.0, 2.0, 3.0, 4.0};
@@ -15,9 +25,9 @@ int main()
     std::cout<<"Building initial mover"<<std::endl;
     Mover::SequenceMove<double> mover(numParams, stepSize);
     
-    std::cout<<"Building sampler"<<std::endl;
+    std::cout<<"Building sampler with: "<<numThreads<<" Threads and "<<numWalkers<<" Walkers"<<std::endl;
     //give the sampler a size larger than normal in order to accomodate the full chain size
-    ParallelEnsembleSampler<double, Mover::SequenceMove<double> > sampler(runNumber, 3, numWalkers, numParams, mover, 3300000000);
+    ParallelEnsembleSampler<double, Mover::SequenceMove<double> > sampler(runNumber, numThreads, numWalkers, numParams, mover, 3300000000);
     
     std::cout<<"Getting initial values"<<std::endl;
     double* initVals = new double[numWalkers*numParams];
@@ -37,7 +47,7 @@ int main()
     delete[] initVals;
     delete[] auxVals;
     
-    std::cout<<"Running ensemble sampler for benchmarking"<<std::endl;
+    std::cout<<"Running parallel ensemble sampler for benchmarking"<<std::endl;
     bool status = sampler.runMCMC(numSteps);
     if(status)
     {
