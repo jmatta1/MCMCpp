@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cmath>
+#include<cstdlib>
 #include<memory>
 // includes from other libraries
 // includes from MCMC
@@ -54,7 +55,7 @@ public:
         phis(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
         offs(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
         prngStdDev(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
-        proposal(new ParamType[numParams]),
+        proposal(nullptr),
         prng(0), //doesn't really matter, just stops the compiler warnings for Weffc++
         paramCount(numParams)
     {
@@ -64,9 +65,11 @@ public:
             offs.get()[i] = offsets[i];
             prngStdDev.get()[i] = std::sqrt(paramVariance[i])*std::sqrt(static_cast<ParamType>(1)-phiValues[i]*phiValues[i]);
         }
+        proposal = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
+                                                                   sizeof(ParamType)*paramCount));
     }
     
-    ~AutoRegressiveMove(){delete[] proposal;}
+    ~AutoRegressiveMove(){free(proposal);}
     
     /*!
      * \brief AutoRegressiveMove Copy constructor

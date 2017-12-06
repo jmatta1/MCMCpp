@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cmath>
+#include<cstdlib>
 // includes from other libraries
 // includes from MCMC
 #include"../Walker/Walker.h"
@@ -59,9 +60,10 @@ public:
      */
     StretchMove(int numParams, long long prngInit, const Calculator& orig):
         paramCount(numParams), prng(prngInit), calc(orig)
-    {proposal = new ParamType[paramCount];}
+    {proposal = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
+                                                                sizeof(ParamType)*paramCount));}
     
-    ~StretchMove(){delete[] proposal;}
+    ~StretchMove(){free(proposal);}
     
     /*!
      * \brief StrethMove Copy constructor

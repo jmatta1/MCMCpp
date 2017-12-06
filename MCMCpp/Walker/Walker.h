@@ -14,7 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<algorithm>
-#include<iostream>
+#include<cstdlib>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/Chain.h"
@@ -39,6 +39,8 @@ namespace Walker
  * 
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
  * 
+ * **WARNING** If using the swap procedure instead of copy (for speed), movers need to allocate their proposal arrays
+ * using std::aligned_alloc in cstdlib instead of using operator new
  */
 template <class ParamType>
 class Walker
@@ -48,7 +50,7 @@ public:
      * \brief Walker Constructs a default instance of Walker with all values set to nullptr or zero
      */
     Walker(){}
-    ~Walker(){if(currState != nullptr) delete[] currState;}
+    ~Walker(){if(currState != nullptr) free(currState);}
     
     /*!
      * \brief Delete copy constructor
@@ -72,7 +74,8 @@ public:
         markovChain = chain;
         walkerNumber = walkerIndex; 
         numParams = numParam;
-        currState = new ParamType[numParam];
+        currState = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
+                                                                    sizeof(ParamType)*paramCount));
     }
     
     /*!

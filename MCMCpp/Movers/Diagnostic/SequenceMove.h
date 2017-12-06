@@ -13,17 +13,21 @@
 #define MCMC_WALKER_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
 // includes for C system headers
 // includes for C++ system headers
-#include<memory>
+#include<cstdlib>//needed for aligned allocation
+#include<memory>//shared pointer
+#include<algorithm>
 // includes from other libraries
 // includes from MCMC
 #include"../../Walker/Walker.h"
 #include"../../Utility/ArrayDeleter.h"
 #include"../../Utility/UserOjbectsTest.h"
+#include"Utility/Misc.h"
 
 namespace MCMC
 {
 namespace Mover
 {
+
 /**
  * @class SequenceMove
  * @ingroup Movers
@@ -47,7 +51,7 @@ public:
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
     SequenceMove(int numParams, const ParamType* steps):
-        proposal(new ParamType[numParams]),
+        proposal(nullptr),
         stepSizes(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
         paramCount(numParams)
     {
@@ -55,9 +59,11 @@ public:
         {
             stepSizes.get()[i] = steps[i];
         }
+        proposal = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
+                                                                   sizeof(ParamType)*paramCount));
     }
     
-    ~SequenceMove(){delete[] proposal;}
+    ~SequenceMove(){free(proposal);}
     
     /*!
      * \brief SequenceMove Copy constructor
@@ -106,13 +112,15 @@ public:
      */
     void getInitialPoints(ParamType* initArray, ParamType* auxArray, int numWalkers)
     {
-        for(int j=0; j<numWalkers; ++j)
+        std::fill_n(initArray, numWalkers*paramCount, static_cast<ParamType>(0));
+        std::fill_n(auxArray, numWalkers, static_cast<ParamType>(0));
+        /*for(int j=0; j<numWalkers; ++j)
         {
             for(int i=0; i<paramCount; ++i)
             {
                 initArray[j*paramCount+i] = static_cast<ParamType>(0);
             }
-        }
+        }*/
     }
     
 private:

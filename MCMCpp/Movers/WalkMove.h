@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
+#include<cstdlib>
 // includes from other libraries
 // includes from MCMC
 #include"../Utility/MultiSampler.h"
@@ -59,10 +60,11 @@ public:
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
-        proposal = new ParamType[paramCount];
+        proposal = reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
+                                                                   sizeof(ParamType)*paramCount));
     }
     
-    ~WalkMove(){delete[] randoms; delete[] walkerIndices; delete[] proposal;}
+    ~WalkMove(){delete[] randoms; delete[] walkerIndices; free(proposal);}
     
     /*!
      * \brief WalkMove Copy Constructor
