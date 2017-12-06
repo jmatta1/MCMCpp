@@ -7,9 +7,9 @@ namespace Mover=MCMC::Mover;
 int main()
 {
     const int runNumber = 0;
-    const int numWalkers = 100;
+    const int numWalkers = 224;
     const int numParams = 4;
-    const int numSteps = 1000000;
+    const int numSteps = 200000;
     double stepSize[numParams] = {1.0, 2.0, 3.0, 4.0};
     
     std::cout<<"Building initial mover"<<std::endl;
