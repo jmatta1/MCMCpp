@@ -65,7 +65,7 @@ public:
         ctrlStatus(MainStatus::Continue), ctrlMutex(), ctrlWait(),
         wrkrStatus(WorkerStatus::Wait), savePoints(true),
         numWorkersAtMainWait(0), wrkrMutex(), wrkrWait(), wrkrTerm(0),
-        numWorkersAtMidStep(0), numWorkersAtEndStep(0), endStepWait(){}
+        numWorkersAtMidStep(0), numWorkersAtEndStep(0){}
     
     //functions for the controller thread
     /*!
