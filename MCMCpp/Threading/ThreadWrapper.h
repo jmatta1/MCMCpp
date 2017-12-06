@@ -42,13 +42,13 @@ public:
      * \brief ThreadWrapper The standard constructor of this thread wrapper
      * \param p A pointer to the object that contains the actual thread of execution
      */
-    ThreadWrapper(const ThreadType* p): ptr(p){}
+    ThreadWrapper(ThreadType* p): ptr(p){}
     
     /*!
      * \brief ThreadWrapper The copy constructor, generates a copy of this class
      * \param copy The ThreadWrapper class to be copied
      */
-    ThreadWrapper(const ThreadWrapper<ThreadType> copy): ptr(copy.ptr){}
+    ThreadWrapper(const ThreadWrapper<ThreadType>& copy): ptr(copy.ptr){}
     /*!
      * @brief ~ThreadWrapper Allow ptr to destruct without deleting its contents, something else owns the contents of ptr
      */
