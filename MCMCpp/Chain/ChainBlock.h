@@ -110,13 +110,15 @@ private:
     int cellsPerWalker; ///<Number of cells needed by each walker
     int cellsPerStep; ///<Number of cells for all the walkers in a single step
     int firstEmptyStep = 0; ///<Index (in units of cellsPerStep) of the next empty step
+    int sizeInBytes; ///<The size in bytes for a memcpy operation
 };
 
 template <class ParamType>
 ChainBlock<ParamType>::ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker):
     lastBlock(prev),chainArray(nullptr),
     walkerCount(numWalkers), cellsPerWalker(numCellsPerWalker),
-    cellsPerStep(numWalkers*numCellsPerWalker)
+    cellsPerStep(numWalkers*numCellsPerWalker),
+    sizeInBytes(walkerCount*cellsPerWalker*sizeof(ParamType))
 {
     size_t allocSize = (sizeof(ParamType)*Detail::BlockSize*numCellsPerWalker*numWalkers);
     if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
@@ -139,7 +141,7 @@ void ChainBlock<ParamType>::copyWalkerSet(ParamType* walkerData)
 {
     ParamType* offset = chainArray + (firstEmptyStep*cellsPerStep);
     //std::copy(walkerData, (walkerData+(walkerCount*cellsPerWalker)), offset);
-    std::memcpy(offset, walkerData, walkerCount*cellsPerWalker*sizeof(ParamType));
+    std::memcpy(offset, walkerData, sizeInBytes);
 }
 
 }
