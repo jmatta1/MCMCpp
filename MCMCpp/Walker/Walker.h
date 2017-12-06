@@ -75,6 +75,7 @@ public:
         markovChain = chain;
         walkerNumber = walkerIndex; 
         numParams = numParam;
+        sizeInBytes = numParams*sizeof(ParamType);
         size_t allocSize = (sizeof(ParamType)*numParam);
         if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
         {
@@ -163,12 +164,14 @@ private:
     int numParams = 0; ///<holds the number of parameters for the post prob function
     int acceptedSteps = 0; ///< holds the number of times that a new parameter set was accepted
     int diffSteps = 0; ///< holds the number of times that a new parameter set was proposed and not accepted
+    int sizeInBytes = 0; ///< holds the number of bytes to copy using memcopy
 };
 
 template <class ParamType>
 void Walker<ParamType>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint)
 {
-    std::copy(newPos, (newPos+numParams), currState);
+    //std::copy(newPos, (newPos+numParams), currState);
+    std::memcpy(currState, newPos, sizeInBytes);
     auxData = auxVal;
     ++acceptedSteps;
     if(storePoint) markovChain->storeWalker(walkerNumber, currState);
