@@ -19,6 +19,7 @@
 // includes from MCMC
 #include"../Chain/Chain.h"
 #include"../Utility/MultiSampler.h"
+#include"Utility/Misc.h"
 
 
 namespace MCMC

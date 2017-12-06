@@ -13,12 +13,13 @@
 #define MCMC_CHAIN_CHAINBLOCK_H
 // includes for C system headers
 // includes for C++ system headers
-#include<stdlib.h>//needed for aligned allocation
+#include<cstdlib>//needed for aligned allocation
 #include<cstring>//for memcpy
 #include<algorithm>
 #include<iostream>
 // includes from other libraries
 // includes from MCMC
+#include"Utility/Misc.h"
 
 namespace MCMC
 {
@@ -29,7 +30,6 @@ namespace Chain
 namespace Detail
 {
 static const int BlockSize = 1000; ///<Number of steps to store in one chain block
-static const unsigned int AlignmentLength = 64;///<Stores the memory boundary to force memory alignment to, 64 is sufficient for cache lines and up to the 256-bit AVX instructions, 128 will handle AVX-512 instructions as well
 }
 
 /**
@@ -115,8 +115,8 @@ private:
 template <class ParamType>
 ChainBlock<ParamType>::ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker):
     lastBlock(prev),
-    chainArray(reinterpret_cast<ParamType*>(aligned_alloc(Detail::AlignmentLength,
-                                                          sizeof(ParamType)*Detail::BlockSize*numCellsPerWalker*numWalkers)
+    chainArray(reinterpret_cast<ParamType*>(std::aligned_alloc(Utility::AlignmentLength,
+                                                               sizeof(ParamType)*Detail::BlockSize*numCellsPerWalker*numWalkers)
                                             )),
     walkerCount(numWalkers), cellsPerWalker(numCellsPerWalker),
     cellsPerStep(numWalkers*numCellsPerWalker) {}

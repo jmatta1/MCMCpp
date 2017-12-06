@@ -23,6 +23,7 @@
 #include"../../Utility/MultiSampler.h"
 #include"../../Utility/GwDistribution.h"
 #include"../../Utility/UserOjbectsTest.h"
+#include"Utility/Misc.h"
 
 namespace MCMC
 {

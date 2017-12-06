@@ -21,6 +21,7 @@
 #include"../Utility/UserOjbectsTest.h"
 #include"../Utility/GwDistribution.h"
 #include"../Walker/Walker.h"
+#include"Utility/Misc.h"
 
 namespace MCMC
 {
