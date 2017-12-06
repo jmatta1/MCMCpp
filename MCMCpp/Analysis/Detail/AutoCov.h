@@ -13,7 +13,6 @@
 #define MCMC_ANALYSIS_DETAIL_AUTOCOV_H
 // includes for C system headers
 // includes for C++ system headers
-#include<stdlib.h>//needef for aligned allocation
 #include<algorithm>
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
