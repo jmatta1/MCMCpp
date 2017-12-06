@@ -51,7 +51,7 @@ namespace MCMC
  * 
  * **Recommendation**: numWalkers should be chosen such that
  * (numWalkers/(2*numThreads))*numParam*sizeof(ParamType) is an integer
- * multiple of 128 bytes. This ensures that individual threads are not sharing
+ * multiple of 64 bytes. This ensures that individual threads are not sharing
  * data that is split across cachelines, preventing false sharing of data
  * between threads, allowing a faster calculation (because the cache is not
  * being invalidated for one thread when another thread updates the chain it
@@ -92,7 +92,7 @@ public:
      * 
      * **Recommendation**: numWalkers should be chosen such that
      * (numWalkers/(2*numThreads))*numParam*sizeof(ParamType) is an integer
-     * multiple of 128 bytes. This ensures that individual threads are not sharing
+     * multiple of 64 bytes. This ensures that individual threads are not sharing
      * data that is split across cachelines, preventing false sharing of data
      * between threads, allowing a faster calculation (because the cache is not
      * being invalidated for one thread when another thread updates the chain it
