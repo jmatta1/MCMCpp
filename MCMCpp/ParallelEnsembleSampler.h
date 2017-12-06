@@ -17,7 +17,6 @@
 #include<mutex>
 #include<thread>
 #include<chrono>
-#include<functional>
 // includes from other libraries
 // includes from MCMC
 #include"Chain/Chain.h"
@@ -26,9 +25,11 @@
 #include"Utility/UserOjbectsTest.h"
 #include"Threading/RedBlkCtrler.h"
 #include"Threading/RedBlkUpdater.h"
+#include"Threading/ThreadWrapper.h"
 
 namespace MCMC
 {
+
 /*!
  * @class ParallelEnsembleSampler
  * @ingroup Primary
@@ -60,13 +61,6 @@ public:
     typedef Chain::ChainPsetIterator<ParamType> PsetItt;
     typedef Chain::ChainStepIterator<ParamType> StepItt;
     typedef Threading::RedBlkUpdater<ParamType, Mover, PostStepAction> ThreadObjectType;
-    
-    template<class ThreadType>
-    struct ThreadWrapper
-    {
-        void operator()(){(*ptr)();}
-        ThreadType* ptr;
-    };
 
     //perform static checks of the users classes to ensure that they have the needed member functions for their role
     static_assert(Utility::CheckCalcUpdateWalker<Mover, void, WalkerType&, WalkerType*, int, bool>(),
@@ -101,7 +95,7 @@ public:
                             unsigned long long maxChainSizeBytes=2147483648, PostStepAction* stepAct=nullptr);
     
     /*!
-     * @brief ~EnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
+     * @brief ~ParallelEnsembleSampler Delete the walker lists and temp parameter set then allow the rest to die normally
      */
     ~ParallelEnsembleSampler();
     
@@ -241,7 +235,7 @@ ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::ParallelEnsembleSampl
         offset += size;
         if(i==excess) size = nominalWalkersPerThread;
         //now create the thread
-        threadGroup[i] = new std::thread(*(threadObjects[i]));
+        threadGroup[i] = new std::thread(Threading::ThreadWrapper<ThreadObjectType>(threadObjects[i]));
     }
     //now wait for all the threads to come to the wait state
     while(controller.getNumWorkersWaiting() < numThreads)
