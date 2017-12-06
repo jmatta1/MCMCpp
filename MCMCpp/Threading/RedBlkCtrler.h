@@ -60,10 +60,12 @@ public:
      * \param ptr A pointer to the EndOfStepAction class, nullptr if there will be no end of step action
      */
     RedBlackCtrler(int numThreads, Chain::Chain<ParamType>& chainRef, EndOfStepAction* ptr = nullptr):
-        chain(chainRef), stepAction(ptr), threadCount(numThreads), ctrlStatus(MainStatus::Continue),
-        ctrlMutex(), ctrlWait(), wrkrStatus(WorkerStatus::Wait), savePoints(true),
-        numWorkersAtMainWait(0), wrkrMutex(), wrkrWait(), wrkrTerm(0), midStepWait(),
-        endStepWait(){}
+        chain(chainRef), stepAction(ptr), threadCount(numThreads),
+        lastThread(numThreads-1), stepsTaken(0), stepsSkipped(0),
+        ctrlStatus(MainStatus::Continue), ctrlMutex(), ctrlWait(),
+        wrkrStatus(WorkerStatus::Wait), savePoints(true),
+        numWorkersAtMainWait(0), wrkrMutex(), wrkrWait(), wrkrTerm(0),
+        numWorkersAtMidStep(0), numWorkersAtEndStep(0), endStepWait(){}
     
     //functions for the controller thread
     /*!
@@ -132,10 +134,11 @@ private:
     Chain::Chain<ParamType>& chain; ///<The chain reference for incrementing and getting itterators for the end of step action
     EndOfStepAction* stepAction = nullptr; ///<Pointer to the end of step action object
     int threadCount; ///<Number of worker threads
+    int lastThread; ///<Number of worker threads - 1, stored for convenience
     
-    int stepsTaken = 0; ///<Number of saved steps taken in this sampling run
+    std::atomic_int stepsTaken; ///<Number of saved steps taken in this sampling run
     int stepsToTake = 0; ///<Number of saved steps to be taken in this sampling run, set at start of run by control thread
-    int stepsSkipped = 0; ///<Number of steps skipped in this round of the sampling run
+    std::atomic_int stepsSkipped; ///<Number of steps skipped in this round of the sampling run
     int stepsToSkip = 0; ///<Number of steps to skip per round of the sampling run, set at start of run by control thread
     
     //Main thread control
@@ -149,15 +152,13 @@ private:
     std::atomic_int numWorkersAtMainWait; ///<Number of workers at the main wait location, queryable from the outside, so it is atomic
     std::mutex wrkrMutex; ///<Mutex for workers to wait at the beginning / end of a step
     std::condition_variable wrkrWait; ///<Wait condition variable to hold workers when they are not stepping
-    std::atomic_int wrkrTerm = 0;
+    std::atomic_int wrkrTerm;
     
     //worker mid step control
-    int numWorkersAtMidStep = 0; ///<Number of workers that are waiting at the mid step point
-    std::condition_variable midStepWait; ///<condition variable for workers to wait at the mid step point
+    std::atomic_int numWorkersAtMidStep; ///<Number of workers that are waiting at the mid step point
     
     //worker end step control
-    int numWorkersAtEndStep = 0; ///<Number of workers that are waiting at the mid step point
-    std::condition_variable endStepWait; ///<condition variable for workers to wait at the mid step point
+    std::atomic_int numWorkersAtEndStep; ///<Number of workers that are waiting at the mid step point
 };
 
 template<class ParamType, class EndOfStepAction>
@@ -168,8 +169,6 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::terminateWorkers()
         wrkrTerm.store(0);
         wrkrStatus.store(WorkerStatus::Terminate);
         wrkrWait.notify_all();
-        midStepWait.notify_all();
-        endStepWait.notify_all();
     }
     std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
     while(wrkrTerm.load() != threadCount)
@@ -205,7 +204,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
             savePoints.store(false);
         }
         //Set the number of threads at the midstep checkpoint to zero
-        numWorkersAtMidStep = 0;
+        numWorkersAtMidStep.store(0);
         //Set the processing mode to start stepping the ensemble
         wrkrStatus.store(WorkerStatus::ProcessRed);
         //wake all the worker threads sitting on the primary worker condition variable
@@ -236,22 +235,15 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerWaitForTask()
 template<class ParamType, class EndOfStepAction>
 void RedBlackCtrler<ParamType, EndOfStepAction>::workerMidStepWait()
 {
-    //Note: if we are at the mid step the status is ProcessRed, always
-    std::unique_lock<std::mutex> lock(wrkrMutex);
-    ++numWorkersAtMidStep;
-    if(numWorkersAtMidStep == threadCount)
-    {//we are the last thread to finish:
-        //reset the number threads waiting at the next checkpoint, change worker state, and wake the workers
-        numWorkersAtEndStep = 0;
+    int temp = numWorkersAtMidStep.fetch_add(1);
+    if(temp == lastThread)
+    {//we are the last thread swap things around and go
+        numWorkersAtEndStep.store(0);
         wrkrStatus.store(WorkerStatus::ProcessBlack);
-        midStepWait.notify_all();
     }
     else
-    {//we are not the last thread to finish, so wait until the others are ready
-        while(wrkrStatus.load() == WorkerStatus::ProcessRed)
-        {
-            midStepWait.wait(lock);
-        }
+    {//otherwise, spin until the state changes to something other than ProcessRed
+        while(wrkrStatus.load() == WorkerStatus::ProcessRed){}
     }
     
 }
@@ -260,14 +252,11 @@ template<class ParamType, class EndOfStepAction>
 void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
 {
     //Note: if we are at the end step the status is ProcessBlack, always
-    std::unique_lock<std::mutex> lock(wrkrMutex);
-    ++numWorkersAtEndStep;
-    if(numWorkersAtEndStep == threadCount)
+    int temp = numWorkersAtEndStep.fetch_add(1);
+    if(temp == lastThread)
     {//we are the last thread to finish the step
         //create a variable to store if we are at the end of sampling for when the time comes to update worker thread states
         bool endOfSampling = false;
-        //lock the control mutex to prevent unforseen races, this should be basicly contention free and thus fast
-        std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
         //first increment the chain, if we have reached the max memory allowable for the chain, declare sampling at an end
         if(Chain::IncrementStatus::EndOfChain == chain.incrementChainStep())
         {
@@ -281,10 +270,9 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
         //next increment the appropriate step counter and adjust the write mode as needed
         if(savePoints.load())
         {
-            if((stepsTaken % 10000) == 0) std::cout<<"At end: "<<stepsTaken<<std::endl;
-            ++stepsTaken;
+            stepsTaken.fetch_add(1);
             //check if we are done sampling (since we can only finish sampling on a written point
-            if(stepsTaken == stepsToTake)
+            if(stepsToTake == stepsTaken.load())
             {
                 endOfSampling = true;
             }
@@ -292,15 +280,15 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
             if(stepsToSkip != 0)
             {//whenever we write a point we need to skip the next batch before writing again
                 savePoints.store(false);
-                stepsSkipped = 0;
+                stepsSkipped.store(0);
             }
         }
         else
         {
-            ++stepsSkipped;
+            stepsSkipped.fetch_add(1);
             //we cannot be done sampling if we are in a stretch of skipping
             //check if we need to save the next step
-            if(stepsToSkip == stepsSkipped)
+            if(stepsToSkip == stepsSkipped.load())
             {
                 savePoints.store(false);
             }
@@ -310,31 +298,27 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
         {
             numWorkersAtMainWait.store(0);
             wrkrStatus.store(WorkerStatus::Wait);
+            std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
             ctrlStatus.store(MainStatus::Continue);
-            endStepWait.notify_all();
             ctrlWait.notify_all();
         }
         else
         {
             numWorkersAtMidStep = 0;
             wrkrStatus.store(WorkerStatus::ProcessRed);
-            endStepWait.notify_all();
         }
     }
     else
-    {//we are not the last thread, wait for further instructions
-        while(wrkrStatus.load() == WorkerStatus::ProcessBlack)
-        {
-            endStepWait.wait(lock);
-        }
+    {//we are not the last thread, spin until the state is not ProcessBlack
+        while(wrkrStatus.load() == WorkerStatus::ProcessBlack){}
     }
 }
 
 template<class ParamType, class EndOfStepAction>
 void RedBlackCtrler<ParamType, EndOfStepAction>::workerAckTerminate()
 {
-    wrkrTerm.fetch_add(1);
-    if(wrkrTerm.load() == threadCount)
+    int temp = wrkrTerm.fetch_add(1);
+    if(temp == lastThread)
     {
         std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
         ctrlWait.notify_all();
