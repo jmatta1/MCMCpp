@@ -82,14 +82,14 @@ private:
     int blkSize = 0; ///<The number of walkers in the full black set
     int numRed = 0; ///<The number of walkers in the red step that this thread is in charge of updating
     int numBlk = 0; ///<The number of walkers in the black step that this thread is in charge of updating
-    
-    bool writeChain = true;
+    int trdNum; ///<The index of this thread, for debugging.
+    bool writeChain = true;///<A variable that stores if the points need to be written for a given step
 };
 
 template<class ParamType, class MoverType, class EndOfStepAction>
 RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::
 RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, const MoverType& mvr, ControllerType& ctrl):
-    mover(mvr), controller(ctrl)
+    mover(mvr), controller(ctrl), trdNum(threadNum)
 {
     std::tie(redWalkers, blkWalkers, redSize, blkSize) = walkerSets;
     std::tie(redSet, blkSet, numRed, numBlk) = updateSets;
@@ -124,7 +124,7 @@ void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::operator()()
             controller.workerWaitForTask();
             break;
         case WorkerStatus::Terminate:
-            notTerminated = true;
+            notTerminated = false;
             break;
         }
     }
