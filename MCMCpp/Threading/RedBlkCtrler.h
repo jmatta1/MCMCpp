@@ -17,6 +17,8 @@
 #include<condition_variable>
 #include<atomic>
 #include<cassert>
+#include<thread>
+#include<chrono>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/Chain.h"
@@ -113,7 +115,7 @@ public:
     /*!
      * \brief workerAckTerminate Used by the worker threads to signal that they have exited their event loop
      */
-    void workerAckTerminate(){wrkrTerm.fetch_add(1);}
+    void workerAckTerminate();
     
     /*!
      * \brief workerGetStatus Returns the current state the worker should be in
@@ -161,13 +163,19 @@ private:
 template<class ParamType, class EndOfStepAction>
 void RedBlackCtrler<ParamType, EndOfStepAction>::terminateWorkers()
 {
+    {
+        std::unique_lock<std::mutex> wrkrLock(wrkrMutex);
+        wrkrTerm.store(0);
+        wrkrStatus.store(WorkerStatus::Terminate);
+        wrkrWait.notify_all();
+        midStepWait.notify_all();
+        endStepWait.notify_all();
+    }
     std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
-    std::unique_lock<std::mutex> wrkrLock(wrkrMutex);
-    wrkrTerm.store(0);
-    wrkrStatus.store(WorkerStatus::Terminate);
-    wrkrWait.notify_all();
-    midStepWait.notify_all();
-    endStepWait.notify_all();
+    while(wrkrTerm.load() != threadCount)
+    {
+        ctrlWait.wait_for(ctrlLock, std::chrono::microseconds(10));
+    }
 }
 
 template<class ParamType, class EndOfStepAction>
@@ -177,9 +185,6 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
     //Where Either the number of steps to sample or the number of points to skip was less than 1
     assert(numSteps > 0);
     assert(skipPoints >= 0);
-    //lock the control thread mutex
-    std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
-    
     {//artificial scope to force destruction of lock on worker mutex when done modifying variables that workers can use
         //lock the worker mutex to prevent unforseen races
         std::unique_lock<std::mutex> wrkrLock(wrkrMutex);
@@ -207,6 +212,8 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
         wrkrWait.notify_all();
         //the worker mutex will be unlocked now so the worker threads can wake up
     }
+    //lock the control thread mutex
+    std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
     //make the control thread (this thread) sleep until it is signalled that sampling is finished
     while(ctrlStatus.load() == MainStatus::Wait)
     {
@@ -274,6 +281,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
         //next increment the appropriate step counter and adjust the write mode as needed
         if(savePoints.load())
         {
+            if((stepsTaken % 10000) == 0) std::cout<<"At end: "<<stepsTaken<<std::endl;
             ++stepsTaken;
             //check if we are done sampling (since we can only finish sampling on a written point
             if(stepsTaken == stepsToTake)
@@ -319,6 +327,17 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
         {
             endStepWait.wait(lock);
         }
+    }
+}
+
+template<class ParamType, class EndOfStepAction>
+void RedBlackCtrler<ParamType, EndOfStepAction>::workerAckTerminate()
+{
+    wrkrTerm.fetch_add(1);
+    if(wrkrTerm.load() == threadCount)
+    {
+        std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
+        ctrlWait.notify_all();
     }
 }
 

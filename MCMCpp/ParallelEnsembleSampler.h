@@ -16,7 +16,6 @@
 #include<cassert>
 #include<mutex>
 #include<thread>
-#include<chrono>
 // includes from other libraries
 // includes from MCMC
 #include"Chain/Chain.h"
@@ -49,6 +48,16 @@ namespace MCMC
  * chain start and end at the end of every step, it need not be concurrent or
  * reentrant, it is only ever called by a single thread, though the thread 
  * making the call may be different between calls
+ * 
+ * **Recommendation**: numWalkers should be chosen such that
+ * (numWalkers/(2*numThreads))*numParam*sizeof(ParamType) is an integer
+ * multiple of 128 bytes. This ensures that individual threads are not sharing
+ * data that is split across cachelines, preventing false sharing of data
+ * between threads, allowing a faster calculation (because the cache is not
+ * being invalidated for one thread when another thread updates the chain it
+ * is working on that happens to share a cache line with the chain of the
+ * first thread, invalidating the cache even though neither thread is
+ * examining the same data)
  */
 template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
 class ParallelEnsembleSampler
@@ -223,17 +232,18 @@ ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::ParallelEnsembleSampl
     threadObjects = new ThreadObjectType*[numThreads];
     threadGroup = new std::thread*[numThreads];
     int offset = 0;
-    int nominalWalkersPerThread = (numWalkers/numThreads);
-    int excess = (numWalkers%numThreads);
+    int nominalWalkersPerThread = (walkersPerSet/numThreads);
+    int excess = (walkersPerSet%numThreads);
     int size = ((excess == 0) ? nominalWalkersPerThread : nominalWalkersPerThread+1);
     for(int i=0; i<numThreads; ++i)
     {
+        //check if we have finished removing the excess
+        if(i==excess) size = nominalWalkersPerThread;
         typename ThreadObjectType::WalkerInfo walkerSets = std::make_tuple(walkerRedSet, walkerBlkSet, walkersPerSet, walkersPerSet);
         typename ThreadObjectType::WalkerInfo updateSets = std::make_tuple(walkerRedSet+offset, walkerBlkSet+offset, size, size);
         threadObjects[i] = new ThreadObjectType(randSeed, i, walkerSets, updateSets, move, controller);
-        //now update the offset and size
+        //now update the offset
         offset += size;
-        if(i==excess) size = nominalWalkersPerThread;
         //now create the thread
         threadGroup[i] = new std::thread(Threading::ThreadWrapper<ThreadObjectType>(threadObjects[i]));
     }
@@ -250,12 +260,6 @@ ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::~ParallelEnsembleSamp
     std::unique_lock<std::mutex> lock(samplerMutex);
     //terminate the workers and wait until they all acknowledge the terminate
     controller.terminateWorkers();
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
-    while(controller.getTerminatedWorkerCount() < numThreads)
-    {
-        controller.terminateWorkers();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
     //now that the threads have all acknowledged the terminate, call join on each
     //and then when that returns delete the thread object and the function object
     for(int i=0; i<numThreads; ++i)
