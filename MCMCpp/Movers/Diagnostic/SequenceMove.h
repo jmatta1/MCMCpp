@@ -101,6 +101,9 @@ public:
     void updateWalker(WalkType& currWalker, WalkType* walkerSet, int numWalkers, bool storePoint)
     {
         const ParamType* currState = currWalker.getCurrState();
+        //benchmarking shows that the transform was a bad choice here
+        /*std::transform(currState, currState+paramCount, stepSizes.get(), proposal,
+                       [](const ParamType& v1, const ParamType& v2) -> ParamType {return (v1+v2);})*/
         for(int i=0; i<paramCount; ++i)
         {
             proposal[i] = (currState[i] + stepSizes.get()[i]);
