@@ -231,19 +231,10 @@ ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::ParallelEnsembleSampl
     //now set up the threads
     threadObjects = new ThreadObjectType*[numThreads];
     threadGroup = new std::thread*[numThreads];
-    int offset = 0;
-    int nominalWalkersPerThread = (walkersPerSet/numThreads);
-    int excess = (walkersPerSet%numThreads);
-    int size = ((excess == 0) ? nominalWalkersPerThread : nominalWalkersPerThread+1);
     for(int i=0; i<numThreads; ++i)
     {
-        //check if we have finished removing the excess
-        if(i==excess) size = nominalWalkersPerThread;
         typename ThreadObjectType::WalkerInfo walkerSets = std::make_tuple(walkerRedSet, walkerBlkSet, walkersPerSet, walkersPerSet);
-        typename ThreadObjectType::WalkerInfo updateSets = std::make_tuple(walkerRedSet+offset, walkerBlkSet+offset, size, size);
-        threadObjects[i] = new ThreadObjectType(randSeed, i, walkerSets, updateSets, move, controller);
-        //now update the offset
-        offset += size;
+        threadObjects[i] = new ThreadObjectType(randSeed, i, walkerSets, move, controller);
         //now create the thread
         threadGroup[i] = new std::thread(Threading::ThreadWrapper<ThreadObjectType>(threadObjects[i]));
     }
