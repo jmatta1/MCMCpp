@@ -17,9 +17,9 @@ int main(int argc, char* argv[])
     int numThreads = 1;
     converter >> numThreads;
     const int runNumber = 0;
-    const int numWalkers = 240; //Chosen so that 1, 2, 3, or 4 threads will not have false sharing
+    const int numWalkers = 2400; //Chosen so that 1, 2, 3, or 4 threads will not have false sharing
     const int numParams = 4;
-    const int numSteps = 200000;
+    const int numSteps = 20000;
     double stepSize[numParams] = {1.0, 2.0, 3.0, 4.0};
     
     std::cout<<"Building initial mover"<<std::endl;
