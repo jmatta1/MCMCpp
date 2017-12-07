@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     int numThreads = 1;
     converter >> numThreads;
     const int runNumber = 0;
-    const int numWalkers = 224; //Chosen so that 1, 2, 3, or 4 threads will not have false sharing
+    const int numWalkers = 240; //Chosen so that 1, 2, 3, or 4 threads will not have false sharing
     const int numParams = 4;
     const int numSteps = 200000;
     double stepSize[numParams] = {1.0, 2.0, 3.0, 4.0};
@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
     
     std::cout<<"Running parallel ensemble sampler for benchmarking"<<std::endl;
     bool status = sampler.runMCMC(numSteps);
+    
     if(status)
     {
         std::cout<<"Sampling completed normally"<<std::endl;
@@ -57,4 +58,10 @@ int main(int argc, char* argv[])
     {
         std::cout<<"Sampling finished when chain ran out of space"<<std::endl;
     }
+    
+    /*auto end = sampler.getStepIttEnd();
+    for(auto itt = sampler.getStepIttBegin(); itt != end; ++itt)
+    {
+        std::cout<<(*itt)[0]<<", "<<(*itt)[1]<<", "<<(*itt)[2]<<", "<<(*itt)[3]<<std::endl;
+    }*/
 }

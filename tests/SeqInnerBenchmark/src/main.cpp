@@ -7,7 +7,7 @@ namespace Mover=MCMC::Mover;
 int main()
 {
     const int runNumber = 0;
-    const int numWalkers = 224;
+    const int numWalkers = 240;
     const int numParams = 4;
     const int numSteps = 200000;
     double stepSize[numParams] = {1.0, 2.0, 3.0, 4.0};
@@ -47,4 +47,10 @@ int main()
     {
         std::cout<<"Sampling finished when chain ran out of space"<<std::endl;
     }
+    
+    /*auto end = sampler.getStepIttEnd();
+    for(auto itt = sampler.getStepIttBegin(); itt != end; ++itt)
+    {
+        std::cout<<(*itt)[0]<<", "<<(*itt)[1]<<", "<<(*itt)[2]<<", "<<(*itt)[3]<<std::endl;
+    }*/
 }
