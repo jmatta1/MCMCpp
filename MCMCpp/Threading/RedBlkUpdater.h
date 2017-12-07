@@ -46,15 +46,10 @@ public:
      * \param walkerSets A tuple of Walker::Walker<ParamType>*, Walker::Walker<ParamType>*, int, and int. The first pointer
      * is a pointer to the full set of red walkers, the second pointer is a pointer to the full set of black walkers, the first
      * integer is the total number of red walkers, the second integer is the total number of black walkers
-     * \param updateSetsA tuple of Walker::Walker<ParamType>*, Walker::Walker<ParamType>*, int, and int. The first pointer
-     * is a pointer to the set of red walkers that this thread is responsible for updating, the second pointer is a pointer
-     * to the set of black walkers that this thread is responsible for updating. The first integer is the number of red
-     * walkers that this thread is responsible for updating, the second integer is the number of black walkers that this
-     * thread is responsible for updating
      * \param mvr The mover class that will be copied to become the mover for this particular thread
      * \param ctrl A reference to the RedBlack controller (which will be stored)
      */
-    RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, const MoverType& mvr, ControllerType& ctrl);
+    RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, const MoverType& mvr, ControllerType& ctrl);
     
     /*!
      * \brief operator() The entry point for the thread, carries out all the threads basic tasks
@@ -76,23 +71,18 @@ private:
     ControllerType& controller; ///<A reference to the controller object
     WalkerType* redWalkers = nullptr; ///<A pointer to the beginning of the full set of red walkers, which will be used to update the black walkers
     WalkerType* blkWalkers = nullptr; ///<A pointer to the beginning of the full set of black walkers, which will be used to update the red walkers
-    WalkerType* redSet = nullptr; ///<A pointer to the set of walkers that are updated for the red step
-    WalkerType* blkSet = nullptr; ///<A pointer to the set of walkers that are updated for the black step
     int redSize = 0; ///<The number of walkers in the full red set
     int blkSize = 0; ///<The number of walkers in the full black set
-    int numRed = 0; ///<The number of walkers in the red step that this thread is in charge of updating
-    int numBlk = 0; ///<The number of walkers in the black step that this thread is in charge of updating
     int trdNum; ///<The index of this thread, for debugging.
     bool writeChain = true;///<A variable that stores if the points need to be written for a given step
 };
 
 template<class ParamType, class MoverType, class EndOfStepAction>
 RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::
-RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, WalkerInfo& updateSets, const MoverType& mvr, ControllerType& ctrl):
+RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, const MoverType& mvr, ControllerType& ctrl):
     mover(mvr), controller(ctrl), trdNum(threadNum)
 {
     std::tie(redWalkers, blkWalkers, redSize, blkSize) = walkerSets;
-    std::tie(redSet, blkSet, numRed, numBlk) = updateSets;
     mover.setPrng(rndSeed, threadNum);
 }
 
@@ -135,18 +125,24 @@ void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::operator()()
 template<class ParamType, class MoverType, class EndOfStepAction>
 void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::doRedUpdates()
 {
-    for(int i=0; i<numRed; ++i)
+    int index = controller.workerGetWorkIndex();
+    //std::cout<<"RT"<<trdNum<<", "<<index<<std::endl;
+    while(index<redSize)
     {
-        mover.updateWalker(redSet[i], blkWalkers, blkSize, writeChain);
+        mover.updateWalker(redWalkers[index], blkWalkers, blkSize, writeChain);
+        index = controller.workerGetWorkIndex();
     }
 }
 
 template<class ParamType, class MoverType, class EndOfStepAction>
 void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::doBlackUpdates()
 {
-    for(int i=0; i<numBlk; ++i)
+    int index = controller.workerGetWorkIndex();
+    //std::cout<<"BT"<<trdNum<<", "<<index<<std::endl;
+    while(index < redSize)
     {
-        mover.updateWalker(blkSet[i], redWalkers, redSize, writeChain);
+        mover.updateWalker(blkWalkers[index], redWalkers, redSize, writeChain);
+        index = controller.workerGetWorkIndex();
     }
 }
 

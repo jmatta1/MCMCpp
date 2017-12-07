@@ -19,7 +19,6 @@
 #include<cassert>
 #include<thread>
 #include<chrono>
-#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/Chain.h"
@@ -64,7 +63,7 @@ public:
         chain(chainRef), stepAction(ptr), threadCount(numThreads),
         lastThread(numThreads-1), stepsTaken(0), stepsSkipped(0),
         ctrlStatus(MainStatus::Continue), ctrlMutex(), ctrlWait(),
-        wrkrStatus(WorkerStatus::Wait), savePoints(true),
+        wrkrStatus(WorkerStatus::Wait), savePoints(true), wrkrIndex(0),
         numWorkersAtMainWait(0), wrkrMutex(), wrkrWait(), wrkrTerm(0),
         numWorkersAtMidStep(0), numWorkersAtEndStep(0){}
     
@@ -125,11 +124,18 @@ public:
      * \return The currently set worker state
      */
     WorkerStatus workerGetStatus(){return wrkrStatus.load(std::memory_order_acquire);}
+    
     /*!
      * \brief workerGetSavingPoint Returns if the worker should be saving points or not
      * \return The current setting for saving points
      */
     bool workerGetSavingPoint(){return savePoints.load(std::memory_order_acquire);}
+    
+    /*!
+     * \brief workerGetWorkIndex Gets the next work index for the worker thread
+     * \return the next worker index
+     */
+    int workerGetWorkIndex(){return wrkrIndex.fetch_add(1, std::memory_order_acq_rel);}
     
 private:
     Chain::Chain<ParamType>& chain; ///<The chain reference for incrementing and getting itterators for the end of step action
@@ -147,13 +153,18 @@ private:
     std::mutex ctrlMutex; ///<Mutex for the controller thread
     std::condition_variable ctrlWait; ///<Wait condition for the controller thread
     
-    //worker control
+    //worker action control
     std::atomic<WorkerStatus> wrkrStatus; ///<Status/command for the worker threads
     std::atomic_bool savePoints; ///<Whether or not worker threads should tell their walkers to save this step
+    std::atomic_int wrkrIndex; ///<The index of the next walker in the set to update
+    
+    //worker main wait control
     std::atomic_int numWorkersAtMainWait; ///<Number of workers at the main wait location, queryable from the outside, so it is atomic
     std::mutex wrkrMutex; ///<Mutex for workers to wait at the beginning / end of a step
     std::condition_variable wrkrWait; ///<Wait condition variable to hold workers when they are not stepping
-    std::atomic_int wrkrTerm;
+    
+    //worker terminate control
+    std::atomic_int wrkrTerm; ///<Number of workers that have acknowledged the terminate command / terminated
     
     //worker mid step control
     std::atomic_int numWorkersAtMidStep; ///<Number of workers that are waiting at the mid step point
@@ -204,6 +215,8 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
         {
             savePoints.store(false, std::memory_order_release);
         }
+        //set the starting index of threads to zero
+        wrkrIndex.store(0, std::memory_order_release);
         //Set the number of threads at the midstep checkpoint to zero
         numWorkersAtMidStep.store(0, std::memory_order_release);
         //Set the processing mode to start stepping the ensemble
@@ -240,6 +253,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerMidStepWait()
     if(temp == lastThread)
     {//we are the last thread swap things around and go
         numWorkersAtEndStep.store(0, std::memory_order_release);
+        wrkrIndex.store(0, std::memory_order_release);
         wrkrStatus.store(WorkerStatus::ProcessBlack, std::memory_order_release);
     }
     else
@@ -272,6 +286,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
         if(savePoints.load(std::memory_order_acquire))
         {
             int temp = (stepsTaken.fetch_add(1, std::memory_order_acq_rel) + 1);
+            //if((temp%10000) == 0) std::cout<<"Stored Steps: "<<temp<<std::endl;
             //check if we are done sampling (since we can only finish sampling on a written point
             if(stepsToTake == temp)
             {
@@ -306,6 +321,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
         else
         {
             numWorkersAtMidStep = 0;
+            wrkrIndex.store(0, std::memory_order_release);
             wrkrStatus.store(WorkerStatus::ProcessRed, std::memory_order_release);
         }
     }

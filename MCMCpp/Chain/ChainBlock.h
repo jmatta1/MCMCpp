@@ -16,7 +16,6 @@
 #include<cstdlib>//needed for aligned allocation
 #include<cstring>//for memcpy
 #include<algorithm>
-#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"Utility/Misc.h"
