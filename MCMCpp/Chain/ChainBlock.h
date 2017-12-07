@@ -29,7 +29,7 @@ namespace Chain
 
 namespace Detail
 {
-static const int BlockSize = 1000; ///<Number of steps to store in one chain block
+static const int BlockSize = 10000; ///<Number of steps to store in one chain block
 }
 
 /**
