@@ -16,6 +16,8 @@
 // includes for C++ system headers
 #include<memory>//shared pointer
 #include<algorithm>
+#include<thread>
+#include<chrono>
 // includes from other libraries
 // includes from MCMC
 #include"../../Walker/Walker.h"
@@ -27,6 +29,11 @@ namespace MCMC
 {
 namespace Mover
 {
+
+namespace Detail
+{
+static const int NthPrime = 70; ///<Factor to tune as a "work factor" for the calculation
+}
 
 /**
  * @class SequenceMove
@@ -100,6 +107,7 @@ public:
      */
     void updateWalker(WalkType& currWalker, WalkType* walkerSet, int numWalkers, bool storePoint)
     {
+        findPrimeNumber(Detail::NthPrime);
         const ParamType* currState = currWalker.getCurrState();
         //benchmarking shows that the transform was a bad choice here
         /*std::transform(currState, currState+paramCount, stepSizes.get(), proposal,
@@ -131,6 +139,34 @@ public:
     }
     
 private:
+    /*!
+     * \brief findPrimeNumber Finds the nth prime number and returns it
+     * \param n Which prime number to find
+     * \return The nth prime number
+     * 
+     * This function exists to create a heavy CPU load, simulating a function that costs a lot to calculate
+     */
+    unsigned long long findPrimeNumber(int n)
+    {
+        int count=0;
+        unsigned long long a = 2;
+        while(count<n)
+        {
+            bool isPrime = true;
+            for(unsigned long long b = 2; b * b <= a; ++b)
+            {
+                if(a % b == 0)
+                {
+                    isPrime = false;
+                    break;
+                }
+            }
+            if(isPrime) count++;
+            ++a;
+        }
+        return (a - 1);
+    }
+    
     ParamType* proposal; ///Holds the new parameter set for the walker
     std::shared_ptr<ParamType> stepSizes; ///<Holds the array of step sizes, doesn't need to be replicated
     int paramCount; ///<Holds the total number of parameters
