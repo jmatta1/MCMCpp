@@ -248,6 +248,7 @@ bool EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
         {
             performStep(true);
             ++storedSteps;
+            //if((storedSteps%10000) == 0) std::cout<<"Stored Steps: "<<storedSteps<<std::endl;
             if(Chain::IncrementStatus::EndOfChain == markovChain.incrementChainStep()) return false;
         }
     }

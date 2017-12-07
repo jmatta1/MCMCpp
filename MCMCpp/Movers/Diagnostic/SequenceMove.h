@@ -32,7 +32,7 @@ namespace Mover
 
 namespace Detail
 {
-static const int NthPrime = 70; ///<Factor to tune as a "work factor" for the calculation
+static const int NthPrime = 50; ///<Factor to tune as a "work factor" for the calculation
 }
 
 /**
