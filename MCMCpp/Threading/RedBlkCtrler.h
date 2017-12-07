@@ -19,6 +19,7 @@
 #include<cassert>
 #include<thread>
 #include<chrono>
+#include<iostream>
 // includes from other libraries
 // includes from MCMC
 #include"../Chain/Chain.h"
@@ -79,13 +80,13 @@ public:
      * \brief samplingComplete Returns true if the requested number of samples has been taken, otherwise false
      * \return True if the number of steps taken is equal to the number of steps requested, false otherwise
      */
-    bool samplingComplete(){return (stepsTaken == stepsToTake);}
+    bool samplingComplete(){return (stepsTaken.load(std::memory_order_acquire) == stepsToTake);}
     
     /*!
      * \brief getNumWorkersWaiting returns the number of worker threads waiting for work
      * \return The number of threads waiting on the main condition variable
      */
-    int getNumWorkersWaiting(){return numWorkersAtMainWait.load();}
+    int getNumWorkersWaiting(){return numWorkersAtMainWait.load(std::memory_order_acquire);}
     
     /*!
      * \brief terminateWorkers Sets the status of all workers to terminate and ensures that all worker condition variables are notified
@@ -96,7 +97,7 @@ public:
      * \brief getTerminatedWorkerCount Returns the number of worker threads that have terminated
      * \return The number of threads that have terminated
      */
-    int getTerminatedWorkerCount(){return wrkrTerm;}
+    int getTerminatedWorkerCount(){return wrkrTerm.load(std::memory_order_acquire);}
     
     //functions for the worker threads
     /*!
@@ -123,12 +124,12 @@ public:
      * \brief workerGetStatus Returns the current state the worker should be in
      * \return The currently set worker state
      */
-    WorkerStatus workerGetStatus(){return wrkrStatus.load();}
+    WorkerStatus workerGetStatus(){return wrkrStatus.load(std::memory_order_acquire);}
     /*!
      * \brief workerGetSavingPoint Returns if the worker should be saving points or not
      * \return The current setting for saving points
      */
-    bool workerGetSavingPoint(){return savePoints.load();}
+    bool workerGetSavingPoint(){return savePoints.load(std::memory_order_acquire);}
     
 private:
     Chain::Chain<ParamType>& chain; ///<The chain reference for incrementing and getting itterators for the end of step action
@@ -166,12 +167,12 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::terminateWorkers()
 {
     {
         std::unique_lock<std::mutex> wrkrLock(wrkrMutex);
-        wrkrTerm.store(0);
+        wrkrTerm.store(0, std::memory_order_release);
         wrkrStatus.store(WorkerStatus::Terminate);
         wrkrWait.notify_all();
     }
     std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
-    while(wrkrTerm.load() != threadCount)
+    while(wrkrTerm.load(std::memory_order_acquire) != threadCount)
     {
         ctrlWait.wait_for(ctrlLock, std::chrono::microseconds(10));
     }
@@ -188,25 +189,25 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
         //lock the worker mutex to prevent unforseen races
         std::unique_lock<std::mutex> wrkrLock(wrkrMutex);
         //change the control status and set up the sampling parameters
-        ctrlStatus.store(MainStatus::Wait);
-        stepsTaken = 0;
+        ctrlStatus.store(MainStatus::Wait, std::memory_order_release);
+        stepsTaken.store(0, std::memory_order_release);;
         stepsToTake = numSteps;
-        stepsSkipped = 0;
+        stepsSkipped.store(0, std::memory_order_release);
         stepsToSkip = skipPoints;
         //if we are not doing sample slicing, jump straight to a save step
         //otherwise set to a skip step
         if(stepsToSkip == 0)
         {
-            savePoints.store(true);
+            savePoints.store(true, std::memory_order_release);
         }
         else
         {
-            savePoints.store(false);
+            savePoints.store(false, std::memory_order_release);
         }
         //Set the number of threads at the midstep checkpoint to zero
-        numWorkersAtMidStep.store(0);
+        numWorkersAtMidStep.store(0, std::memory_order_release);
         //Set the processing mode to start stepping the ensemble
-        wrkrStatus.store(WorkerStatus::ProcessRed);
+        wrkrStatus.store(WorkerStatus::ProcessRed, std::memory_order_release);
         //wake all the worker threads sitting on the primary worker condition variable
         wrkrWait.notify_all();
         //the worker mutex will be unlocked now so the worker threads can wake up
@@ -214,7 +215,7 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::runSampling(int numSteps, int s
     //lock the control thread mutex
     std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
     //make the control thread (this thread) sleep until it is signalled that sampling is finished
-    while(ctrlStatus.load() == MainStatus::Wait)
+    while(ctrlStatus.load(std::memory_order_acquire) == MainStatus::Wait)
     {
         ctrlWait.wait(ctrlLock);
     }
@@ -225,8 +226,8 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerWaitForTask()
 {
     //lock the worker mutex, increment the wait counter, then wait
     std::unique_lock<std::mutex> lock(wrkrMutex);
-    numWorkersAtMainWait.fetch_add(1);
-    while(wrkrStatus.load() == WorkerStatus::Wait)
+    numWorkersAtMainWait.fetch_add(1, std::memory_order_acq_rel);
+    while(wrkrStatus.load(std::memory_order_acquire) == WorkerStatus::Wait)
     {
         wrkrWait.wait(lock);
     }
@@ -235,15 +236,15 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerWaitForTask()
 template<class ParamType, class EndOfStepAction>
 void RedBlackCtrler<ParamType, EndOfStepAction>::workerMidStepWait()
 {
-    int temp = numWorkersAtMidStep.fetch_add(1);
+    int temp = numWorkersAtMidStep.fetch_add(1, std::memory_order_acq_rel);
     if(temp == lastThread)
     {//we are the last thread swap things around and go
-        numWorkersAtEndStep.store(0);
-        wrkrStatus.store(WorkerStatus::ProcessBlack);
+        numWorkersAtEndStep.store(0, std::memory_order_release);
+        wrkrStatus.store(WorkerStatus::ProcessBlack, std::memory_order_release);
     }
     else
     {//otherwise, spin until the state changes to something other than ProcessRed
-        while(wrkrStatus.load() == WorkerStatus::ProcessRed){}
+        while(wrkrStatus.load(std::memory_order_acquire) == WorkerStatus::ProcessRed){}
     }
     
 }
@@ -252,7 +253,7 @@ template<class ParamType, class EndOfStepAction>
 void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
 {
     //Note: if we are at the end step the status is ProcessBlack, always
-    int temp = numWorkersAtEndStep.fetch_add(1);
+    int temp = numWorkersAtEndStep.fetch_add(1, std::memory_order_acq_rel);
     if(temp == lastThread)
     {//we are the last thread to finish the step
         //create a variable to store if we are at the end of sampling for when the time comes to update worker thread states
@@ -268,56 +269,56 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerEndStepWait()
              stepAction->performAction(chain.getStepIteratorBegin(), chain.getStepIteratorEnd());
         }
         //next increment the appropriate step counter and adjust the write mode as needed
-        if(savePoints.load())
+        if(savePoints.load(std::memory_order_acquire))
         {
-            stepsTaken.fetch_add(1);
+            int temp = (stepsTaken.fetch_add(1, std::memory_order_acq_rel) + 1);
             //check if we are done sampling (since we can only finish sampling on a written point
-            if(stepsToTake == stepsTaken.load())
+            if(stepsToTake == temp)
             {
                 endOfSampling = true;
             }
             //check if we need to shift to skip mode for the next X points
             if(stepsToSkip != 0)
             {//whenever we write a point we need to skip the next batch before writing again
-                savePoints.store(false);
-                stepsSkipped.store(0);
+                savePoints.store(false, std::memory_order_release);
+                stepsSkipped.store(0, std::memory_order_release);
             }
         }
         else
         {
-            stepsSkipped.fetch_add(1);
+            int temp = (stepsSkipped.fetch_add(1, std::memory_order_acq_rel) + 1);
             //we cannot be done sampling if we are in a stretch of skipping
             //check if we need to save the next step
-            if(stepsToSkip == stepsSkipped.load())
+            if(stepsToSkip == temp)
             {
-                savePoints.store(false);
+                savePoints.store(false, std::memory_order_release);
             }
         }
         //handle if we are at the end of sampling
         if(endOfSampling)
         {
-            numWorkersAtMainWait.store(0);
-            wrkrStatus.store(WorkerStatus::Wait);
+            numWorkersAtMainWait.store(0, std::memory_order_release);
+            wrkrStatus.store(WorkerStatus::Wait, std::memory_order_release);
             std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
-            ctrlStatus.store(MainStatus::Continue);
+            ctrlStatus.store(MainStatus::Continue, std::memory_order_release);
             ctrlWait.notify_all();
         }
         else
         {
             numWorkersAtMidStep = 0;
-            wrkrStatus.store(WorkerStatus::ProcessRed);
+            wrkrStatus.store(WorkerStatus::ProcessRed, std::memory_order_release);
         }
     }
     else
     {//we are not the last thread, spin until the state is not ProcessBlack
-        while(wrkrStatus.load() == WorkerStatus::ProcessBlack){}
+        while(wrkrStatus.load(std::memory_order_acquire) == WorkerStatus::ProcessBlack) {}
     }
 }
 
 template<class ParamType, class EndOfStepAction>
 void RedBlackCtrler<ParamType, EndOfStepAction>::workerAckTerminate()
 {
-    int temp = wrkrTerm.fetch_add(1);
+    int temp = wrkrTerm.fetch_add(1, std::memory_order_acq_rel);
     if(temp == lastThread)
     {
         std::unique_lock<std::mutex> ctrlLock(ctrlMutex);
