@@ -10,7 +10,7 @@ include(./CMakeFlagDefs.txt)
 
 # add our default g++ flags
 #add_definitions(-m64 -std=c++14 -D_FILE_OFFSET_BITS=64 -lpthread -I/usr/local/include/root)
-add_definitions(-m64 -march=native -mtune=native -std=c++11 -D_FILE_OFFSET_BITS=64 -lpthread)
+add_definitions(-m64 -march=native -mtune=native -std=c++11 -D_FILE_OFFSET_BITS=64)
 
 # a little hack to make Qt Creator a little happier when it runs cmake to get
 # the project files
