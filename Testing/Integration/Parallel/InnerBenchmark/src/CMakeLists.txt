@@ -44,6 +44,6 @@ include_directories(".")
 include_directories("../../../MCMCpp")
 
 # Set the executable and what it depends on
-add_executable(parBenchmark main.cpp ${HDRS})
-target_link_libraries(parBenchmark ${CMAKE_THREAD_LIBS_INIT})
+add_executable(benchmark main.cpp ${HDRS})
+target_link_libraries(benchmark ${CMAKE_THREAD_LIBS_INIT})
 

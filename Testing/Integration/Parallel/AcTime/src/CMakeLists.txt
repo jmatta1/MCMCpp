@@ -43,5 +43,5 @@ include_directories(".")
 include_directories("../../../MCMCpp")
 
 # Set the executable and what it depends on
-add_executable(pacTest ${SRCS} ${HDRS})
-target_link_libraries(pacTest ${CMAKE_THREAD_LIBS_INIT})
+add_executable(acTest ${SRCS} ${HDRS})
+target_link_libraries(acTest ${CMAKE_THREAD_LIBS_INIT})

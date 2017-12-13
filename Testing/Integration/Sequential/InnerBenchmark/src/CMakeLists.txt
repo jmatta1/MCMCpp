@@ -42,5 +42,5 @@ include_directories(".")
 include_directories("../../../MCMCpp")
 
 # Set the executable and what it depends on
-add_executable(seqBenchmark ${SRCS} ${HDRS})
+add_executable(benchmark ${SRCS} ${HDRS})
 
