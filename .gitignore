@@ -12,8 +12,7 @@ CMakeLists.txt.user
 
 # ignore executables built in the testing and example codes
 acTest
-seqBenchmark
-parBenchmark
+benchmark
 
 # ignore build directories
 build
