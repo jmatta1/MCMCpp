@@ -13,7 +13,7 @@
 #define MCMC_ANALYSIS_DETAIL_AUTOCOV_H
 // includes for C system headers
 // includes for C++ system headers
-#include<algorithm>
+#include<algorithm>//for transform
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
 // includes from other libraries
@@ -256,7 +256,7 @@ void AutoCov<ParamType>::checkSizeAndHandleChanges(int chainLength)
         fftSize = (1 << lgFftSize);
         if(negRootsOfUnity != nullptr) delete[] negRootsOfUnity;
         if(posRootsOfUnity != nullptr) delete[] posRootsOfUnity;
-        if(firstTransform != nullptr) delete[] firstTransform;
+        if(firstTransform  != nullptr) delete[] firstTransform;
         if(secondTransform != nullptr) delete[] secondTransform;
         negRootsOfUnity = new std::complex<ParamType>[fftSize/2];
         posRootsOfUnity = new std::complex<ParamType>[fftSize/2];
