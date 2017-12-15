@@ -48,13 +48,6 @@ int main()
     std::cout<<"Running parallel ensemble sampler for autoregressive model"<<std::endl;
     sampler.runMCMC(numSteps);
     
-    /*auto end = sampler.getStepIttEnd();
-    int offset = 20;
-    for(auto itt = sampler.getStepIttBegin(); itt != end; ++itt)
-    {
-        std::cout<<(*itt)[20*numParams+0]<<", "<<(*itt)[20*numParams+1]<<", "<<(*itt)[20*numParams+2]<<", "<<(*itt)[20*numParams+3]<<std::endl;
-    }*/
-    
     std::cout<<"Calculating integrated autocorrelation times"<<std::endl;
     Analysis::AutoCorrCalc<double> acCalc(numParams, numWalkers);
     auto startItt = sampler.getStepIttBegin();
