@@ -18,10 +18,10 @@
 #include<algorithm>//used for transform and fill_n
 #include<random>//needed for normal distribution
 // includes from other libraries
-#include"../Utility/pcg-cpp/include/pcg_random.hpp"
+#include"../Utility/pcg-cpp/include/pcg_random.hpp"//the random number generator for randomly selecting a set of walkers
 // includes from MCMC
-#include"../Chain/ChainStepIterator.h"
-#include"Detail/AutoCov.h"
+#include"../Chain/ChainStepIterator.h" //the iterator to step through chains with
+#include"Detail/AutoCov.h" //used to calculate the autocovariance function for a single chain
 
 namespace MCMC
 {
