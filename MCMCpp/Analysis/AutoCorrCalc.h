@@ -15,7 +15,7 @@
 // includes for C++ system headers
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
-#include<algorithm>//used for
+#include<algorithm>//used for transform and fill_n
 #include<random>//needed for normal distribution
 // includes from other libraries
 #include"../Utility/pcg-cpp/include/pcg_random.hpp"
@@ -198,6 +198,7 @@ void AutoCorrCalc<ParamType>::transferWalker(const IttType& start, const IttType
 template<class ParamType>
 void AutoCorrCalc<ParamType>::calculateChainAverages(const IttType& start, const IttType& end, int numSamples, int numWalkersToUse)
 {
+    std::fill_n(chainAverages, paramCount*walkerCount, static_cast<ParamType>(0));
     ParamType norm = (static_cast<ParamType>(1)/static_cast<ParamType>(numSamples));
     for(IttType itt(start); itt != end; ++itt)
     {
