@@ -1,4 +1,6 @@
 #include<iostream>
+//#include<iomanip>
+//#include<fstream>
 #include"Movers/Diagnostic/AutoRegressiveMove.h"
 #include"Analysis/AutoCorrCalc.h"
 #include"EnsembleSampler.h"
@@ -6,6 +8,8 @@
 using MCMC::EnsembleSampler;
 namespace Mover=MCMC::Mover;
 namespace Analysis=MCMC::Analysis;
+
+//std::string FileNames[5] = {"p1.csv", "p2.csv", "p3.csv", "p4.csv", "p5.csv"};
 
 int main()
 {
@@ -46,6 +50,24 @@ int main()
     
     std::cout<<"Running ensemble sampler for autoregressive model"<<std::endl;
     sampler.runMCMC(numSteps);
+    
+    /*std::cout<<"Writing out chains"<<std::endl;
+    auto end = sampler.getStepIttEnd();
+    for(int j=0; j<numParams; ++j)
+    {
+        std::ofstream output(FileNames[j]);
+        for(auto itt = sampler.getStepIttBegin(); itt != end; ++itt)
+        {
+            
+            output<<(*itt)[j];
+            for(int i=1; i<numWalkers; ++i)
+            {
+                output<<", "<<std::scientific<<std::setprecision(16)<<(*itt)[i*numParams+j];
+            }
+            output<<'\n';
+        }
+        output<<std::flush;
+    }*/
     
     std::cout<<"Calculating integrated autocorrelation times"<<std::endl;
     Analysis::AutoCorrCalc<double> acCalc(numParams, numWalkers);
