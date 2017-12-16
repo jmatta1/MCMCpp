@@ -158,9 +158,9 @@ void AutoCov<ParamType>::calcNormAutoCov(ParamType* chain, const ParamType& avg,
 template<class ParamType>
 void AutoCov<ParamType>::normalizeAndCopyAutoCov(ParamType* output, int chainLength)
 {
-    ParamType normValue = (static_cast<ParamType>(1)/secondTransform[0].real());
+    ParamType normValue = secondTransform[0].real();
     std::transform(secondTransform, secondTransform+chainLength, output,
-                   [&normValue](const std::complex<ParamType>& v) -> ParamType {return normValue*v.real();});
+                   [&normValue](const std::complex<ParamType>& v) -> ParamType {return (v.real()/normValue);});
 }
 
 template<class ParamType>
@@ -191,7 +191,8 @@ void AutoCov<ParamType>::copyBitReversedPowerSpectrum()
 {
     for(int i=0; i<fftSize; ++i)
     {
-        secondTransform[bitReverse(i)] = std::norm(firstTransform[i]);
+        std::complex<ParamType> temp = firstTransform[i];
+        secondTransform[bitReverse(i)] = (temp.real()*temp.real()+temp.imag()*temp.imag());
     }
 }
 
