@@ -58,6 +58,13 @@ namespace MCMC
  * is working on that happens to share a cache line with the chain of the
  * first thread, invalidating the cache even though neither thread is
  * examining the same data)
+ * 
+ * It should be noted that in its current implementation, the parallel ensemble sampler
+ * is not deterministic. This is because of the nondeterminism in which thread updates
+ * which walkers. While the sequence of random numbers the that each thread generates
+ * will be the same for a given thread number and run number, which walker that is applied
+ * to can change from run to run depending on processor load, schedule and all
+ * manner of other things.
  */
 template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
 class ParallelEnsembleSampler
