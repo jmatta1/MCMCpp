@@ -21,7 +21,7 @@
 #include"../Utility/UserOjbectsTest.h"
 #include"../Utility/GwDistribution.h"
 #include"../Walker/Walker.h"
-#include"Utility/Misc.h"
+#include"../Utility/Misc.h"
 
 namespace MCMC
 {
@@ -86,7 +86,7 @@ public:
     /*!
      * \brief Deleted assignment operator
      */
-    WalkMove<ParamType>& operator=(const WalkMove<ParamType>& rhs) = delete;
+    WalkMove<ParamType, Calculator>& operator=(const WalkMove<ParamType, Calculator>& rhs) = delete;
     
     /*!
      * \brief setPrngSeed Sets the seed and stream number of the underlying prng
@@ -112,7 +112,7 @@ public:
         if(prng.getNegExponentialReal() < logProbDiff)
         {
             //currWalker.jumpToNewPoint(proposal, newProb, storePoint);
-            currWalker.jumpToNewPointSwap(proposal, auxVal, storePoint);
+            currWalker.jumpToNewPointSwap(proposal, newProb, storePoint);
         }
         else
         {
