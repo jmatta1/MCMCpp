@@ -142,7 +142,7 @@ struct CheckFunctor : decltype(Detail::testSignature_functor<TestClass, RetVal, 
  * @brief Outer Function to perform test for calcLogPostProb function
  */
 template<class TestClass, class RetVal, class Arg0>
-struct CheckCalcLogPostProb : decltype(Detail::testSignature_functor<TestClass, RetVal, Arg0>(0ULL) ){};
+struct CheckCalcLogPostProb : decltype(Detail::testSignature_calcLogPostProb<TestClass, RetVal, Arg0>(0ULL) ){};
 
 /*!
  * @brief Outer Function to perform test for calcLogPostProb function
