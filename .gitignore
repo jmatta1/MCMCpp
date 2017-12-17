@@ -24,3 +24,5 @@ test.cfg
 # ignore notes files
 callgrind.txt
 posOptOpp.txt
+walkGauss
+stretchGauss
