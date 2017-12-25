@@ -101,7 +101,7 @@ public:
     /*!
      * \brief getStoredStepCount get the number of steps
      * \return The number of steps stored in the chain
-     */
+     */ 
     int getStoredStepCount(){return stepCount;}
     
     /*!
@@ -274,7 +274,7 @@ void Chain<ParamType>::resetChainForSubSampling(int burnInSamples, int autoCorre
     if(stepCount <= burnInSamples){resetChain(); return;}
     stepCount = 0;
     auto readLocation = this->getStepIteratorBegin();
-    auto end = this->getStepIteratorBegin();
+    auto end = this->getStepIteratorEnd();
     //push the read location to the first non-burnin sample
     readLocation += burnInSamples;
     //check to make sure we are not at the end (if so, just do a normal reset of the chain
