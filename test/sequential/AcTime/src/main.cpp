@@ -19,7 +19,7 @@ int main()
     //phi = 0.904761904762 gives a calculated value of: 19.9437
     //phi = 0.9354838709677 gives a calculated value of: 29.7831
     //phi = 0.9672131147541 gives a calculated value of: 59.8488
-    //phi = 0.990050200903734685 gives a calculated value of: 196.85 (I suspect truncation
+    //phi = 0.990050200903734685 gives a calculated value of: 196.85 (I suspect truncation causes this)
     const int runNumber = 0;
     const int numWalkers = 100;
     const int numParams = 5;
