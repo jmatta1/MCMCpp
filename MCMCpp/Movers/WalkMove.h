@@ -57,7 +57,7 @@ public:
      * \param numSamples The number of samples to draw from the complementary ensemble
      */
     WalkMove(int numParams, long long prngInit, const Calculator& orig, int numSamples):
-        numPoints(numSamples),ptCount(static_cast<ParamType>(numSamples)), paramCount(numParams), prng(prngInit), calc(orig)
+        numPoints(numSamples), ptCount(numSamples), paramCount(numParams), prng(prngInit), calc(orig)
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
@@ -76,7 +76,7 @@ public:
      * \param rhs Original WalkMove object to be copied
      */
     WalkMove(const WalkMove<ParamType, Calculator>& rhs):
-        numPoints(rhs.numPoints), paramCount(rhs.paramCount), calc(rhs.calc)
+        numPoints(rhs.numPoints), ptCount(rhs.ptCount), paramCount(rhs.paramCount), prng(rhs.prng), calc(rhs.calc)
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
@@ -109,7 +109,8 @@ public:
         calculateProposal(currWalker, walkerSet);
         ParamType newProb = calc.calcLogPostProb(proposal);
         ParamType logProbDiff = (newProb - currWalker.getCurrAuxData());
-        if(prng.getNegExponentialReal() < logProbDiff)
+        ParamType temp = prng.getNegExponentialReal();
+        if(temp < logProbDiff)
         {
             //currWalker.jumpToNewPoint(proposal, newProb, storePoint);
             currWalker.jumpToNewPointSwap(proposal, newProb, storePoint);
@@ -140,7 +141,7 @@ private:
         while(numSelected < numPoints)
         {
             randUniform = prng.getUniformReal();
-            if( ((numWalkers-totalInputExamined)*randUniform) >= (numWalkers-numSelected))
+            if( ((numWalkers-totalInputExamined)*randUniform) >= (ptCount-numSelected))
             {
                 ++totalInputExamined;
             }
@@ -164,6 +165,7 @@ private:
         intermediates[0] = 0.0;
         intermediates[1] = 0.0;
         intermediates[2] = 0.0;
+        const ParamType* currentState = currWalker.getCurrState();
         for(int j=0; j<numPoints; ++j)
         {
             randoms[j] = prng.getNormalReal();
@@ -172,21 +174,19 @@ private:
             intermediates[1] += randoms[j];
             intermediates[2] += value;
         }
-        proposal[0] = currWalker.getCurrState()[0] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount)));
+        proposal[0] = currentState[0] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount)));
         //loop across the remaining parameters, using the pre-stored random numbers
         for(int i=1; i<paramCount; ++i)
         {
             intermediates[0] = 0.0;
-            intermediates[1] = 0.0;
             intermediates[2] = 0.0;
             for(int j=0; j<numPoints; ++j)
             {
                 ParamType value = walkerSet[walkerIndices[j]].getCurrState()[i];
                 intermediates[0] += randoms[j]*value;
-                intermediates[1] += randoms[j];
                 intermediates[2] += value;
             }
-            proposal[i] = (currWalker.getCurrState()[i] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount))));
+            proposal[i] = (currentState[i] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount))));
         }
     }
     
@@ -196,9 +196,9 @@ private:
     ParamType* randoms; ///<Storage for the random numbers selected in calculating the first parameter in the point proposal
     int* walkerIndices; ///<Storage for the indices of the randomly selected walkers
     
-    ParamType* proposal = nullptr;
-    int paramCount;
-    Utility::MultiSampler<ParamType, Utility::GwDistribution<ParamType, 2, 1>> prng;
+    ParamType* proposal = nullptr; ///<Pointer to the proposal point
+    int paramCount; ///MNumber of parameters in the distribution
+    Utility::MultiSampler<ParamType, Utility::GwDistribution<ParamType, 2, 1>> prng; ///<The random number generator and distribution sampler
     Calculator calc;
 };
 }
