@@ -21,7 +21,7 @@ int main()
     const int extraRunNumber = 53;
     const int numWalkers = 320;
     const int numParams = 2;
-    const int numSteps = 44999;
+    const int numSteps = 40019;
     const double eps = 0.13;
     
     std::cout<<"Building Custom Distribution"<<std::endl;
@@ -33,8 +33,8 @@ int main()
     std::cout<<"Building sampler"<<std::endl;
     EnsembleSampler<double, Walker> sampler(runNumber, numWalkers, numParams, mover);
     
-    std::cout<<"Setting sampler to skip 4 points for every point it remembers"<<std::endl;
-    sampler.setSlicingMode(true, 5);
+    std::cout<<"Setting sampler to skip 9 points for every point it remembers"<<std::endl;
+    sampler.setSlicingMode(true, 10);
     
     std::cout<<"Generating initial values"<<std::endl;
     double* initVals = new double[numWalkers*numParams];
@@ -58,8 +58,8 @@ int main()
     {
         std::cout<<"Sampling finished when chain ran out of space"<<std::endl;
     }
-    std::cout<<"Discarding 5000 points for burn in."<<std::endl;
-    sampler.sliceAndBurnChain(1, 5000);
+    std::cout<<"Discarding 20 points for burn in."<<std::endl;
+    sampler.sliceAndBurnChain(1, 20);
     std::cout<<"Acceptance Fraction: "<<sampler.getAcceptedSteps()<<"/"<<sampler.getTotalSteps()<<" | "<<sampler.getAcceptanceFraction()<<std::endl;
     std::cout<<"Writing out chains"<<std::endl;
     std::ofstream output("linearChains.csv");
