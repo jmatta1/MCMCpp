@@ -3,10 +3,12 @@
 #include<fstream>
 #include<Utility/pcg-cpp/include/pcg_random.hpp>
 #include"Common/SkewedGaussian.h"
+#include"Analysis/AutoCorrCalc.h"
 #include"Movers/WalkMove.h"
 #include"EnsembleSampler.h"
 using MCMC::EnsembleSampler;
 namespace Mover=MCMC::Mover;
+namespace Analysis=MCMC::Analysis;
 
 template<class ParamType>
 void generateInitialValues(ParamType* initVals, ParamType* auxVals, SkewedGaussianTwoDim<ParamType>& likelihood,
@@ -19,7 +21,7 @@ int main()
     const int extraRunNumber = 53;
     const int numWalkers = 320;
     const int numParams = 2;
-    const int numSteps = 39999;
+    const int numSteps = 44999;
     const double eps = 0.13;
     
     std::cout<<"Building Custom Distribution"<<std::endl;
@@ -31,8 +33,8 @@ int main()
     std::cout<<"Building sampler"<<std::endl;
     EnsembleSampler<double, Walker> sampler(runNumber, numWalkers, numParams, mover);
     
-    std::cout<<"Setting sampler to skip 4999 points for every point it remembers"<<std::endl;
-    sampler.setSamplingMode(true, 5000);
+    std::cout<<"Setting sampler to skip 4 points for every point it remembers"<<std::endl;
+    sampler.setSlicingMode(true, 5);
     
     std::cout<<"Generating initial values"<<std::endl;
     double* initVals = new double[numWalkers*numParams];
@@ -56,6 +58,9 @@ int main()
     {
         std::cout<<"Sampling finished when chain ran out of space"<<std::endl;
     }
+    std::cout<<"Discarding 5000 points for burn in."<<std::endl;
+    sampler.sliceAndBurnChain(1, 5000);
+    std::cout<<"Acceptance Fraction: "<<sampler.getAcceptedSteps()<<"/"<<sampler.getTotalSteps()<<" | "<<sampler.getAcceptanceFraction()<<std::endl;
     std::cout<<"Writing out chains"<<std::endl;
     std::ofstream output("linearChains.csv");
     auto end = sampler.getParamSetIttEnd();
@@ -64,6 +69,14 @@ int main()
         output<<(*itt)[0]<<", "<<(*itt)[1]<<std::endl;
     }
     output.close();
+    std::cout<<"Calculating integrated autocorrelation times"<<std::endl;
+    Analysis::AutoCorrCalc<double> acCalc(numParams, numWalkers);
+    auto startItt = sampler.getStepIttBegin();
+    auto endItt = sampler.getStepIttEnd();
+    acCalc.calcAutoCorrTimes(startItt, endItt, sampler.getStoredSteps());
+    
+    std::cout<<"P0 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(0)<<std::endl;
+    std::cout<<"P1 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(1)<<std::endl;
     std::cout<<"Shutting down"<<std::endl;
 }
 
