@@ -43,7 +43,7 @@ template <class ParamType, class Calculator, class CustomDistribution=Utility::G
 class StretchMove
 {
 public:
-    typedef Walker<ParamType> WalkType;
+    typedef Walker::Walker<ParamType> WalkType;
     static_assert(Utility::CheckCalcLogPostProb<Calculator, ParamType, ParamType*>(),
                   "StretchMove: The Calculator class does not have the necessary member function with signature:\n"
                   "  'ParamType calcLogPostProb(ParamType* paramSet)'");
@@ -76,7 +76,7 @@ public:
      * \brief StrethMove Copy constructor
      * \param rhs Original StretchMove object to be copied
      */
-    StrethMove(const StretchMove<ParamType, Calculator, CustomDistribution>& rhs):
+    StretchMove(const StretchMove<ParamType, Calculator, CustomDistribution>& rhs):
     paramCount(rhs.paramCount), calc(rhs.calc)
     {
         proposal = new ParamType[paramCount];
@@ -85,7 +85,7 @@ public:
     /*!
      * \brief Deleted assignment operator
      */
-    StretchMove<ParamType>& operator=(const StretchMove<ParamType>& rhs) = delete;
+    StretchMove<ParamType, Calculator, CustomDistribution>& operator=(const StretchMove<ParamType, Calculator, CustomDistribution>& rhs) = delete;
     
     /*!
      * \brief setPrngSeed Sets the seed and stream number of the underlying prng
@@ -107,12 +107,12 @@ public:
         const ParamType* selectedState = walkerSet[prng.getNonOffSetInt(numWalkers)].getCurrState();
         const ParamType* currState = currWalker.getCurrState();
         ParamType scalingFactor = prng.getCustomSample();
-        for(int i=0; i<numParams; ++i)
+        for(int i=0; i<paramCount; ++i)
         {
             proposal[i] = (selectedState[i] + scalingFactor*(currState[i] - selectedState[i]));
         }
         //now calculate the log of the probability of performing the jump
-        ParamType probScaling = (std::log(scalingFactor)*static_cast<ParamType>(numParams - 1));
+        ParamType probScaling = (std::log(scalingFactor)*static_cast<ParamType>(paramCount - 1));
         ParamType newProb = calc.calcLogPostProb(proposal);
         ParamType logProbDiff = (probScaling + newProb - currWalker.getCurrAuxData());
         if(prng.getNegExponentialReal() < logProbDiff)
