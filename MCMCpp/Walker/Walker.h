@@ -25,11 +25,6 @@
 namespace MCMC
 {
 
-namespace Mover
-{
-
-}
-
 namespace Walker
 {
 /**
