@@ -23,33 +23,33 @@ int main()
     const int numParams = 2;
     const int numSteps = 40019;
     const double eps = 0.13;
-    
+
     std::cout<<"Building Custom Distribution"<<std::endl;
     SkewedGaussianTwoDim<double> likelihood(eps);
-    
+
     std::cout<<"Building initial mover"<<std::endl;
     Walker mover(numParams, runNumber, likelihood);
-    
+
     std::cout<<"Building sampler"<<std::endl;
     EnsembleSampler<double, Walker> sampler(runNumber, numWalkers, numParams, mover);
-    
-    std::cout<<"Setting sampler to skip 9 points for every point it remembers"<<std::endl;
-    sampler.setSlicingMode(true, 10);
-    
+
+    std::cout<<"Setting sampler to skip 29 points for every point it remembers"<<std::endl;
+    sampler.setSlicingMode(true, 30);
+
     std::cout<<"Generating initial values"<<std::endl;
     double* initVals = new double[numWalkers*numParams];
     double* auxVals = new double[numWalkers];
     generateInitialValues(initVals, auxVals, likelihood, numWalkers, numParams, extraRunNumber);
-    
+
     std::cout<<"Setting initial values"<<std::endl;
     sampler.setInitialWalkerPos(initVals, auxVals);
     std::cout<<"Deleting initial value arrays"<<std::endl;
     delete[] initVals;
     delete[] auxVals;
-    
+
     std::cout<<"Running ensemble sampler"<<std::endl;
     bool status = sampler.runMCMC(numSteps);
-    
+
     if(status)
     {
         std::cout<<"Sampling completed normally"<<std::endl;
@@ -74,7 +74,7 @@ int main()
     auto startItt = sampler.getStepIttBegin();
     auto endItt = sampler.getStepIttEnd();
     acCalc.calcAutoCorrTimes(startItt, endItt, sampler.getStoredSteps());
-    
+
     std::cout<<"P0 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(0)<<std::endl;
     std::cout<<"P1 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(1)<<std::endl;
     std::cout<<"Shutting down"<<std::endl;
