@@ -9,8 +9,8 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
-#define MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
+#ifndef MCMCPP_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
+#define MCMCPP_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
 // includes for C system headers
 #include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
@@ -18,13 +18,13 @@
 #include<cstdlib>
 #include<memory>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../../Walker/Walker.h"
 #include"../../Utility/ArrayDeleter.h"
 #include"../../Utility/MultiSampler.h"
 #include"../../Utility/GwDistribution.h"
 #include"../../Utility/UserOjbectsTest.h"
-#include"Utility/Misc.h"
+#include"../../Utility/Misc.h"
 
 namespace MCMC
 {
@@ -68,14 +68,10 @@ public:
             prngStdDev.get()[i] = std::sqrt(paramVariance[i])*std::sqrt(static_cast<ParamType>(1)-phiValues[i]*phiValues[i]);
         }
         size_t allocSize = (sizeof(ParamType)*paramCount);
-        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-        {
-            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
-        }
-        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
+        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
     }
     
-    ~AutoRegressiveMove(){free(proposal);}
+    ~AutoRegressiveMove(){Utility::delAAA(proposal);}
     
     /*!
      * \brief AutoRegressiveMove Copy constructor
@@ -146,4 +142,4 @@ private:
 };
 }
 }
-#endif  //MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
+#endif  //MCMCPP_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H

@@ -9,13 +9,13 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_ENSEMBLESAMPLER_H
-#define MCMC_ENSEMBLESAMPLER_H
+#ifndef MCMCPP_ENSEMBLESAMPLER_H
+#define MCMCPP_ENSEMBLESAMPLER_H
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"Chain/Chain.h"
 #include"Walker/Walker.h"
 #include"Utility/NoAction.h"
@@ -360,4 +360,4 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::performStep(bool save)
 }
 
 }
-#endif  //MCMC_ENSEMBLESAMPLER_H
+#endif  //MCMCPP_ENSEMBLESAMPLER_H

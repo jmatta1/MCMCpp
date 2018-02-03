@@ -9,15 +9,15 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_PARALLELENSEMBLESAMPLER_H
-#define MCMC_PARALLELENSEMBLESAMPLER_H
+#ifndef MCMCPP_PARALLELENSEMBLESAMPLER_H
+#define MCMCPP_PARALLELENSEMBLESAMPLER_H
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
 #include<mutex>
 #include<thread>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"Chain/Chain.h"
 #include"Walker/Walker.h"
 #include"Utility/NoAction.h"
@@ -345,4 +345,4 @@ void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::storeCurrentWalk
 }
 
 }
-#endif  //MCMC_PARALLELENSEMBLESAMPLER_H
+#endif  //MCMCPP_PARALLELENSEMBLESAMPLER_H

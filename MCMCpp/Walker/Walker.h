@@ -9,17 +9,17 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_WALKER_H
-#define MCMC_WALKER_WALKER_H
+#ifndef MCMCPP_WALKER_WALKER_H
+#define MCMCPP_WALKER_WALKER_H
 // includes for C system headers
 #include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
 #include<algorithm>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../Chain/Chain.h"
 #include"../Utility/MultiSampler.h"
-#include"Utility/Misc.h"
+#include"../Utility/Misc.h"
 
 
 namespace MCMC
@@ -36,7 +36,8 @@ namespace Walker
  * \tparam ParamType The floating point type to be used for the chain, float, double, long double, etc.
  * 
  * **WARNING** If using the swap procedure instead of copy (for speed), movers need to allocate their proposal arrays
- * using std::aligned_alloc in cstdlib instead of using operator new
+ * using std::aligned_alloc in cstdlib instead of using operator new. There are a pair of convenience function in
+ * Utility/Misc, namely autoAlignedAlloc and delAAA which can be used to perform aligned allocation and deletion correctly
  */
 template <class ParamType>
 class Walker
@@ -46,7 +47,7 @@ public:
      * \brief Walker Constructs a default instance of Walker with all values set to nullptr or zero
      */
     Walker(){}
-    ~Walker(){if(currState != nullptr) free(currState);}
+    ~Walker(){if(currState != nullptr) Utility::delAAA(currState);}
     
     /*!
      * \brief Delete copy constructor
@@ -72,11 +73,7 @@ public:
         numParams = numParam;
         sizeInBytes = numParams*sizeof(ParamType);
         size_t allocSize = (sizeof(ParamType)*numParam);
-        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-        {
-            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
-        }
-        currState = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
+        currState = Utility::autoAlignedAlloc<ParamType>(allocSize);
     }
     
     /*!
@@ -183,4 +180,4 @@ void Walker<ParamType>::jumpToNewPointSwap(ParamType* &newPos, const ParamType& 
 
 }
 }
-#endif  //MCMC_WALKER_WALKER_H
+#endif  //MCMCPP_WALKER_WALKER_H

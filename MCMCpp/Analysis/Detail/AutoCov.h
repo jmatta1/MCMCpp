@@ -9,15 +9,15 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_ANALYSIS_DETAIL_AUTOCOV_H
-#define MCMC_ANALYSIS_DETAIL_AUTOCOV_H
+#ifndef MCMCPP_ANALYSIS_DETAIL_AUTOCOV_H
+#define MCMCPP_ANALYSIS_DETAIL_AUTOCOV_H
 // includes for C system headers
 // includes for C++ system headers
 #include<algorithm>//for transform
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 
 namespace MCMC
 {
@@ -293,4 +293,4 @@ int AutoCov<ParamType>::findNextPowerOfTwo(int chainLength) const
 }
 }
 }
-#endif  //MCMC_ANALYSIS_AUTOCORRCALC_H
+#endif  //MCMCPP_ANALYSIS_AUTOCORRCALC_H

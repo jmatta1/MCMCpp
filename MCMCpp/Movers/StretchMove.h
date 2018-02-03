@@ -9,19 +9,19 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_MOVERS_STRETCHMOVE_H
-#define MCMC_WALKER_MOVERS_STRETCHMOVE_H
+#ifndef MCMCPP_MOVERS_STRETCHMOVE_H
+#define MCMCPP_MOVERS_STRETCHMOVE_H
 // includes for C system headers
 #include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
 #include<cmath>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../Walker/Walker.h"
 #include"../Utility/MultiSampler.h"
 #include"../Utility/GwDistribution.h"
 #include"../Utility/UserOjbectsTest.h"
-#include"Utility/Misc.h"
+#include"../Utility/Misc.h"
 
 namespace MCMC
 {
@@ -63,14 +63,10 @@ public:
         paramCount(numParams), prng(prngInit), calc(orig)
     {
         size_t allocSize = (sizeof(ParamType)*paramCount);
-        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-        {
-            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
-        }
-        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
+        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
     }
     
-    ~StretchMove(){free(proposal);}
+    ~StretchMove(){Utility::delAAA(proposal);}
     
     /*!
      * \brief StrethMove Copy constructor
@@ -79,7 +75,8 @@ public:
     StretchMove(const StretchMove<ParamType, Calculator, CustomDistribution>& rhs):
     paramCount(rhs.paramCount), calc(rhs.calc)
     {
-        proposal = new ParamType[paramCount];
+        size_t allocSize = (sizeof(ParamType)*paramCount);
+        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
     }
     
     /*!
@@ -135,4 +132,4 @@ private:
 };
 }
 }
-#endif  //MCMC_WALKER_MOVERS_STRETCHMOVE_H
+#endif  //MCMCPP_MOVERS_STRETCHMOVE_H

@@ -9,12 +9,12 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_CHAIN_CHAIN_H
-#define MCMC_CHAIN_CHAIN_H
+#ifndef MCMCPP_CHAIN_CHAIN_H
+#define MCMCPP_CHAIN_CHAIN_H
 // includes for C system headers
 // includes for C++ system headers
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"ChainBlock.h"
 #include"ChainPsetIterator.h"
 #include"ChainStepIterator.h"
@@ -319,4 +319,4 @@ ChainStepIterator<ParamType> Chain<ParamType>::getStepIteratorEnd()
 
 }
 }
-#endif  //MCMC_CHAIN_CHAIN_H
+#endif  //MCMCPP_CHAIN_CHAIN_H

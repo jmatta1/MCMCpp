@@ -9,13 +9,13 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_THREADING_REDBLKUPDATER_H
-#define MCMC_THREADING_REDBLKUPDATER_H
+#ifndef MCMCPP_THREADING_REDBLKUPDATER_H
+#define MCMCPP_THREADING_REDBLKUPDATER_H
 // includes for C system headers
 // includes for C++ system headers
 #include<tuple>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../Walker/Walker.h"
 #include"RedBlkCtrler.h"
 
@@ -148,4 +148,4 @@ void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::doBlackUpdates()
 
 }
 }
-#endif  //MCMC_THREADING_REDBLKUPDATER_H
+#endif  //MCMCPP_THREADING_REDBLKUPDATER_H

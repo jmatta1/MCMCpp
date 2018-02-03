@@ -9,13 +9,13 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_UTILITY_USEROBJECTTEST_H
-#define MCMC_UTILITY_USEROBJECTTEST_H
+#ifndef MCMCPP_UTILITY_USEROBJECTTEST_H
+#define MCMCPP_UTILITY_USEROBJECTTEST_H
 // includes for C system headers
 // includes for C++ system headers
 #include<type_traits>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 
 namespace MCMC
 {
@@ -151,4 +151,4 @@ template<class TestClass, class RetVal, class Arg0, class Arg1, class Arg2, clas
 struct CheckCalcUpdateWalker : decltype(Detail::testSignature_updateWalker<TestClass, RetVal, Arg0, Arg1, Arg2, Arg3>(0ULL) ){};
 }
 }
-#endif  //MCMC_UTILITY_USEROBJECTTEST_H
+#endif  //MCMCPP_UTILITY_USEROBJECTTEST_H

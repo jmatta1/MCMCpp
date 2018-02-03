@@ -9,8 +9,8 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_THREADING_REDBLKCTRLER_H
-#define MCMC_THREADING_REDBLKCTRLER_H
+#ifndef MCMCPP_THREADING_REDBLKCTRLER_H
+#define MCMCPP_THREADING_REDBLKCTRLER_H
 // includes for C system headers
 // includes for C++ system headers
 #include<mutex>
@@ -20,7 +20,7 @@
 #include<thread>
 #include<chrono>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../Chain/Chain.h"
 
 
@@ -344,4 +344,4 @@ void RedBlackCtrler<ParamType, EndOfStepAction>::workerAckTerminate()
 
 }
 }
-#endif  //MCMC_THREADING_REDBLKCTRLER_H
+#endif  //MCMCPP_THREADING_REDBLKCTRLER_H
