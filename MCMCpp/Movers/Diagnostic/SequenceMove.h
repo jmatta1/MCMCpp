@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -58,16 +58,14 @@ public:
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
     SequenceMove(int numParams, const ParamType* steps):
-        proposal(nullptr),
-        stepSizes(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
+        proposal( Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams)),
+        stepSizes(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
         paramCount(numParams)
     {
         for(int i=0; i<paramCount; ++i)
         {
             stepSizes.get()[i] = steps[i];
         }
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
     }
     
     ~SequenceMove(){Utility::delAAA(proposal);}
