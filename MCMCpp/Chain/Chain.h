@@ -9,12 +9,12 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_CHAIN_CHAIN_H
-#define MCMC_CHAIN_CHAIN_H
+#ifndef MCMCPP_CHAIN_CHAIN_H
+#define MCMCPP_CHAIN_CHAIN_H
 // includes for C system headers
 // includes for C++ system headers
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"ChainBlock.h"
 #include"ChainPsetIterator.h"
 #include"ChainStepIterator.h"
@@ -101,7 +101,7 @@ public:
     /*!
      * \brief getStoredStepCount get the number of steps
      * \return The number of steps stored in the chain
-     */
+     */ 
     int getStoredStepCount(){return stepCount;}
     
     /*!
@@ -268,11 +268,13 @@ void Chain<ParamType>::resetChain()
 template <class ParamType>
 void Chain<ParamType>::resetChainForSubSampling(int burnInSamples, int autoCorrelationTime)
 {
-    //check for a special case where we do nothing
+    //check for a special cases where we do nothing
     if((burnInSamples == 0) && (autoCorrelationTime == 1)) return;
+    if((stepCount-burnInSamples) < autoCorrelationTime){resetChain(); return;}
+    if(stepCount <= burnInSamples){resetChain(); return;}
     stepCount = 0;
     auto readLocation = this->getStepIteratorBegin();
-    auto end = this->getStepIteratorBegin();
+    auto end = this->getStepIteratorEnd();
     //push the read location to the first non-burnin sample
     readLocation += burnInSamples;
     //check to make sure we are not at the end (if so, just do a normal reset of the chain
@@ -317,4 +319,4 @@ ChainStepIterator<ParamType> Chain<ParamType>::getStepIteratorEnd()
 
 }
 }
-#endif  //MCMC_CHAIN_CHAIN_H
+#endif  //MCMCPP_CHAIN_CHAIN_H

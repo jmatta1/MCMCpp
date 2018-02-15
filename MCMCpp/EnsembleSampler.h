@@ -9,13 +9,13 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_ENSEMBLESAMPLER_H
-#define MCMC_ENSEMBLESAMPLER_H
+#ifndef MCMCPP_ENSEMBLESAMPLER_H
+#define MCMCPP_ENSEMBLESAMPLER_H
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"Chain/Chain.h"
 #include"Walker/Walker.h"
 #include"Utility/NoAction.h"
@@ -118,12 +118,30 @@ public:
     ParamType getAcceptanceFraction();
     
     /*!
-     * \brief setSamplingMode Is used to change the sampling mode, either using subsampling, or taking all samples
-     * \param useSubSampling Boolean for whether or not to use subsampling, default is false
-     * \param subSamplingInt The interval for subsampling
-     * \param burnIn The number of points at the beginning to discard for burnin
+     * \brief getAcceptedSteps Returns the number of steps accepted by the ensemble
+     * \return The total number of steps taken by the ensemble
      */
-    void setSamplingMode(bool useSubSampling=false, int subSamplingInt=1, int burnIn=0);
+    unsigned long long getAcceptedSteps();
+    
+    /*!
+     * \brief getTotalSteps Returns the total number of steps taken by the ensemble
+     * \return The total number of steps taken by the ensembled
+     */
+    unsigned long long getTotalSteps();
+    
+    /*!
+     * \brief setSlicingMode Is used to change the sampling mode, either using subsampling, or taking all samples
+     * \param useSlicing Boolean for whether or not to use subsampling, default is false
+     * \param slicingInterval The interval for subsampling
+     */
+    void setSlicingMode(bool useSlicing=false, int slicingInterval=1);
+    
+    /*!
+     * \brief sliceAndBurnChain Is used to remove burn in samples and select subsamples form the existing chain
+     * \param slicingInterval The sub sampling interval to use
+     * \param burnIn The number of samples to remove from the beginning of the chain
+     */
+    void sliceAndBurnChain(int slicingInterval, int burnIn);
     
     /*!
      * \brief getStoredSteps retrieves the number of steps that are stored in the chain
@@ -240,6 +258,30 @@ ParamType EnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptanceFracti
 }
 
 template<class ParamType, class Mover, class PostStepAction>
+unsigned long long EnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptedSteps()
+{
+    unsigned long long accepted = 0ULL;
+    for(int i=0; i<walkersPerSet; ++i)
+    {
+        accepted += walkerRedSet[i].getAcceptedProposals();
+        accepted += walkerBlkSet[i].getAcceptedProposals();
+    }
+    return accepted;
+}
+
+template<class ParamType, class Mover, class PostStepAction>
+unsigned long long EnsembleSampler<ParamType, Mover, PostStepAction>::getTotalSteps()
+{
+    unsigned long long total = 0ULL;
+    for(int i=0; i<walkersPerSet; ++i)
+    {
+        total += walkerRedSet[i].getTotalSteps();
+        total += walkerBlkSet[i].getTotalSteps();
+    }
+    return total;
+}
+
+template<class ParamType, class Mover, class PostStepAction>
 bool EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
 {
     if(!subSampling)
@@ -248,7 +290,6 @@ bool EnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
         {
             performStep(true);
             ++storedSteps;
-            //if((storedSteps%10000) == 0) std::cout<<"Stored Steps: "<<storedSteps<<std::endl;
             if(Chain::IncrementStatus::EndOfChain == markovChain.incrementChainStep()) return false;
         }
     }
@@ -281,13 +322,19 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::reset()
 }
 
 template<class ParamType, class Mover, class PostStepAction>
-void EnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(bool useSubSampling, int subSamplingInt, int burnIn)
+void EnsembleSampler<ParamType, Mover, PostStepAction>::setSlicingMode(bool useSlicing, int slicingInterval)
 {
-    assert(subSamplingInt>0);
+    assert(slicingInterval>0);
+    subSampling=useSlicing;
+    subSamplingInterval = slicingInterval;
+}
+
+template<class ParamType, class Mover, class PostStepAction>
+void EnsembleSampler<ParamType, Mover, PostStepAction>::sliceAndBurnChain(int slicingInterval, int burnIn)
+{
+    assert(slicingInterval>0);
     assert(burnIn>=0);
-    subSampling=useSubSampling;
-    subSamplingInterval = subSamplingInt;
-    markovChain.resetChainForSubSampling(burnIn, subSamplingInt);
+    markovChain.resetChainForSubSampling(burnIn, slicingInterval);
     storedSteps = markovChain.getStoredStepCount();
 }
 
@@ -313,4 +360,4 @@ void EnsembleSampler<ParamType, Mover, PostStepAction>::performStep(bool save)
 }
 
 }
-#endif  //MCMC_ENSEMBLESAMPLER_H
+#endif  //MCMCPP_ENSEMBLESAMPLER_H

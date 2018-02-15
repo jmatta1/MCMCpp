@@ -9,8 +9,8 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
-#define MCMC_WALKER_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
+#ifndef MCMCPP_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
+#define MCMCPP_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
 // includes for C system headers
 #include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
@@ -19,11 +19,11 @@
 #include<thread>
 #include<chrono>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../../Walker/Walker.h"
 #include"../../Utility/ArrayDeleter.h"
 #include"../../Utility/UserOjbectsTest.h"
-#include"Utility/Misc.h"
+#include"../../Utility/Misc.h"
 
 namespace MCMC
 {
@@ -67,14 +67,10 @@ public:
             stepSizes.get()[i] = steps[i];
         }
         size_t allocSize = (sizeof(ParamType)*paramCount);
-        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-        {
-            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
-        }
-        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
+        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
     }
     
-    ~SequenceMove(){free(proposal);}
+    ~SequenceMove(){Utility::delAAA(proposal);}
     
     /*!
      * \brief SequenceMove Copy constructor

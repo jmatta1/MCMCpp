@@ -9,12 +9,12 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_UTILITY_ARRAYDELETER_H
-#define MCMC_UTILITY_ARRAYDELETER_H
+#ifndef MCMCPP_UTILITY_ARRAYDELETER_H
+#define MCMCPP_UTILITY_ARRAYDELETER_H
 // includes for C system headers
 // includes for C++ system headers
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 
 namespace MCMC
 {
@@ -44,4 +44,4 @@ private:
 
 }
 }
-#endif  //MCMC_UTILITY_ARRAYDELETER_H
+#endif  //MCMCPP_UTILITY_ARRAYDELETER_H

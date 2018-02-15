@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-project (SeqInnerBenchmark)
+project (SeqAcTest)
 
 
 # include the file where I define a couple of compiler flags, including the long
@@ -39,8 +39,8 @@ file(GLOB_RECURSE HDRS *.h)
 include_directories(".")
 
 # set things up so that we pull in the MCMCpp headers
-include_directories("../../../MCMCpp")
+include_directories("../../../../MCMCpp")
 
 # Set the executable and what it depends on
-add_executable(seqBenchmark ${SRCS} ${HDRS})
+add_executable(acTest ${SRCS} ${HDRS})
 

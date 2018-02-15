@@ -9,12 +9,12 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_UTILITY_NOACTION_H
-#define MCMC_UTILITY_NOACTION_H
+#ifndef MCMCPP_UTILITY_NOACTION_H
+#define MCMCPP_UTILITY_NOACTION_H
 // includes for C system headers
 // includes for C++ system headers
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../Chain/ChainStepIterator.h"
 
 namespace MCMC
@@ -47,4 +47,4 @@ private:
 
 }
 }
-#endif  //MCMC_UTILITY_NOACTION_H
+#endif  //MCMCPP_UTILITY_NOACTION_H

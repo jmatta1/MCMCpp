@@ -1,6 +1,6 @@
 #This variable stores the name/path of the directory with all the object files will be (relative to the make file)
 OBJ_DIR=build
-EXE_FILE=parBenchmark
+EXE_FILE=diffEvGauss
 #get the number of cores
 NUM_CORES=$(shell cat /proc/cpuinfo | grep processor | wc --lines)
 

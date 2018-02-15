@@ -9,12 +9,13 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_CHAIN_CHAINSTEPITERATOR_H
-#define MCMC_CHAIN_CHAINSTEPITERATOR_H
+#ifndef MCMCPP_CHAIN_CHAINSTEPITERATOR_H
+#define MCMCPP_CHAIN_CHAINSTEPITERATOR_H
 // includes for C system headers
 // includes for C++ system headers
+#include<iostream>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"ChainBlock.h"
 
 namespace MCMC
@@ -60,6 +61,7 @@ public:
     ChainStepIterator(ChainBlock<ParamType>* block, int blockStep):
         curr(block), stepIndex(blockStep), lastFullStep(block->firstEmptyStep - 1)
     {}
+    
     /*!
      * \brief ChainStepIterator Copy constructor to make a copy of an iterator
      * \param copy The original iterator to be copied into the iterator being constructed
@@ -144,7 +146,7 @@ ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator+=(int steps
     while((blocks > 0) && (curr->nextBlock != nullptr))
     {
         curr = curr->nextBlock;
-        //leave step index alone because we are essentially incrementing by 1000
+        //leave step index alone because we are essentially incrementing by Detai::BlockSize
         lastFullStep = (curr->firstEmptyStep - 1);
         --blocks;
     }
@@ -156,16 +158,16 @@ ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator+=(int steps
     }
     //if we are here we stopped because we hit our block count, now see if we need to jump one more block
     steps = (steps%Detail::BlockSize);
-    if((stepIndex + steps) > Detail::BlockSize)
+    if((stepIndex + steps) >= Detail::BlockSize)
     {//we need to jump one more block
         if(curr->nextBlock != nullptr)
         {//there is a next block available
             curr = curr->nextBlock;
             //now we are incrementing by the remaining size of the last block,
             //therefor set step index to 0
-            stepIndex = 0;
             lastFullStep = (curr->firstEmptyStep - 1);
             steps -= (Detail::BlockSize - stepIndex);
+            stepIndex = 0;
         }
         else
         {//the next block is not available
@@ -183,7 +185,7 @@ ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator+=(int steps
     else
     {//we could possibly be in the final block of the chain and the steps is only a little more than is in the chain
         //if we are here then that is the case
-        stepIndex = lastFullStep;
+        stepIndex = (lastFullStep+1);
         return *this;
     }
 }
@@ -220,7 +222,7 @@ ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator-=(int steps
             curr = curr->lastBlock;
             //now we are decrementing by the remaining size of the previous block,
             //therefor set step index to the last step in the new block
-            stepIndex = (Detail::BlockSize-1);
+            stepIndex = (Detail::BlockSize - 1);
             lastFullStep = (curr->firstEmptyStep - 1);
             steps -= stepIndex;
         }
@@ -294,4 +296,4 @@ ChainStepIterator<ParamType>& ChainStepIterator<ParamType>::operator--()
 
 }
 }
-#endif  //MCMC_CHAIN_CHAINSTEPITERATOR_H
+#endif  //MCMCPP_CHAIN_CHAINSTEPITERATOR_H

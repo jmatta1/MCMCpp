@@ -9,16 +9,16 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_CHAIN_CHAINBLOCK_H
-#define MCMC_CHAIN_CHAINBLOCK_H
+#ifndef MCMCPP_CHAIN_CHAINBLOCK_H
+#define MCMCPP_CHAIN_CHAINBLOCK_H
 // includes for C system headers
 // includes for C++ system headers
 #include<cstdlib>//needed for aligned allocation
 #include<cstring>//for memcpy
 #include<algorithm>
 // includes from other libraries
-// includes from MCMC
-#include"Utility/Misc.h"
+// includes from MCMCpp
+#include"../Utility/Misc.h"
 
 namespace MCMC
 {
@@ -55,7 +55,7 @@ public:
      * \param numCellsPerWalker Number of parameters plus overhead that the walker needs
      */
     ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, int numCellsPerWalker);
-    ~ChainBlock(){free(chainArray);}
+    ~ChainBlock(){Utility::delAAA(chainArray);}
     
     /*!
      * \brief Deleted copy constructor
@@ -120,11 +120,7 @@ ChainBlock<ParamType>::ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, i
     sizeInBytes(walkerCount*cellsPerWalker*sizeof(ParamType))
 {
     size_t allocSize = (sizeof(ParamType)*Detail::BlockSize*numCellsPerWalker*numWalkers);
-    if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-    {
-        allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
-    }
-    chainArray = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength, allocSize));
+    chainArray = Utility::autoAlignedAlloc<ParamType>(allocSize);
 }
 
 template <class ParamType>
@@ -145,4 +141,4 @@ void ChainBlock<ParamType>::copyWalkerSet(ParamType* walkerData)
 
 }
 }
-#endif  //MCMC_CHAIN_CHAINBLOCK_H
+#endif  //MCMCPP_CHAIN_CHAINBLOCK_H
