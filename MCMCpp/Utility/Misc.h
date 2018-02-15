@@ -23,17 +23,17 @@ namespace MCMC
 namespace Utility
 {
 
-static const unsigned int AlignmentLength = 64;///<Stores the memory boundary to force memory alignment to, 64 is sufficient for cache lines and up to the 256-bit AVX instructions, 128 will handle AVX-512 instructions as well
-
 /*!
  * @brief Takes a size in bytes to allocate, increases it to be the nearest multiple of AlignmentLength then allocates it
+ * @tparam ParamType The pointer type that needs to be returned
+ * @tparam AlignmentLength The integer to align the addresses to, defaults to 64 since that is sufficient for cache lines and up to AVX-512 instructions
  * @param allocSize The minimum size in bytes to allocate
  * @return the pointer to the allocated memory
  */
-template<class ParamType>
+template<class ParamType, int AlignmentLength=64>
 ParamType* autoAlignedAlloc(size_t allocSize)
 {
-    if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
+    if(allocSize%AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
     {
         allocSize = (((allocSize/AlignmentLength)+1)*AlignmentLength);
     }
