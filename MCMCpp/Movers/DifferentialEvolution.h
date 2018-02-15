@@ -130,7 +130,7 @@ public:
         {
             proposal[i] = currState[i] +
                           gamma*(w1State[i] - w2State[i]) +
-                          prng.getUniformRangeReal(smallRandLowEdge, smallRandWdith);
+                          prng.getUniformRangeReal(smallRandLowEdge, smallRandWidth);
         }
         ParamType currAuxVal = calc.calcLogPostProb(proposal);
         if((currAuxVal - currWalker.getCurrAuxData()) > (prng.getNegExponentialReal()))
