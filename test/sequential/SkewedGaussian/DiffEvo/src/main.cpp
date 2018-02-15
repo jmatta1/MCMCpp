@@ -4,7 +4,7 @@
 #include<Utility/pcg-cpp/include/pcg_random.hpp>
 #include"Common/SkewedGaussian.h"
 #include"Analysis/AutoCorrCalc.h"
-#include"Movers/WalkMove.h"
+#include"Movers/DifferentialEvolution.h"
 #include"EnsembleSampler.h"
 using MCMC::EnsembleSampler;
 namespace Mover=MCMC::Mover;
@@ -16,7 +16,7 @@ void generateInitialValues(ParamType* initVals, ParamType* auxVals, SkewedGaussi
 
 int main()
 {
-    typedef Mover::WalkMove<double, SkewedGaussianTwoDim<double> > Walker;
+    typedef Mover::DifferentialEvolution<double, SkewedGaussianTwoDim<double> > Walker;
     const int runNumber = 0;
     const int extraRunNumber = 53;
     const int numWalkers = 320;
@@ -28,7 +28,7 @@ int main()
     SkewedGaussianTwoDim<double> likelihood(eps);
     
     std::cout<<"Building initial mover"<<std::endl;
-    Walker mover(numParams, runNumber, likelihood, 6);
+    Walker mover(numParams, runNumber, likelihood);
     
     std::cout<<"Building sampler"<<std::endl;
     EnsembleSampler<double, Walker> sampler(runNumber, numWalkers, numParams, mover);
