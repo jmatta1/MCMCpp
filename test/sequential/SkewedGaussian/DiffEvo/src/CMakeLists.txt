@@ -36,6 +36,7 @@ file(GLOB_RECURSE HDRS *.h)
 # set things up so that files include as if they were at the root of the dir
 # tree unless they are including a file within their own folder
 include_directories(".")
+include_directories("../../../../../MCMCpp")
 
 # set things up so that we pull in the MCMCpp headers
 #include_directories("../../../../../MCMCpp")
