@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
