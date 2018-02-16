@@ -63,17 +63,16 @@ public:
     {setIdentityCovar();}
     
     ~MetropolisHastings(){Utility::delAAA(proposal);}
-    
+
     /*!
      * \brief Copy constructor
      * \param rhs Original DifferentialEvolution object to be copied
      */
     MetropolisHastings(const MetropolisHastings<ParamType, Calculator>& rhs):
-    paramCount(rhs.paramCount), calc(rhs.calc)
-    {
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
-    }
+        decompCovMat(rhs.decompCovMat),
+        proposal(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*rhs.paramCount)),
+        paramCount(rhs.paramCount), diagonal(rhs.diagonal), calc(rhs.calc)
+    {}
     
     /*!
      * \brief Deleted assignment operator
@@ -89,7 +88,7 @@ public:
      * 
      * The caller of this function retains ownership of the memory containing the covariance matrix and is responsible for deleting it
      */
-    bool setCovarMat(ParamType* cMat)
+    bool setCovarMat(const ParamType* cMat)
     {
         int result = testCovar(cMat);
         if(result == 1)
@@ -115,6 +114,11 @@ public:
             return false;
         }
     }
+    
+    /*!
+     * \brief Instructs the mover to use the simple identity covariance matrix
+     */
+    void setIdentityCovarMat(){setIdentityCovar();}
     
     /*!
      * \brief setPrngSeed Sets the seed and stream number of the underlying prng
@@ -211,7 +215,7 @@ private:
      * \param cMat The covariance matrix to be tested.
      * \return 0 for a matrix that is not symmetrix or has a non-positive value on the diagonal, 2 for a diagonal matrix that has only positive values, 1 in all other cases
      */
-    int testCovar(ParamType* cMat)
+    int testCovar(const ParamType* cMat)
     {
         bool isDiagonal = true;
         for(int i=1; i<paramCount; ++i)
@@ -237,7 +241,7 @@ private:
      * @param cMat The covariance matrix to be decomposed
      * @return True for successful decomposition, false for failure
      */
-    bool decomposeCovarMat(ParamType* cMat)
+    bool decomposeCovarMat(const ParamType* cMat)
     {
         ParamType* temp = decompCovMat.get();
         for(int i=0; i<paramCount; ++i)
@@ -283,7 +287,7 @@ private:
      * \brief When the covaraiance matrix is diagonal, this merely sets the decomposed matrix to the square roots of the covar matrices elements
      * \param cMat the diagonal covariance matrix
      */
-    void setDiagonalDecomp(ParamType* cMat)
+    void setDiagonalDecomp(const ParamType* cMat)
     {
         ParamType* temp = decompCovMat.get();
         for(int i=0; i<paramCount; ++i)
