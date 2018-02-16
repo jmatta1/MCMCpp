@@ -38,7 +38,7 @@ template <class ArrayType>
 class ArrayDeleter
 {
 public:
-    void operator()(ArrayType const* arrayPtr){delete[] arrayPtr;}
+    void operator()(ArrayType* arrayPtr){delete[] arrayPtr;}
 private:
 };
 
@@ -56,7 +56,7 @@ template <class ArrayType>
 class AlignedArrayDeleter
 {
 public:
-    void operator()(ArrayType const* arrayPtr){delAAA(arrayPtr);}
+    void operator()(ArrayType* arrayPtr){delAAA(arrayPtr);}
 private:
 };
 
