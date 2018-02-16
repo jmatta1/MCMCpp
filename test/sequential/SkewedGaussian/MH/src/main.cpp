@@ -1,5 +1,7 @@
 #include<iostream>
 #include<random>
+#include<string>
+#include<sstream>
 #include<fstream>
 #include<Utility/pcg-cpp/include/pcg_random.hpp>
 #include"Common/SkewedGaussian.h"
@@ -14,21 +16,56 @@ template<class ParamType>
 void generateInitialValues(ParamType* initVals, ParamType* auxVals, SkewedGaussianTwoDim<ParamType>& likelihood,
                            int numWalkers, int numParams, int extraRunNumber);
 
-int main()
+int main(int argc, char* argv[])
 {
-    typedef Mover::DifferentialEvolution<double, SkewedGaussianTwoDim<double> > Walker;
+    if(argc != 2)
+    {
+        std::cout<<"Usage:\n    "<<argv[0]
+                 <<" <0|1|2>\n  Where 0 means use the ideal covariance matrix"
+                 <<"\n        1 means use the identity covariance matrix"
+                 <<"\n    and 2 means use the bad covariance matrix"<<std::endl;
+        return 1;
+    }
+    std::istringstream converter;
+    converter.str(argv[1]);
+    int option=0;
+    converter >> option;
+    typedef Mover::MetropolisHastings<double, SkewedGaussianTwoDim<double> > Walker;
     const int runNumber = 0;
     const int extraRunNumber = 53;
     const int numWalkers = 320;
     const int numParams = 2;
     const int numSteps = 40019;
     const double eps = 0.13;
+    const double idealCovar[4] = {1.0+eps, 1.0-eps, 1.0-eps, 1.0+eps};
+    const double badCovar[4]   = {(2.0/3.0), -5.0, -5.0, 50.0};
+    //const double identCovar[4] = {1.0, 0.0, 0.0, 1.0};
     
     std::cout<<"Building Custom Distribution"<<std::endl;
     SkewedGaussianTwoDim<double> likelihood(eps);
     
     std::cout<<"Building initial mover"<<std::endl;
     Walker mover(numParams, runNumber, likelihood);
+    if(option==0)
+    {
+        std::cout<<"Setting Metropolis Hastings sample covariance matrix to ideal case"<<std::endl;
+        mover.setCovarMat(idealCovar);
+    }
+    else if(option==1)
+    {
+        std::cout<<"Setting Metropolis Hastings sample covariance matrix to identity case"<<std::endl;
+        mover.setIdentityCovarMat();
+    }
+    else if(option==2)
+    {
+        std::cout<<"Setting Metropolis Hastings sample covariance matrix to bad case"<<std::endl;
+        mover.setCovarMat(badCovar);
+    }
+    else
+    {
+        std::cout<<"Invalid option setting, exitting"<<std::endl;
+        return 1;
+    }
     
     std::cout<<"Building sampler"<<std::endl;
     EnsembleSampler<double, Walker> sampler(runNumber, numWalkers, numParams, mover);
@@ -62,7 +99,19 @@ int main()
     sampler.sliceAndBurnChain(1, 20);
     std::cout<<"Acceptance Fraction: "<<sampler.getAcceptedSteps()<<"/"<<sampler.getTotalSteps()<<" | "<<sampler.getAcceptanceFraction()<<std::endl;
     std::cout<<"Writing out chains"<<std::endl;
-    std::ofstream output("linearChains.csv");
+    std::ofstream output;
+    if(option==0)
+    {
+        output.open("linearChainsIdeal.csv");
+    }
+    else if(option==1)
+    {
+        output.open("linearChainsIdentity.csv");
+    }
+    else if(option==2)
+    {
+        output.open("linearChainsBad.csv");
+    }
     auto end = sampler.getParamSetIttEnd();
     for(auto itt = sampler.getParamSetIttBegin(); itt != end; ++itt)
     {
