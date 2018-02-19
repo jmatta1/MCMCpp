@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,8 +9,8 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
-#define MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
+#ifndef MCMCPP_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
+#define MCMCPP_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
 // includes for C system headers
 #include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
@@ -18,13 +18,13 @@
 #include<cstdlib>
 #include<memory>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../../Walker/Walker.h"
 #include"../../Utility/ArrayDeleter.h"
 #include"../../Utility/MultiSampler.h"
 #include"../../Utility/GwDistribution.h"
 #include"../../Utility/UserOjbectsTest.h"
-#include"Utility/Misc.h"
+#include"../../Utility/Misc.h"
 
 namespace MCMC
 {
@@ -54,10 +54,10 @@ public:
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
     AutoRegressiveMove(int numParams, const ParamType* offsets, const ParamType* phiValues, const ParamType* paramVariance):
-        phis(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
-        offs(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
-        prngStdDev(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
-        proposal(nullptr),
+        phis(      Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
+        offs(      Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
+        prngStdDev(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
+        proposal(  Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams)),
         prng(0), //doesn't really matter, just stops the compiler warnings for Weffc++
         paramCount(numParams)
     {
@@ -67,15 +67,9 @@ public:
             offs.get()[i] = offsets[i];
             prngStdDev.get()[i] = std::sqrt(paramVariance[i])*std::sqrt(static_cast<ParamType>(1)-phiValues[i]*phiValues[i]);
         }
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-        {
-            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
-        }
-        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
     }
     
-    ~AutoRegressiveMove(){free(proposal);}
+    ~AutoRegressiveMove(){Utility::delAAA(proposal);}
     
     /*!
      * \brief AutoRegressiveMove Copy constructor
@@ -146,4 +140,4 @@ private:
 };
 }
 }
-#endif  //MCMC_WALKER_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H
+#endif  //MCMCPP_MOVERS_DIAGNOSTIC_AUTOREGRESSIVEMOVER_H

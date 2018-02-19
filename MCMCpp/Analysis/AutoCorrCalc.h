@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,19 +9,19 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_ANALYSIS_AUTOCORRCALC_H
-#define MCMC_ANALYSIS_AUTOCORRCALC_H
+#ifndef MCMCPP_ANALYSIS_AUTOCORRCALC_H
+#define MCMCPP_ANALYSIS_AUTOCORRCALC_H
 // includes for C system headers
 // includes for C++ system headers
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
-#include<algorithm>//used for
+#include<algorithm>//used for transform and fill_n
 #include<random>//needed for normal distribution
 // includes from other libraries
-#include"../Utility/pcg-cpp/include/pcg_random.hpp"
-// includes from MCMC
-#include"../Chain/ChainStepIterator.h"
-#include"Detail/AutoCov.h"
+#include"../Utility/pcg-cpp/include/pcg_random.hpp"//the random number generator for randomly selecting a set of walkers
+// includes from MCMCpp
+#include"../Chain/ChainStepIterator.h" //the iterator to step through chains with
+#include"Detail/AutoCov.h" //used to calculate the autocovariance function for a single chain
 
 namespace MCMC
 {
@@ -50,10 +50,12 @@ public:
         engine(std::random_device()()), normDist(static_cast<ParamType>(0),static_cast<ParamType>(1)),
         autoCovCalc(), paramCount(numParams), walkerCount(numWalkers)
     {   acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
-        chainAverages = new ParamType[paramCount*numWalkers];  std::fill_n(acorrTimeList, paramCount, static_cast<ParamType>(0));}
+        chainAverages = new ParamType[paramCount*numWalkers]; chainAvgComps = new ParamType[paramCount*numWalkers];
+        std::fill_n(acorrTimeList, paramCount, static_cast<ParamType>(0));}
     
     ~AutoCorrCalc()
-    {delete[] acorrTimeList; delete[] randomWalkerIndices; delete[] chainAverages; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
+    {delete[] acorrTimeList; delete[] randomWalkerIndices; delete[] chainAverages; 
+        delete[] chainAvgComps; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
         if(acovFuncArray!=nullptr) delete[] acovFuncArray;}
 
     /*!
@@ -101,7 +103,8 @@ private:
     void checkScratchSizes(int numSamples);
     void calculateChainAverages(const IttType& start, const IttType& end, int numSamples, int numWalkersToUse);
     void transferWalker(const IttType& start, const IttType& end, int paramNumber, int walkerNumber);
-    void averageAutocovarianceFunctions(int walkersToSelect);
+    void averageAutocovarianceFunctions();
+    void finalizeAutocovarianceAvg(int numWalkers);
     
     //general use random number generator stuff
     pcg32 engine;///<The base random number generator engine that is used for selecting walkers randomly
@@ -114,8 +117,10 @@ private:
     
     //Parameters for calculation of autocorellations
     ParamType* acovFuncAvgArray = nullptr; ///<Stores the sum of the autocovariance functions as they are calculated for every walker in the chain
+    ParamType* acovFuncAvgComps = nullptr; ///<Stores the compensations of the autocovariance function sums
     ParamType* acovFuncArray = nullptr; ///<Stores the chain, and the autocovariance function that is calculated by the object
     ParamType* chainAverages = nullptr; ///<Stores the computed averages of the chains selected for calculation
+    ParamType* chainAvgComps = nullptr; ///<Stores the array of compensation values for calculating the averages of the chains using kahan summation
     int* randomWalkerIndices = nullptr; ///<Stores the array of randomly chosen walker indices
     int acovSize = 0; ///<Stores the size of the autocovariance function arrays
     int windowScaling = 4; ///<Minimum number of autocorrelation times to be processed to consider the result correct
@@ -149,22 +154,28 @@ ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimes(const IttType& start
 {
     //clear the autocovariance function average array
     std::fill_n(acovFuncAvgArray, acovSize, static_cast<ParamType>(0));
+    std::fill_n(acovFuncAvgComps, acovSize, static_cast<ParamType>(0));
     
     //now calculate the autocovariance function for every selected walker and add it to the average
     for(int i=0; i<walkersToSelect; ++i)
     {
         transferWalker(start, end, paramNumber, randomWalkerIndices[i]);
         autoCovCalc.calcNormAutoCov(acovFuncArray,chainAverages[randomWalkerIndices[i]*paramCount + paramNumber], numSamples);
-        averageAutocovarianceFunctions(walkersToSelect);
+        averageAutocovarianceFunctions();
     }
+    finalizeAutocovarianceAvg(walkersToSelect);
     //now that we have the averaged autocovariance function, extract the autocorrelation time from the cumulative sum
-    ParamType autoCorrSum = acovFuncAvgArray[0]; // initialize to this so we only count the first cell once
+    ParamType autoCorrSum = -acovFuncAvgArray[0]; // initialize to this so we only count the first cell once by cancelling half of the double value that is added
+    ParamType compensation = static_cast<ParamType>(0);
     ParamType factor = static_cast<ParamType>(windowScaling);
     //because of definitions, the autocorrelation time cannot possibly be less than 1 since acovFuncAvgArray[0] == 1
-    for(int i=1; i<acovSize; ++i)
+    for(int i=0; i<acovSize; ++i)
     {
-        //Add the next term to the autocovariance function
-        autoCorrSum += (static_cast<ParamType>(2)*acovFuncAvgArray[i]);
+        //Add the next term to the autocovariance function using kahan summation
+        ParamType value = ((static_cast<ParamType>(2)*acovFuncAvgArray[i]) - compensation);
+        ParamType temp = autoCorrSum + value;
+        compensation = ((temp-autoCorrSum) - value);
+        autoCorrSum = temp;
         //check if our window size surpasses the currently estimated autocorrelation time
         //if it does return the currently estimated autocorrelation time
         if(i > factor*autoCorrSum)
@@ -179,11 +190,27 @@ ParamType AutoCorrCalc<ParamType>::sampleParamAutoCorrTimes(const IttType& start
 }
 
 template<class ParamType>
-void AutoCorrCalc<ParamType>::averageAutocovarianceFunctions(int walkersToSelect)
+void AutoCorrCalc<ParamType>::averageAutocovarianceFunctions()
 {
-    ParamType normVal = (static_cast<ParamType>(1)/(static_cast<ParamType>(walkersToSelect)));
-    std::transform(acovFuncArray, acovFuncArray+acovSize, acovFuncAvgArray, acovFuncAvgArray,
-                   [&normVal] (const ParamType& acv, const ParamType& avg) -> ParamType {return (avg+(normVal*acv));});
+    /*std::transform(acovFuncArray, acovFuncArray+acovSize, acovFuncAvgArray, acovFuncAvgArray,
+                   [&normVal] (const ParamType& acv, const ParamType& avg) -> ParamType {return (avg+(normVal*acv));});*/
+    for(int i=0; i<acovSize; ++i)
+    {
+        ParamType value = (acovFuncArray[i]+acovFuncAvgComps[i]);
+        ParamType temp = (acovFuncAvgArray[i] + value);
+        acovFuncAvgComps[i] = ((temp - acovFuncAvgArray[i]) - value);
+        acovFuncAvgArray[i] = temp;
+    }
+}
+
+template<class ParamType>
+void AutoCorrCalc<ParamType>::finalizeAutocovarianceAvg(int numWalkers)
+{
+    ParamType divParam = static_cast<ParamType>(numWalkers);
+    for(int i=0; i<acovSize; ++i)
+    {
+        acovFuncAvgArray[i] /= divParam;
+    }
 }
 
 template<class ParamType>
@@ -198,7 +225,9 @@ void AutoCorrCalc<ParamType>::transferWalker(const IttType& start, const IttType
 template<class ParamType>
 void AutoCorrCalc<ParamType>::calculateChainAverages(const IttType& start, const IttType& end, int numSamples, int numWalkersToUse)
 {
-    ParamType norm = (static_cast<ParamType>(1)/static_cast<ParamType>(numSamples));
+    //initialize the averages and their compensations
+    std::fill_n(chainAverages, paramCount*walkerCount, static_cast<ParamType>(0));
+    std::fill_n(chainAvgComps, paramCount*walkerCount, static_cast<ParamType>(0));
     for(IttType itt(start); itt != end; ++itt)
     {
         for(int i=0; i<numWalkersToUse; ++i)
@@ -207,8 +236,21 @@ void AutoCorrCalc<ParamType>::calculateChainAverages(const IttType& start, const
             int endset = (offset+paramCount);
             for(int j=offset; j<endset; ++j)
             {
-                chainAverages[j] += (norm*((*itt)[j]));
+                ParamType value = (((*itt)[j]) - chainAvgComps[j]);
+                ParamType temp = chainAverages[j] + value;
+                chainAvgComps[j] = ((temp - chainAverages[j]) - value);
+                chainAverages[j] = temp;
             }
+        }
+    }
+    
+    for(int i=0; i<numWalkersToUse; ++i)
+    {
+        int offset = randomWalkerIndices[i]*paramCount;
+        int endset = (offset+paramCount);
+        for(int j=offset; j<endset; ++j)
+        {
+            chainAverages[j] /= static_cast<ParamType>(numSamples);
         }
     }
 }
@@ -256,9 +298,11 @@ void AutoCorrCalc<ParamType>::checkScratchSizes(int numSamples)
         acovFuncAvgArray = new ParamType[acovSize];
         if(acovFuncArray != nullptr) delete[] acovFuncArray;
         acovFuncArray = new ParamType[acovSize];
+        if(acovFuncAvgComps != nullptr) delete[] acovFuncAvgComps;
+        acovFuncAvgComps = new ParamType[acovSize];
     }
 }
 
 }
 }
-#endif  //MCMC_ANALYSIS_AUTOCORRCALC_H
+#endif  //MCMCPP_ANALYSIS_AUTOCORRCALC_H

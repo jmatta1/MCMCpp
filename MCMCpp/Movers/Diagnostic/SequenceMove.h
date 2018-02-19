@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,8 +9,8 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
-#define MCMC_WALKER_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
+#ifndef MCMCPP_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
+#define MCMCPP_MOVERS_DIAGNOSTIC_SEQUENCEMOVER_H
 // includes for C system headers
 #include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
@@ -19,11 +19,11 @@
 #include<thread>
 #include<chrono>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../../Walker/Walker.h"
 #include"../../Utility/ArrayDeleter.h"
 #include"../../Utility/UserOjbectsTest.h"
-#include"Utility/Misc.h"
+#include"../../Utility/Misc.h"
 
 namespace MCMC
 {
@@ -58,23 +58,17 @@ public:
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
     SequenceMove(int numParams, const ParamType* steps):
-        proposal(nullptr),
-        stepSizes(new ParamType[numParams], Utility::ArrayDeleter<ParamType>()),
+        proposal( Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams)),
+        stepSizes(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
         paramCount(numParams)
     {
         for(int i=0; i<paramCount; ++i)
         {
             stepSizes.get()[i] = steps[i];
         }
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-        {
-            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
-        }
-        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
     }
     
-    ~SequenceMove(){free(proposal);}
+    ~SequenceMove(){Utility::delAAA(proposal);}
     
     /*!
      * \brief SequenceMove Copy constructor

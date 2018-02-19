@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,13 +9,13 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_UTILITY_USEROBJECTTEST_H
-#define MCMC_UTILITY_USEROBJECTTEST_H
+#ifndef MCMCPP_UTILITY_USEROBJECTTEST_H
+#define MCMCPP_UTILITY_USEROBJECTTEST_H
 // includes for C system headers
 // includes for C++ system headers
 #include<type_traits>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 
 namespace MCMC
 {
@@ -142,7 +142,7 @@ struct CheckFunctor : decltype(Detail::testSignature_functor<TestClass, RetVal, 
  * @brief Outer Function to perform test for calcLogPostProb function
  */
 template<class TestClass, class RetVal, class Arg0>
-struct CheckCalcLogPostProb : decltype(Detail::testSignature_functor<TestClass, RetVal, Arg0>(0ULL) ){};
+struct CheckCalcLogPostProb : decltype(Detail::testSignature_calcLogPostProb<TestClass, RetVal, Arg0>(0ULL) ){};
 
 /*!
  * @brief Outer Function to perform test for calcLogPostProb function
@@ -151,4 +151,4 @@ template<class TestClass, class RetVal, class Arg0, class Arg1, class Arg2, clas
 struct CheckCalcUpdateWalker : decltype(Detail::testSignature_updateWalker<TestClass, RetVal, Arg0, Arg1, Arg2, Arg3>(0ULL) ){};
 }
 }
-#endif  //MCMC_UTILITY_USEROBJECTTEST_H
+#endif  //MCMCPP_UTILITY_USEROBJECTTEST_H

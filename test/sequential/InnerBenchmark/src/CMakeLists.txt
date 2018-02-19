@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
-project (ParInnerBenchmark)
+project (SeqInnerBenchmark)
 
-
-find_package(Threads REQUIRED)
 
 # include the file where I define a couple of compiler flags, including the long
 # lists of warning flags for the compiler
@@ -30,8 +28,8 @@ elseif(BUILD_TYPE STREQUAL "Warn_Opt")
     add_definitions(${WARN_OPT_FLAGS})
 endif(BUILD_TYPE STREQUAL "Release")
 
-# Use only main.cpp, MCMCpp is header only
-# file(READ main.cpp SRCS)
+# Grab all the source files
+file(GLOB_RECURSE SRCS *.cpp)
 
 # Grab all the header files
 file(GLOB_RECURSE HDRS *.h)
@@ -41,9 +39,8 @@ file(GLOB_RECURSE HDRS *.h)
 include_directories(".")
 
 # set things up so that we pull in the MCMCpp headers
-include_directories("../../../MCMCpp")
+include_directories("../../../../MCMCpp")
 
 # Set the executable and what it depends on
-add_executable(parBenchmark main.cpp ${HDRS})
-target_link_libraries(parBenchmark ${CMAKE_THREAD_LIBS_INIT})
+add_executable(benchmark ${SRCS} ${HDRS})
 

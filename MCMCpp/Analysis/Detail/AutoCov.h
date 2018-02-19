@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,15 +9,15 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_ANALYSIS_DETAIL_AUTOCOV_H
-#define MCMC_ANALYSIS_DETAIL_AUTOCOV_H
+#ifndef MCMCPP_ANALYSIS_DETAIL_AUTOCOV_H
+#define MCMCPP_ANALYSIS_DETAIL_AUTOCOV_H
 // includes for C system headers
 // includes for C++ system headers
-#include<algorithm>
+#include<algorithm>//for transform
 #include<complex>//needed for the FFT and iFFT
 #include<cmath>//needed for ceiling and log 2
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 
 namespace MCMC
 {
@@ -158,9 +158,9 @@ void AutoCov<ParamType>::calcNormAutoCov(ParamType* chain, const ParamType& avg,
 template<class ParamType>
 void AutoCov<ParamType>::normalizeAndCopyAutoCov(ParamType* output, int chainLength)
 {
-    ParamType normValue = (static_cast<ParamType>(1)/secondTransform[0].real());
+    ParamType normValue = secondTransform[0].real();
     std::transform(secondTransform, secondTransform+chainLength, output,
-                   [&normValue](const std::complex<ParamType>& v) -> ParamType {return normValue*v.real();});
+                   [&normValue](const std::complex<ParamType>& v) -> ParamType {return (v.real()/normValue);});
 }
 
 template<class ParamType>
@@ -191,7 +191,8 @@ void AutoCov<ParamType>::copyBitReversedPowerSpectrum()
 {
     for(int i=0; i<fftSize; ++i)
     {
-        secondTransform[bitReverse(i)] = std::norm(firstTransform[i]);
+        std::complex<ParamType> temp = firstTransform[i];
+        secondTransform[bitReverse(i)] = (temp.real()*temp.real()+temp.imag()*temp.imag());
     }
 }
 
@@ -256,7 +257,7 @@ void AutoCov<ParamType>::checkSizeAndHandleChanges(int chainLength)
         fftSize = (1 << lgFftSize);
         if(negRootsOfUnity != nullptr) delete[] negRootsOfUnity;
         if(posRootsOfUnity != nullptr) delete[] posRootsOfUnity;
-        if(firstTransform != nullptr) delete[] firstTransform;
+        if(firstTransform  != nullptr) delete[] firstTransform;
         if(secondTransform != nullptr) delete[] secondTransform;
         negRootsOfUnity = new std::complex<ParamType>[fftSize/2];
         posRootsOfUnity = new std::complex<ParamType>[fftSize/2];
@@ -292,4 +293,4 @@ int AutoCov<ParamType>::findNextPowerOfTwo(int chainLength) const
 }
 }
 }
-#endif  //MCMC_ANALYSIS_AUTOCORRCALC_H
+#endif  //MCMCPP_ANALYSIS_AUTOCORRCALC_H

@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,15 +9,15 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_PARALLELENSEMBLESAMPLER_H
-#define MCMC_PARALLELENSEMBLESAMPLER_H
+#ifndef MCMCPP_PARALLELENSEMBLESAMPLER_H
+#define MCMCPP_PARALLELENSEMBLESAMPLER_H
 // includes for C system headers
 // includes for C++ system headers
 #include<cassert>
 #include<mutex>
 #include<thread>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"Chain/Chain.h"
 #include"Walker/Walker.h"
 #include"Utility/NoAction.h"
@@ -58,6 +58,13 @@ namespace MCMC
  * is working on that happens to share a cache line with the chain of the
  * first thread, invalidating the cache even though neither thread is
  * examining the same data)
+ * 
+ * It should be noted that in its current implementation, the parallel ensemble sampler
+ * is not deterministic. This is because of the nondeterminism in which thread updates
+ * which walkers. While the sequence of random numbers the that each thread generates
+ * will be the same for a given thread number and run number, which walker that is applied
+ * to can change from run to run depending on processor load, schedule and all
+ * manner of other things.
  */
 template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
 class ParallelEnsembleSampler
@@ -338,4 +345,4 @@ void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::storeCurrentWalk
 }
 
 }
-#endif  //MCMC_PARALLELENSEMBLESAMPLER_H
+#endif  //MCMCPP_PARALLELENSEMBLESAMPLER_H

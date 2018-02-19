@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,12 +9,12 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_CHAIN_CHAINPSETITERATOR_H
-#define MCMC_CHAIN_CHAINPSETITERATOR_H
+#ifndef MCMCPP_CHAIN_CHAINPSETITERATOR_H
+#define MCMCPP_CHAIN_CHAINPSETITERATOR_H
 // includes for C system headers
 // includes for C++ system headers
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"ChainBlock.h"
 
 namespace MCMC
@@ -167,4 +167,4 @@ ChainPsetIterator<ParamType>& ChainPsetIterator<ParamType>::operator--()
 
 }
 }
-#endif  //MCMC_CHAIN_CHAINPSETITERATOR_H
+#endif  //MCMCPP_CHAIN_CHAINPSETITERATOR_H

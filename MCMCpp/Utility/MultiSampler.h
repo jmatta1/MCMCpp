@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,14 +9,14 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_UTILITY_MULTISAMPLER_H
-#define MCMC_UTILITY_MULTISAMPLER_H
+#ifndef MCMCPP_UTILITY_MULTISAMPLER_H
+#define MCMCPP_UTILITY_MULTISAMPLER_H
 // includes for C system headers
 // includes for C++ system headers
 #include<random>
 // includes from other libraries
 #include"pcg-cpp/include/pcg_random.hpp"
-// includes from MCMC
+// includes from MCMCpp
 
 namespace MCMC
 {
@@ -58,11 +58,20 @@ public:
      * \return ParamType floating point number drawn from the given distribution
      */
     inline ParamType getCustomSample(){return customDist(realDist(engine));}
+    
     /*!
      * \brief getUniformReal returns a sample from the flat probability distribution between 0 and 1
      * \return ParamType floating point drawn from the flat distribution between 0 and 1
      */
     inline ParamType getUniformReal(){return realDist(engine);}
+    
+    /*!
+     * \brief gets a uniformly distributed real in a range from [a,b)
+     * \param lowEdge The low bound of the range
+     * \param width The width of the range (b-a)
+     * \return A uniformly distributed random number in the range [lowEdge, lowEdge + width)
+     */
+    inline ParamType getUniformRangeReal(const ParamType& lowEdge, const ParamType& width){return (lowEdge + (realDist(engine) * width));}
     
     /*!
      * \brief getExponentialReal returns a sample from the exponential probability distribution with parameter 1
@@ -117,4 +126,4 @@ private:
 
 }
 }
-#endif  //MCMC_UTILITY_MULTISAMPLER_H
+#endif  //MCMCPP_UTILITY_MULTISAMPLER_H

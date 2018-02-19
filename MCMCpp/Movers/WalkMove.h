@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017 James Till Matta
+** @copyright Copyright (C) 2017-2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -9,19 +9,19 @@
 ** 
 ********************************************************************************
 *******************************************************************************/
-#ifndef MCMC_WALKER_MOVERS_WALKMOVE_H
-#define MCMC_WALKER_MOVERS_WALKMOVE_H
+#ifndef MCMCPP_MOVERS_WALKMOVE_H
+#define MCMCPP_MOVERS_WALKMOVE_H
 // includes for C system headers
 #include<stdlib.h>//needed for aligned allocation, which appears in C11 but does not appear in C++ until C++17
 // includes for C++ system headers
 #include<cassert>
 // includes from other libraries
-// includes from MCMC
+// includes from MCMCpp
 #include"../Utility/MultiSampler.h"
 #include"../Utility/UserOjbectsTest.h"
 #include"../Utility/GwDistribution.h"
 #include"../Walker/Walker.h"
-#include"Utility/Misc.h"
+#include"../Utility/Misc.h"
 
 namespace MCMC
 {
@@ -57,36 +57,33 @@ public:
      * \param numSamples The number of samples to draw from the complementary ensemble
      */
     WalkMove(int numParams, long long prngInit, const Calculator& orig, int numSamples):
-        numPoints(numSamples),ptCount(static_cast<ParamType>(numSamples)), paramCount(numParams), prng(prngInit), calc(orig)
+        numPoints(numSamples), ptCount(numSamples), paramCount(numParams), prng(prngInit), calc(orig)
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
         size_t allocSize = (sizeof(ParamType)*paramCount);
-        if(allocSize%Utility::AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-        {
-            allocSize = (((allocSize/Utility::AlignmentLength)+1)*Utility::AlignmentLength);
-        }
-        proposal = reinterpret_cast<ParamType*>(aligned_alloc(Utility::AlignmentLength,allocSize));
+        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
     }
     
-    ~WalkMove(){delete[] randoms; delete[] walkerIndices; free(proposal);}
+    ~WalkMove(){delete[] randoms; delete[] walkerIndices; Utility::delAAA(proposal);}
     
     /*!
      * \brief WalkMove Copy Constructor
      * \param rhs Original WalkMove object to be copied
      */
     WalkMove(const WalkMove<ParamType, Calculator>& rhs):
-        numPoints(rhs.numPoints), paramCount(rhs.paramCount), calc(rhs.calc)
+        numPoints(rhs.numPoints), ptCount(rhs.ptCount), paramCount(rhs.paramCount), prng(rhs.prng), calc(rhs.calc)
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
-        proposal = new ParamType[paramCount];
+        size_t allocSize = (sizeof(ParamType)*paramCount);
+        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
     }
     
     /*!
      * \brief Deleted assignment operator
      */
-    WalkMove<ParamType>& operator=(const WalkMove<ParamType>& rhs) = delete;
+    WalkMove<ParamType, Calculator>& operator=(const WalkMove<ParamType, Calculator>& rhs) = delete;
     
     /*!
      * \brief setPrngSeed Sets the seed and stream number of the underlying prng
@@ -109,10 +106,11 @@ public:
         calculateProposal(currWalker, walkerSet);
         ParamType newProb = calc.calcLogPostProb(proposal);
         ParamType logProbDiff = (newProb - currWalker.getCurrAuxData());
-        if(prng.getNegExponentialReal() < logProbDiff)
+        ParamType temp = prng.getNegExponentialReal();
+        if(temp < logProbDiff)
         {
             //currWalker.jumpToNewPoint(proposal, newProb, storePoint);
-            currWalker.jumpToNewPointSwap(proposal, auxVal, storePoint);
+            currWalker.jumpToNewPointSwap(proposal, newProb, storePoint);
         }
         else
         {
@@ -140,7 +138,7 @@ private:
         while(numSelected < numPoints)
         {
             randUniform = prng.getUniformReal();
-            if( ((numWalkers-totalInputExamined)*randUniform) >= (numWalkers-numSelected))
+            if( ((numWalkers-totalInputExamined)*randUniform) >= (ptCount-numSelected))
             {
                 ++totalInputExamined;
             }
@@ -164,6 +162,7 @@ private:
         intermediates[0] = 0.0;
         intermediates[1] = 0.0;
         intermediates[2] = 0.0;
+        const ParamType* currentState = currWalker.getCurrState();
         for(int j=0; j<numPoints; ++j)
         {
             randoms[j] = prng.getNormalReal();
@@ -172,21 +171,19 @@ private:
             intermediates[1] += randoms[j];
             intermediates[2] += value;
         }
-        proposal[0] = currWalker.getCurrState()[0] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount)));
+        proposal[0] = currentState[0] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount)));
         //loop across the remaining parameters, using the pre-stored random numbers
         for(int i=1; i<paramCount; ++i)
         {
             intermediates[0] = 0.0;
-            intermediates[1] = 0.0;
             intermediates[2] = 0.0;
             for(int j=0; j<numPoints; ++j)
             {
                 ParamType value = walkerSet[walkerIndices[j]].getCurrState()[i];
                 intermediates[0] += randoms[j]*value;
-                intermediates[1] += randoms[j];
                 intermediates[2] += value;
             }
-            proposal[i] = (currWalker.getCurrState()[i] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount))));
+            proposal[i] = (currentState[i] + (intermediates[0] - (intermediates[1]*(intermediates[2]/ptCount))));
         }
     }
     
@@ -196,11 +193,11 @@ private:
     ParamType* randoms; ///<Storage for the random numbers selected in calculating the first parameter in the point proposal
     int* walkerIndices; ///<Storage for the indices of the randomly selected walkers
     
-    ParamType* proposal = nullptr;
-    int paramCount;
-    Utility::MultiSampler<ParamType, Utility::GwDistribution<ParamType, 2, 1>> prng;
+    ParamType* proposal = nullptr; ///<Pointer to the proposal point
+    int paramCount; ///MNumber of parameters in the distribution
+    Utility::MultiSampler<ParamType, Utility::GwDistribution<ParamType, 2, 1>> prng; ///<The random number generator and distribution sampler
     Calculator calc;
 };
 }
 }
-#endif  //MCMC_WALKER_MOVERS_WALKMOVE_H
+#endif  //MCMCPP_MOVERS_WALKMOVE_H
