@@ -72,8 +72,7 @@ public:
         walkerNumber = walkerIndex; 
         numParams = numParam;
         sizeInBytes = numParams*sizeof(ParamType);
-        size_t allocSize = (sizeof(ParamType)*numParam);
-        currState = Utility::autoAlignedAlloc<ParamType>(allocSize);
+        currState = Utility::autoAlignedAlloc<ParamType>(numParams);
     }
     
     /*!

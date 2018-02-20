@@ -58,8 +58,7 @@ public:
         paramCount(numParams), gamma(2.38/std::sqrt(2*paramCount)), prng(prngInit), calc(orig)
     {
         
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
+        proposal = Utility::autoAlignedAlloc<ParamType>(paramCount);
     }
     
     ~DifferentialEvolution(){Utility::delAAA(proposal);}
@@ -71,8 +70,7 @@ public:
     DifferentialEvolution(const DifferentialEvolution<ParamType, Calculator>& rhs):
     paramCount(rhs.paramCount), gamma(2.38/std::sqrt(2*paramCount)), calc(rhs.calc)
     {
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
+        proposal = Utility::autoAlignedAlloc<ParamType>(paramCount);
     }
     
     /*!

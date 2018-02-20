@@ -57,8 +57,8 @@ public:
      * @param orig The original calculator class that will be copied to make the one stored internally
      */
     MetropolisHastings(int numParams, long long prngInit, const Calculator& orig):
-        decompCovMat(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams*numParams), Utility::AlignedArrayDeleter<ParamType>()),
-        proposal(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams)),
+        decompCovMat(Utility::autoAlignedAlloc<ParamType>(numParams*numParams), Utility::AlignedArrayDeleter<ParamType>()),
+        proposal(Utility::autoAlignedAlloc<ParamType>(numParams)),
         paramCount(numParams), prng(prngInit), calc(orig)
     {setIdentityCovar();}
     
@@ -70,7 +70,7 @@ public:
      */
     MetropolisHastings(const MetropolisHastings<ParamType, Calculator>& rhs):
         decompCovMat(rhs.decompCovMat),
-        proposal(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*rhs.paramCount)),
+        proposal(Utility::autoAlignedAlloc<ParamType>(rhs.paramCount)),
         paramCount(rhs.paramCount), diagonal(rhs.diagonal), calc(rhs.calc)
     {}
     

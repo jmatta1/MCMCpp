@@ -119,8 +119,7 @@ ChainBlock<ParamType>::ChainBlock(ChainBlock<ParamType>* prev, int numWalkers, i
     cellsPerStep(numWalkers*numCellsPerWalker),
     sizeInBytes(walkerCount*cellsPerWalker*sizeof(ParamType))
 {
-    size_t allocSize = (sizeof(ParamType)*Detail::BlockSize*numCellsPerWalker*numWalkers);
-    chainArray = Utility::autoAlignedAlloc<ParamType>(allocSize);
+    chainArray = Utility::autoAlignedAlloc<ParamType>(Detail::BlockSize*numCellsPerWalker*numWalkers);
 }
 
 template <class ParamType>

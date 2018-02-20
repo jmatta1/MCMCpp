@@ -23,20 +23,64 @@ namespace MCMC
 namespace Utility
 {
 
+namespace Detail
+{
+/*!
+ * \brief Internal function to find the greatest common divisor of two integers using the euclidean algorithm
+ * \param a The first integer input (must be greater than or equal to b)
+ * \param b The second integer input (must be less than or equal to a)
+ * \return The greatest common divisor of a and b
+ */
+size_t gcdInternal(size_t a, size_t b)
+{
+    while(b!=0)
+    {
+        size_t temp = b;
+        b = (a%b);
+        a = temp;
+    }
+    return a;
+}
+
+/*!
+ * \brief Finds the greatest common divisor of two integers using the euclidean algorithm by ensuring that the arguments are passed in inverse value order to gcdInternal
+ * \param a The first integer input
+ * \param b The second integer input
+ * \return The greatest common divisor of a and b
+ */
+size_t greatestCommonDivisor(size_t a, size_t b)
+{
+    if(a>b){return Detail::gcdInternal(a,b);}
+    else if(b>a){return Detail::gcdInternal(b,a);}
+    else{return a;}
+}
+
+/*!
+ * \brief Finds the least common multiple of two integers (using gcd)
+ * \param a The first integer input
+ * \param b The second integer input
+ * \return The least common multiple of a and b
+ */
+size_t leastCommonMultiple(size_t a, size_t b)
+{
+    return ((a/greatestCommonDivisor(a,b))*b);
+}
+
+}
 /*!
  * @brief Takes a size in bytes to allocate, increases it to be the nearest multiple of AlignmentLength then allocates it
  * @tparam ParamType The pointer type that needs to be returned
  * @tparam AlignmentLength The integer to align the addresses to, defaults to 64 since that is sufficient for cache lines and up to AVX-512 instructions
- * @param allocSize The minimum size in bytes to allocate
+ * @param numCells The minimum number of ParamType cells to allocate
  * @return the pointer to the allocated memory
  */
 template<class ParamType, int AlignmentLength=64>
-ParamType* autoAlignedAlloc(size_t allocSize)
+ParamType* autoAlignedAlloc(size_t numCells)
 {
-    if(allocSize%AlignmentLength) //if allocSize is not an integral multiple of AlignementLength
-    {
-        allocSize = (((allocSize/AlignmentLength)+1)*AlignmentLength);
-    }
+    size_t arrayBlockSize = (Detail::leastCommonMultiple(AlignmentLength, sizeof(ParamType))/sizeof(ParamType));
+    size_t arrayBlockCount = (numCells/arrayBlockSize);
+    if((arrayBlockCount*arrayBlockSize) != numCells){++arrayBlockCount;}
+    size_t allocSize = (arrayBlockCount*arrayBlockSize*sizeof(ParamType));
     return reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, allocSize));
 }
 
