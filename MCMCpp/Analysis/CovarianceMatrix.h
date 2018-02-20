@@ -26,7 +26,7 @@ namespace Analysis
 {
 
 /*!
- * @class CovarianceMatrixCalculator
+ * @class CovarianceMatrix
  * @ingroup Analysis
  * @brief A class to calculate the covariance matrix of a given set of MCMC samples
  * @author James Till Matta
@@ -40,7 +40,7 @@ namespace Analysis
  * autocorrelation.
  */
 template<class ParamType>
-class CovarianceMatrixCalc
+class CovarianceMatrix
 {
 public:
     typedef Chain::ChainStepIterator<ParamType> IttType;
@@ -50,7 +50,7 @@ public:
      * \param numParams The number of parameters in the matrix
      * \param numWalkers The number of walkers that are in ensemble
      */
-    CovarianceMatrixCalc(int numParams, int numWalkers):
+    CovarianceMatrix(int numParams, int numWalkers):
         covarMat(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
         corrMat(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
         pProducts(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
@@ -60,7 +60,7 @@ public:
         pCount(numParams), wCount(numWalkers)
     {}
     
-    ~CovarianceMatrixCalc()
+    ~CovarianceMatrix()
     {
         Utility::delAAA(covarMat);
         Utility::delAAA(corrMat);

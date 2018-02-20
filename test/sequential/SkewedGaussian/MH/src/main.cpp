@@ -133,15 +133,7 @@ int main(int argc, char* argv[])
     std::cout<<"P1 Calculated AutoCorrelation Time: "<<p1Ac<<std::endl;
     
     std::cout<<"Calculating the covariance matrix without slicing"<<std::endl;
-    Analysis::CovarianceMatrixCalc<double> cmCalc(numParams, numWalkers);
-    cmCalc.calculateCovar(startItt, endItt);
-    std::cout<<"Covariance matrix without slicing"<<std::endl;
-    std::cout<<cmCalc.getCovarianceMatrixElement(0, 0)<<", "<<cmCalc.getCovarianceMatrixElement(0, 1)<<"\n";
-    std::cout<<cmCalc.getCovarianceMatrixElement(1, 0)<<", "<<cmCalc.getCovarianceMatrixElement(1, 1)<<"\n";
-    std::cout<<"Correlation matrix without slicing"<<std::endl;
-    std::cout<<cmCalc.getCorrelationMatrixElement(0, 0)<<", "<<cmCalc.getCorrelationMatrixElement(0, 1)<<"\n";
-    std::cout<<cmCalc.getCorrelationMatrixElement(1, 0)<<", "<<cmCalc.getCorrelationMatrixElement(1, 1)<<"\n";
-    
+    Analysis::CovarianceMatrix<double> cmCalc(numParams, numWalkers);
     std::cout<<"Calculating the covariance matrix with slicing"<<std::endl;
     int sliceInterval = static_cast<int>((p0Ac<p1Ac)?std::ceil(p0Ac):std::ceil(p1Ac));
     cmCalc.calculateCovarSlicing(startItt, endItt, sliceInterval);
