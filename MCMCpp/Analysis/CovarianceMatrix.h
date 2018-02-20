@@ -71,19 +71,12 @@ public:
     }
     
     /*!
-     * \brief Uses every sample to calculate the covariance of the markov chains
-     * \param start The start chain step iterator
-     * \param end The end chain step iterator
-     */
-    void calculateCovar(IttType start, IttType end){calculateCovarSlicing(start, end, 1);}
-    
-    /*!
      * \brief Uses every sliceInterval'th sample to calculate the covariance of the markov chains
      * \param start The start chain step iterator
      * \param end The end chain step iterator
      * \param sliceInterval The relative index of sample to use, must be >= 1. a value of 1 uses every sample, 2 uses every other sample, so on and so forth
      */
-    void calculateCovarSlicing(IttType start, IttType end, int sliceInterval)
+    void calculateCovarSlicing(IttType start, IttType end, int sliceInterval=1)
     {
         zeroStorage();
         int index = 0;
