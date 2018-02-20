@@ -1,11 +1,13 @@
 #include<iostream>
 #include<random>
+#include<cmath>
 #include<string>
 #include<sstream>
 #include<fstream>
 #include<Utility/pcg-cpp/include/pcg_random.hpp>
 #include"Common/SkewedGaussian.h"
 #include"Analysis/AutoCorrCalc.h"
+#include"Analysis/CovarianceMatrix.h"
 #include"Movers/MetropolisHastings.h"
 #include"EnsembleSampler.h"
 using MCMC::EnsembleSampler;
@@ -124,8 +126,32 @@ int main(int argc, char* argv[])
     auto endItt = sampler.getStepIttEnd();
     acCalc.calcAutoCorrTimes(startItt, endItt, sampler.getStoredSteps());
     
-    std::cout<<"P0 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(0)<<std::endl;
-    std::cout<<"P1 Calculated AutoCorrelation Time: "<<acCalc.retrieveAutoCorrelationTime(1)<<std::endl;
+    double p0Ac = acCalc.retrieveAutoCorrelationTime(0);
+    double p1Ac = acCalc.retrieveAutoCorrelationTime(1);
+    
+    std::cout<<"P0 Calculated AutoCorrelation Time: "<<p0Ac<<std::endl;
+    std::cout<<"P1 Calculated AutoCorrelation Time: "<<p1Ac<<std::endl;
+    
+    std::cout<<"Calculating the covariance matrix without slicing"<<std::endl;
+    Analysis::CovarianceMatrixCalc<double> cmCalc(numParams, numWalkers);
+    cmCalc.calculateCovar(startItt, endItt);
+    std::cout<<"Covariance matrix without slicing"<<std::endl;
+    std::cout<<cmCalc.getCovarianceMatrixElement(0, 0)<<", "<<cmCalc.getCovarianceMatrixElement(0, 1)<<"\n";
+    std::cout<<cmCalc.getCovarianceMatrixElement(1, 0)<<", "<<cmCalc.getCovarianceMatrixElement(1, 1)<<"\n";
+    std::cout<<"Correlation matrix without slicing"<<std::endl;
+    std::cout<<cmCalc.getCorrelationMatrixElement(0, 0)<<", "<<cmCalc.getCorrelationMatrixElement(0, 1)<<"\n";
+    std::cout<<cmCalc.getCorrelationMatrixElement(1, 0)<<", "<<cmCalc.getCorrelationMatrixElement(1, 1)<<"\n";
+    
+    std::cout<<"Calculating the covariance matrix with slicing"<<std::endl;
+    int sliceInterval = static_cast<int>((p0Ac<p1Ac)?std::ceil(p0Ac):std::ceil(p1Ac));
+    cmCalc.calculateCovarSlicing(startItt, endItt, sliceInterval);
+    std::cout<<"Covariance matrix with slicing"<<std::endl;
+    std::cout<<cmCalc.getCovarianceMatrixElement(0, 0)<<", "<<cmCalc.getCovarianceMatrixElement(0, 1)<<"\n";
+    std::cout<<cmCalc.getCovarianceMatrixElement(1, 0)<<", "<<cmCalc.getCovarianceMatrixElement(1, 1)<<"\n";
+    std::cout<<"Correlation matrix with slicing"<<std::endl;
+    std::cout<<cmCalc.getCorrelationMatrixElement(0, 0)<<", "<<cmCalc.getCorrelationMatrixElement(0, 1)<<"\n";
+    std::cout<<cmCalc.getCorrelationMatrixElement(1, 0)<<", "<<cmCalc.getCorrelationMatrixElement(1, 1)<<"\n";
+    
     std::cout<<"Shutting down"<<std::endl;
 }
 
