@@ -36,6 +36,10 @@ namespace Analysis
  * @tparam ParamType The floating point type for which this calculation will be carried out
  * 
  * The user can skip parts of the chain to use every nth step in or simply use every point
+ * Care should be taken in choice of binning a good rule of thumb is that the memory size
+ * used by CornerHistograms is going to be approximately
+ * Size in bytes = (2*n*(n-1)*b*b + 4*n*b) where n is the number of parameters
+ * and b is the number of bins
  */
 template<class ParamType>
 class CornerHistograms
