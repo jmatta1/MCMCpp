@@ -5,6 +5,7 @@
 #include"Common/SkewedGaussian.h"
 #include"Analysis/AutoCorrCalc.h"
 #include"Analysis/CovarianceMatrix.h"
+#include"Analysis/CornerHistograms.h"
 #include"Movers/WalkMove.h"
 #include"EnsembleSampler.h"
 using MCMC::EnsembleSampler;
@@ -23,6 +24,7 @@ int main()
     const int numWalkers = 320;
     const int numParams = 2;
     const int numSteps = 40019;
+    const int cornerBinning = 100;
     const double eps = 0.13;
     
     std::cout<<"Building Custom Distribution"<<std::endl;
@@ -82,9 +84,8 @@ int main()
     std::cout<<"P0 Calculated AutoCorrelation Time: "<<p0Ac<<std::endl;
     std::cout<<"P1 Calculated AutoCorrelation Time: "<<p1Ac<<std::endl;
     
-    std::cout<<"Calculating the covariance matrix without slicing"<<std::endl;
-    Analysis::CovarianceMatrix<double> cmCalc(numParams, numWalkers);
     std::cout<<"Calculating the covariance matrix with slicing"<<std::endl;
+    Analysis::CovarianceMatrix<double> cmCalc(numParams, numWalkers);
     int sliceInterval = static_cast<int>((p0Ac<p1Ac)?std::ceil(p0Ac):std::ceil(p1Ac));
     cmCalc.calculateCovarSlicing(startItt, endItt, sliceInterval);
     std::cout<<"Covariance matrix with slicing"<<std::endl;
@@ -93,6 +94,12 @@ int main()
     std::cout<<"Correlation matrix with slicing"<<std::endl;
     std::cout<<cmCalc.getCorrelationMatrixElement(0, 0)<<", "<<cmCalc.getCorrelationMatrixElement(0, 1)<<"\n";
     std::cout<<cmCalc.getCorrelationMatrixElement(1, 0)<<", "<<cmCalc.getCorrelationMatrixElement(1, 1)<<"\n";
+    
+    std::cout<<"Generating Corner Histograms"<<std::endl;
+    Analysis::CornerHistograms<double> cornerHists(numParams, numWalkers, cornerBinning);
+    cornerHists.calculateHistograms(startItt, endItt);
+    std::cout<<"Writing Corner Histograms"<<std::endl;
+    cornerHists.saveHistsCsvFormat("chainHist");
     
     std::cout<<"Shutting down"<<std::endl;
 }

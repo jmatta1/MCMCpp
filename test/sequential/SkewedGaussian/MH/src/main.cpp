@@ -8,6 +8,7 @@
 #include"Common/SkewedGaussian.h"
 #include"Analysis/AutoCorrCalc.h"
 #include"Analysis/CovarianceMatrix.h"
+#include"Analysis/CornerHistograms.h"
 #include"Movers/MetropolisHastings.h"
 #include"EnsembleSampler.h"
 using MCMC::EnsembleSampler;
@@ -38,6 +39,7 @@ int main(int argc, char* argv[])
     const int numWalkers = 320;
     const int numParams = 2;
     const int numSteps = 40019;
+    const int cornerBinning = 100;
     const double eps = 0.13;
     const double idealCovar[4] = {(1.0+eps)/4.0, (1.0-eps)/4.0, (1.0-eps)/4.0, (1.0+eps)/4.0};
     const double badCovar[4]   = {(2.0/3.0), -5.0, -5.0, 50.0};
@@ -143,6 +145,12 @@ int main(int argc, char* argv[])
     std::cout<<"Correlation matrix with slicing"<<std::endl;
     std::cout<<cmCalc.getCorrelationMatrixElement(0, 0)<<", "<<cmCalc.getCorrelationMatrixElement(0, 1)<<"\n";
     std::cout<<cmCalc.getCorrelationMatrixElement(1, 0)<<", "<<cmCalc.getCorrelationMatrixElement(1, 1)<<"\n";
+    
+    std::cout<<"Generating Corner Histograms"<<std::endl;
+    Analysis::CornerHistograms<double> cornerHists(numParams, numWalkers, cornerBinning);
+    cornerHists.calculateHistograms(startItt, endItt);
+    std::cout<<"Writing Corner Histograms"<<std::endl;
+    cornerHists.saveHistsCsvFormat("chainHist");
     
     std::cout<<"Shutting down"<<std::endl;
 }
