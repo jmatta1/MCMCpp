@@ -102,7 +102,7 @@ public:
             ++index;
             ++numPts;
         }
-        finalizeMatrix(index);
+        finalizeMatrix(numPts);
     }
     
     /*!
