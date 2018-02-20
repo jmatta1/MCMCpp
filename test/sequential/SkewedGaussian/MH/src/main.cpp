@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     const int numParams = 2;
     const int numSteps = 40019;
     const double eps = 0.13;
-    const double idealCovar[4] = {1.0+eps, 1.0-eps, 1.0-eps, 1.0+eps};
+    const double idealCovar[4] = {(1.0+eps)/4.0, (1.0-eps)/4.0, (1.0-eps)/4.0, (1.0+eps)/4.0};
     const double badCovar[4]   = {(2.0/3.0), -5.0, -5.0, 50.0};
     //const double identCovar[4] = {1.0, 0.0, 0.0, 1.0};
     
