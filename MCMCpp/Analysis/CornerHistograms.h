@@ -1,7 +1,7 @@
 /*!*****************************************************************************
 ********************************************************************************
 **
-** @copyright Copyright (C) 2017-2018 James Till Matta
+** @copyright Copyright (C) 2018 James Till Matta
 **
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -51,9 +51,9 @@ public:
      * \brief Constructor for Corner Histogram calculator
      * \param numParams The number of parameters per point
      * \param numWalkers The number of walkers per step in the chain
-     * \param binsPerAxis The desired number of bins per axis in the histograms
+     * \param binsPerAxis The desired number of bins per axis in the histograms, 100 bins per axis is a somewhat sane default value
      */
-    CornerHistograms(int numParams, int numWalkers, int binsPerAxis):
+    CornerHistograms(int numParams, int numWalkers, int binsPerAxis=100):
         pCount(numParams), wCount(numWalkers), bCount(binsPerAxis)
     {
         numTwoAxis = ((pCount*(pCount-1))/2);
@@ -253,7 +253,7 @@ private:
             int cornerOffset = ((i*(i-1))/2);
             for(int j=0; j<i; ++j)
             {
-                int jBin = ((pt[j]-paramBounds[2*j])/paramBounds[2*i+1]);
+                int jBin = ((pt[j]-paramBounds[2*j])/paramBounds[2*j+1]);
                 ++(twoAxisHists[cornerOffset+j][jBin*bCount+iBin]);
             }
         }
@@ -261,8 +261,8 @@ private:
     
     /*!
      * \brief Finds the minimum and maximum value of every parameter
-     * \param start The iterator at the start of the chain
-     * \param end The iterator at the end of the chain
+     * \param start The step iterator at the start of the chain
+     * \param end The step iterator at the end of the chain
      * \param sliceInterval The relative index of sample to use, must be >= 1. a value of 1 uses every sample, 2 uses every other sample, so on and so forth
      */
     void findBinning(IttType start, IttType end, int sliceInterval)
@@ -299,19 +299,19 @@ private:
                 }
                 else
                 {
-                    paramBounds[2*i] = -0.01;
-                    paramBounds[2*i+1] = 0.01;
+                    paramBounds[2*i] = -minSize;
+                    paramBounds[2*i+1] = minSize;
                 }
             }
             else
             {//now tweak the bounds slightly so they are inclusive
                 int ans = sign(paramBounds[2*i]);
                 if(ans == -1){paramBounds[2*i] *= expandFraction;}
-                else if(ans == 0){paramBounds[2*i] = -0.01;}
+                else if(ans == 0){paramBounds[2*i] = -minSize;}
                 else{paramBounds[2*i] *= contractFraction;}
                 ans = sign(paramBounds[2*i+1]);
                 if(ans == -1){paramBounds[2*i+1] *= expandFraction;}
-                else if(ans == 0){paramBounds[2*i+1] = -0.01;}
+                else if(ans == 0){paramBounds[2*i+1] = minSize;}
                 else{paramBounds[2*i+1] *= contractFraction;}
             }
         }
@@ -361,7 +361,7 @@ private:
         {
             singleAxisHists[i] = 0;
         }
-        //set the parameter bounds to their "effective zeros"
+        //set the parameter bounds to their initial positions
         for(int i=0; i<pCount; ++i)
         {
             paramBounds[2*i] = std::numeric_limits<ParamType>::max();
@@ -379,8 +379,9 @@ private:
         return (ParamType(0) < val) - (val < ParamType(0));
     }
     
-    const ParamType expandFraction = static_cast<ParamType>(1.01);
-    const ParamType contractFraction = static_cast<ParamType>(0.99);
+    const ParamType expandFraction = static_cast<ParamType>(1.001); ///<Holds the margin for expanding negative bounds downward and positive bounds upward
+    const ParamType contractFraction = static_cast<ParamType>(0.999);///<Holds the margin for expanding negative bounds *upward* and positive bounds downward
+    const ParamType minSize = static_cast<ParamType>(0.001);///<Holds the minimum magnitude of a range
     
     int** twoAxisHists = nullptr; ///<Holds the list of pointers to two-d histograms
     int* singleAxisHists = nullptr; ///<Holds the set of 1-d histograms, one per row of the 2d array
