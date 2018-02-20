@@ -62,8 +62,7 @@ public:
     StretchMove(int numParams, long long prngInit, const Calculator& orig):
         paramCount(numParams), prng(prngInit), calc(orig)
     {
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
+        proposal = Utility::autoAlignedAlloc<ParamType>(paramCount);
     }
     
     ~StretchMove(){Utility::delAAA(proposal);}
@@ -75,8 +74,7 @@ public:
     StretchMove(const StretchMove<ParamType, Calculator, CustomDistribution>& rhs):
     paramCount(rhs.paramCount), calc(rhs.calc)
     {
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
+        proposal = Utility::autoAlignedAlloc<ParamType>(paramCount);
     }
     
     /*!

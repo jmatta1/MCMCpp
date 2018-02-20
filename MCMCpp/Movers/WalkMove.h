@@ -61,8 +61,7 @@ public:
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
+        proposal = Utility::autoAlignedAlloc<ParamType>(paramCount);
     }
     
     ~WalkMove(){delete[] randoms; delete[] walkerIndices; Utility::delAAA(proposal);}
@@ -76,8 +75,7 @@ public:
     {
         walkerIndices = new int[numPoints];
         randoms = new ParamType[numPoints];
-        size_t allocSize = (sizeof(ParamType)*paramCount);
-        proposal = Utility::autoAlignedAlloc<ParamType>(allocSize);
+        proposal = Utility::autoAlignedAlloc<ParamType>(paramCount);
     }
     
     /*!

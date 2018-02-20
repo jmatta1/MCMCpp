@@ -58,8 +58,8 @@ public:
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
     SequenceMove(int numParams, const ParamType* steps):
-        proposal( Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams)),
-        stepSizes(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
+        proposal( Utility::autoAlignedAlloc<ParamType>(numParams)),
+        stepSizes(Utility::autoAlignedAlloc<ParamType>(numParams), Utility::AlignedArrayDeleter<ParamType>()),
         paramCount(numParams)
     {
         for(int i=0; i<paramCount; ++i)

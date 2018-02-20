@@ -54,10 +54,10 @@ public:
      * \param orig The original calculator class that will be copied to make the one stored internally
      */
     AutoRegressiveMove(int numParams, const ParamType* offsets, const ParamType* phiValues, const ParamType* paramVariance):
-        phis(      Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
-        offs(      Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
-        prngStdDev(Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams), Utility::AlignedArrayDeleter<ParamType>()),
-        proposal(  Utility::autoAlignedAlloc<ParamType>(sizeof(ParamType)*numParams)),
+        phis(      Utility::autoAlignedAlloc<ParamType>(numParams), Utility::AlignedArrayDeleter<ParamType>()),
+        offs(      Utility::autoAlignedAlloc<ParamType>(numParams), Utility::AlignedArrayDeleter<ParamType>()),
+        prngStdDev(Utility::autoAlignedAlloc<ParamType>(numParams), Utility::AlignedArrayDeleter<ParamType>()),
+        proposal(  Utility::autoAlignedAlloc<ParamType>(numParams)),
         prng(0), //doesn't really matter, just stops the compiler warnings for Weffc++
         paramCount(numParams)
     {
