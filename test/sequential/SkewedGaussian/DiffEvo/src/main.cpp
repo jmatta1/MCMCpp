@@ -5,8 +5,9 @@
 #include"Common/SkewedGaussian.h"
 #include"Analysis/AutoCorrCalc.h"
 #include"Analysis/CovarianceMatrix.h"
-#include"Movers/DifferentialEvolution.h"
 #include"Analysis/CornerHistograms.h"
+#include"Analysis/PercentileAndMaximumFinder.h"
+#include"Movers/DifferentialEvolution.h"
 #include"EnsembleSampler.h"
 using MCMC::EnsembleSampler;
 namespace Mover=MCMC::Mover;
@@ -101,7 +102,40 @@ int main()
     std::cout<<"Writing Corner Histograms"<<std::endl;
     cornerHists.saveHistsCsvFormat("chainHist");
     
+    std::cout<<"\nGenerating Percentile and Peak Finding Histograms"<<std::endl;
+    Analysis::PercentileAndMaximumFinder<double> pamf(numParams, numWalkers, 100*cornerBinning);
+    pamf.processChainData(startItt, endItt, 1);
+    std::cout<<"Writing High-Res Histograms"<<std::endl;
+    pamf.writeHistogramsInCsvFormat("percentileHistograms");
+    
+    std::cout<<"Finding peaks and errors"<<std::endl;
+    double peak0 = pamf.getValueOfPeak(0);
+    double percentile0 = pamf.getPercentileFromValue(0, peak0);
+    double loPeak0 = pamf.getValueFromPercentile(0, percentile0-34.1);
+    double hiPeak0 = pamf.getValueFromPercentile(0, percentile0+34.1);
+    double peak1 = pamf.getValueOfPeak(1);
+    double percentile1 = pamf.getPercentileFromValue(1, peak1);
+    double loPeak1 = pamf.getValueFromPercentile(1, percentile1-34.1);
+    double hiPeak1 = pamf.getValueFromPercentile(1, percentile1+34.1);
+    std::cout<<"The percentiles, values and errors of the peaks are:\n"
+             <<"Parameter, Peak Percentile, Peak Value, 34.1% down, 34.1% up"<<std::endl;
+    std::cout<<"P0: "<<percentile0<<", "<<peak0<<", "<<loPeak0<<", "<<hiPeak0<<std::endl;
+    std::cout<<"P1: "<<percentile1<<", "<<peak1<<", "<<loPeak1<<", "<<hiPeak1<<std::endl;
+    
+    std::cout<<"Finding percentiles"<<std::endl;
+    double cv0 = pamf.getValueFromPercentile(0, 50);
+    double lv0 = pamf.getValueFromPercentile(0, 15.9);
+    double hv0 = pamf.getValueFromPercentile(0, 84.1);
+    double cv1 = pamf.getValueFromPercentile(1, 50);
+    double lv1 = pamf.getValueFromPercentile(1, 15.9);
+    double hv1 = pamf.getValueFromPercentile(1, 84.1);
+    std::cout<<"The 15.9, 50, 84.1 percentiles are:"<<std::endl;
+    std::cout<<"P0: "<<lv0<<", "<<cv0<<", "<<hv0<<std::endl;
+    std::cout<<"P1: "<<lv1<<", "<<cv1<<", "<<hv1<<std::endl;
+    
     std::cout<<"Shutting down"<<std::endl;
+    
+    return 0;
 }
 
 template<class ParamType>
