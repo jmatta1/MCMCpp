@@ -258,7 +258,7 @@ private:
             for(int j=0; j<i; ++j)
             {
                 int jBin = ((pt[j]-paramBounds[2*j])/paramBounds[2*j+1]);
-                ++(twoAxisHists[cornerOffset+j][jBin*bCount+iBin]);
+                ++(twoAxisHists[cornerOffset+j][iBin*bCount+jBin]);
             }
         }
     }
