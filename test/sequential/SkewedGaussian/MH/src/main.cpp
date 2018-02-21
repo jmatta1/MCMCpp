@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
     std::cout<<"\nCalculating the covariance matrix with slicing"<<std::endl;
     Analysis::CovarianceMatrix<double> cmCalc(numParams, numWalkers);
     int sliceInterval = static_cast<int>((p0Ac<p1Ac)?std::ceil(p0Ac):std::ceil(p1Ac));
-    cmCalc.calculateCovarSlicing(startItt, endItt, sliceInterval);
+    cmCalc.calculateCovar(startItt, endItt, sliceInterval);
     std::cout<<"Covariance matrix with slicing"<<std::endl;
     std::cout<<cmCalc.getCovarianceMatrixElement(0, 0)<<", "<<cmCalc.getCovarianceMatrixElement(0, 1)<<"\n";
     std::cout<<cmCalc.getCovarianceMatrixElement(1, 0)<<", "<<cmCalc.getCovarianceMatrixElement(1, 1)<<"\n";
