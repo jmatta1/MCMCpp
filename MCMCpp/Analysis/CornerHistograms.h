@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<limits>//for numeric_limits
+#include<cassert>//for assert
 #include<sstream>//for generating file names for saving histograms
 #include<fstream>//for saving histograms
 #include<string>//for passing strings around for file names
@@ -56,6 +57,9 @@ public:
     CornerHistograms(int numParams, int numWalkers, int binsPerAxis=100):
         pCount(numParams), wCount(numWalkers), bCount(binsPerAxis)
     {
+        assert(pCount > 0);
+        assert(wCount > 0);
+        assert(bCount > 1);
         numTwoAxis = ((pCount*(pCount-1))/2);
         //allocate the array of pointers two the 2d hists
         twoAxisHists = new int*[numTwoAxis];

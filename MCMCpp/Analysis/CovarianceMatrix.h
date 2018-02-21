@@ -14,6 +14,7 @@
 // includes for C system headers
 // includes for C++ system headers
 #include<cmath>//for sqrt
+#include<cassert>//for assert
 // includes from other libraries
 // includes from MCMCpp
 #include"../Utility/Misc.h"
@@ -58,7 +59,7 @@ public:
         pAvgs(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
         pAvgsComp(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
         pCount(numParams), wCount(numWalkers)
-    {}
+    {assert(pCount > 0);assert(wCount > 0);}
     
     ~CovarianceMatrix()
     {

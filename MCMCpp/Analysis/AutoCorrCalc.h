@@ -49,7 +49,7 @@ public:
     AutoCorrCalc(int numParams, int numWalkers) :
         engine(std::random_device()()), normDist(static_cast<ParamType>(0),static_cast<ParamType>(1)),
         autoCovCalc(), paramCount(numParams), walkerCount(numWalkers)
-    {   acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
+    {   assert(paramCount > 0);assert(walkerCount > 0);acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
         chainAverages = new ParamType[paramCount*numWalkers]; chainAvgComps = new ParamType[paramCount*numWalkers];
         std::fill_n(acorrTimeList, paramCount, static_cast<ParamType>(0));}
     
