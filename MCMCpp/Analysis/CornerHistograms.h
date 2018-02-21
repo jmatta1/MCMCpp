@@ -54,35 +54,12 @@ public:
      * \param numWalkers The number of walkers per step in the chain
      * \param binsPerAxis The desired number of bins per axis in the histograms, 100 bins per axis is a somewhat sane default value
      */
-    CornerHistograms(int numParams, int numWalkers, int binsPerAxis=100):
-        pCount(numParams), wCount(numWalkers), bCount(binsPerAxis)
-    {
-        assert(pCount > 0);
-        assert(wCount > 0);
-        assert(bCount > 1);
-        numTwoAxis = ((pCount*(pCount-1))/2);
-        //allocate the array of pointers two the 2d hists
-        twoAxisHists = new int*[numTwoAxis];
-        //allocate each of the 2D hists
-        for(int i=0; i<numTwoAxis; ++i)
-        {
-            twoAxisHists[i] = new int[bCount*bCount];
-        }
-        //allocate the array of 1D hists
-        singleAxisHists = new int[bCount*pCount];
-        //allocate the set of parameter bounds and set them to extreme values
-        paramBounds = new ParamType[2*pCount];
-    }
+    CornerHistograms(int numParams, int numWalkers, int binsPerAxis=100);
     
-    ~CornerHistograms()
-    {
-        delete[] singleAxisHists;
-        for(int i=0; i<numTwoAxis; ++i)
-        {
-            delete[] twoAxisHists[i];
-        }
-        delete[] twoAxisHists;
-    }
+    /*!
+     * \brief Destructor which uses the deleteAAA function to free all allocated arrays
+     */
+    ~CornerHistograms();
 
     /*!
      * \brief Histograms the points in the chain into all concievable 1 and 2D hisograms
@@ -90,48 +67,13 @@ public:
      * \param end The iterator at the end of the chain
      * \param sliceInterval The relative index of sample to use, must be >= 1. a value of 1 uses every sample, 2 uses every other sample, so on and so forth
      */
-    void calculateHistograms(IttType start, IttType end, int sliceInterval=1)
-    {
-        //reset our storage
-        zeroStorage();
-        //find the binning parameters
-        findBinning(start, end, sliceInterval);
-        //iterate through the chain steps
-        int index = 0;
-        for(IttType itt(start); itt!=end; ++itt)
-        {
-            if((index % sliceInterval) != 0)
-            {
-                ++index;
-                continue; //skip samples that are not the sliceInterval'th sample
-            }
-            //now iterate through every point
-            for(int i=0; i<wCount; ++i)
-            {
-                handlePoint( ((*itt)+(i*pCount)) );
-            }
-            ++index;
-        }
-    }
+    void calculateHistograms(IttType start, IttType end, int sliceInterval=1);
     
     /*!
      * \brief Saves all the histograms in a standard csv format
      * \param fileNameBase The root of the file name to which specifiers are written
      */
-    void saveHistsCsvFormat(const std::string& fileNameBase)
-    {
-        //iterate through the parameter pair combinations
-        for(int i=0; i<pCount; ++i)
-        {//first write the 1D histogram
-            write1dCsv(i, fileNameBase);
-            //then handle the dual parameter histograms
-            int cornerOffset = ((i*(i-1))/2);
-            for(int j=0; j<i; ++j)
-            {
-                write2dCsv(i, j, fileNameBase);
-            }
-        }
-    }
+    void saveHistsCsvFormat(const std::string& fileNameBase);
     
     /*!
      * \brief Returns the low edge for the bin number specified for a given parameter number
@@ -139,10 +81,7 @@ public:
      * \param binNum The bin number to get the low edge for
      * \return The low edge of bin number binNum for parameter pNum
      */
-    ParamType getHistBinLowEdge(int pNum, int binNum)
-    {
-        return (paramBounds[2*pNum] + (binNum*paramBounds[2*pNum+1]));
-    }
+    ParamType getHistBinLowEdge(int pNum, int binNum){return (paramBounds[2*pNum] + (binNum*paramBounds[2*pNum+1]));}
     
     /*!
      * \brief Returns the low edge for the bin number specified for a given parameter number
@@ -150,10 +89,7 @@ public:
      * \param binNum The bin number to get the low edge for
      * \return The low edge of bin number binNum for parameter pNum
      */
-    ParamType getHistBinHighEdge(int pNum, int binNum)
-    {
-        return (paramBounds[2*pNum] + ((binNum+1)*paramBounds[2*pNum+1]));
-    }
+    ParamType getHistBinHighEdge(int pNum, int binNum){return (paramBounds[2*pNum] + ((binNum+1)*paramBounds[2*pNum+1]));}
     
     /*!
      * \brief Retrieve the specified bin for parameter number p1
@@ -161,10 +97,7 @@ public:
      * \param bin The bin number of the histogram to get
      * \return The value of the histogram for p1 for bin
      */
-    int get1dHistBin(int pNum, int bin)
-    {
-        return singleAxisHists[pNum*bCount+bin];
-    }
+    ParamType get1dHistBin(int pNum, int bin){return singleAxisHists[pNum*bCount+bin];}
     
     /*!
      * \brief Retrieve the specified 2D histogram bin
@@ -174,11 +107,7 @@ public:
      * \param biny The yaxis bin number to retrieve from the histogram
      * \return The value of the 2d histogram for p1 and p2 for binx and biny
      */
-    void get2dHistBin(int p1, int p2, int binx, int biny)
-    {
-        int cornerOffset = ((p1*(p1-1))/2);
-        return twoAxisHists[cornerOffset + p2][biny*bCount+binx];
-    }
+    ParamType get2dHistBin(int p1, int p2, int binx, int biny){return twoAxisHists[((p1*(p1-1))/2) + p2][biny*bCount+binx];}
     
 private:
     /*!
@@ -187,81 +116,20 @@ private:
      * \param p2 the parameter of the Y-axis
      * \param fileNameBase The base filename from which the output filename will be calculated
      */
-    void write2dCsv(int p1, int p2, const std::string& fileNameBase)
-    {
-        std::ostringstream namer;
-        namer<<fileNameBase<<"_p"<<p1<<"_p"<<p2<<".csv";
-        std::ofstream out;
-        out.open(namer.str().c_str());
-        out<<"# Lines starting with a '#' in the first column are ignored\n";
-        out<<"# X-axis: nbins, first bin low edge, last bin high edge\n";
-        //write the x-axis parameters
-        out<<bCount<<", "<<paramBounds[2*p1]<<", "<<(paramBounds[2*p1] + (bCount*paramBounds[2*p1+1]))<<"\n";
-        out<<"# Y-axis: nbins, first bin low edge, last bin high edge\n";
-        //write the y-axis parameters
-        out<<bCount<<", "<<paramBounds[2*p2]<<", "<<(paramBounds[2*p2] + (bCount*paramBounds[2*p2+1]))<<"\n";
-        out<<"# x-bin number, y-bin number, value\n";
-        int cornerOffset = ((p1*(p1-1))/2);
-        int* hist = twoAxisHists[cornerOffset+p2];
-        for(int i=0; i<bCount; ++i)
-        {
-            int offset = i*bCount;
-            for(int j=0; j<bCount; ++j)
-            {
-                out<<i<<", "<<j<<", "<<hist[offset+j]<<std::endl;
-            }
-        }
-        out<<std::flush;
-        out.close();
-    }
+    void write2dCsv(int p1, int p2, const std::string& fileNameBase);
     
     /*!
      * \brief Writes the specified single parameter histogram into csv format
      * \param histNum The parameter number of the 1D histogram
      * \param fileNameBase The base filename from which the output filename will be calculated
      */
-    void write1dCsv(int histNum, const std::string& fileNameBase)
-    {
-        std::ostringstream namer;
-        namer<<fileNameBase<<"_p"<<histNum<<".csv";
-        std::ofstream out;
-        out.open(namer.str().c_str());
-        out<<"# Lines starting with a '#' in the first column are ignored\n";
-        out<<"# X-axis: nbins, first bin low edge, last bin high edge\n";
-        //write the axis parameters
-        out<<bCount<<", "<<paramBounds[2*histNum]<<", "<<(paramBounds[2*histNum] + (bCount*paramBounds[2*histNum+1]))<<"\n";
-        int offset = histNum*bCount;
-        out<<"# bin number, value\n";
-        //write the bin data
-        for(int i=0; i<bCount; ++i)
-        {
-            out<<i<<", "<<singleAxisHists[offset+i]<<"\n";
-        }
-        out<<std::flush;
-        out.close();
-    }
+    void write1dCsv(int histNum, const std::string& fileNameBase);
     
     /*!
      * \brief Takes a point and increments the histograms as needed using the point
      * \param pt The point to be used to increment histograms
      */
-    void handlePoint(ParamType* pt)
-    {
-        //iterate through the parameter pair combinations
-        for(int i=0; i<pCount; ++i)
-        {
-            //first handle the single parameter histogram
-            int iBin = ((pt[i] - paramBounds[2*i])/paramBounds[2*i+1]);
-            ++(singleAxisHists[i*bCount+iBin]);
-            //then handle the dual parameter histograms
-            int cornerOffset = ((i*(i-1))/2);
-            for(int j=0; j<i; ++j)
-            {
-                int jBin = ((pt[j]-paramBounds[2*j])/paramBounds[2*j+1]);
-                ++(twoAxisHists[cornerOffset+j][iBin*bCount+jBin]);
-            }
-        }
-    }
+    void handlePoint(ParamType* pt);
     
     /*!
      * \brief Finds the minimum and maximum value of every parameter
@@ -269,119 +137,25 @@ private:
      * \param end The step iterator at the end of the chain
      * \param sliceInterval The relative index of sample to use, must be >= 1. a value of 1 uses every sample, 2 uses every other sample, so on and so forth
      */
-    void findBinning(IttType start, IttType end, int sliceInterval)
-    {
-        //first find the extrema of the points to use
-        int index = 0;
-        int numPts = 0;
-        for(IttType itt(start); itt!=end; ++itt)
-        {
-            if((index % sliceInterval) != 0)
-            {
-                ++index;
-                continue; //skip samples that are not the sliceInterval'th sample
-            }
-            for(int i=0; i<wCount; ++i)
-            {
-                testPtExtremes( ((*itt)+(i*pCount)) );
-            }
-            ++index;
-            ++numPts;
-        }
-        //now tweak the parameter bounds slightly, preventing identical values etc
-        for(int i=0; i<pCount; ++i)
-        {
-            //check for degeneracy
-            if(paramBounds[2*i] == paramBounds[2*i+1])
-            {
-                if(paramBounds[2*i] != static_cast<ParamType>(0))
-                {
-                    if(sign(paramBounds[2*i]) == 1)//positive value
-                    {paramBounds[2*i] *= contractFraction; paramBounds[2*i+1] *= expandFraction;}
-                    else
-                    {paramBounds[2*i] *= expandFraction; paramBounds[2*i+1] *= contractFraction;}
-                }
-                else
-                {
-                    paramBounds[2*i] = -minSize;
-                    paramBounds[2*i+1] = minSize;
-                }
-            }
-            else
-            {//now tweak the bounds slightly so they are inclusive
-                int ans = sign(paramBounds[2*i]);
-                if(ans == -1){paramBounds[2*i] *= expandFraction;}
-                else if(ans == 0){paramBounds[2*i] = -minSize;}
-                else{paramBounds[2*i] *= contractFraction;}
-                ans = sign(paramBounds[2*i+1]);
-                if(ans == -1){paramBounds[2*i+1] *= expandFraction;}
-                else if(ans == 0){paramBounds[2*i+1] = minSize;}
-                else{paramBounds[2*i+1] *= contractFraction;}
-            }
-        }
-        //now use those parameter bounds to calculate the width per bin storing it in the no longer needed upper bound
-        for(int i=0; i<pCount; ++i)
-        {
-            paramBounds[2*i+1] = ((paramBounds[2*i+1]-paramBounds[2*i])/static_cast<ParamType>(bCount));
-        }
-    }
+    void findBinning(IttType start, IttType end, int sliceInterval);
     
     /*!
      * \brief Checks if each parameter constitutes an extreme (min or max) for a given point
      * \param pt The point whose values are to be tested
      */
-    void testPtExtremes(ParamType* pt)
-    {
-        for(int i=0; i<pCount; ++i)
-        {
-            if(pt[i] < paramBounds[2*i])
-            {
-                paramBounds[2*i] = pt[i];
-            }
-            if(pt[i] > paramBounds[2*i+1])
-            {
-                paramBounds[2*i+1] = pt[i];
-            }
-        }
-    }
+    void testPtExtremes(ParamType* pt);
 
     /*!
      * \brief Resets all the storage in the class to zero, or relevant value for starting
      */
-    void zeroStorage()
-    {
-        int histSize = (bCount*bCount);
-        //zero each of the 2D hists
-        for(int i=0; i<numTwoAxis; ++i)
-        {
-            for(int j=0; j<histSize; ++j)
-            {
-                twoAxisHists[i][j] = 0;
-            }
-        }
-        //zero all the 1D hists
-        int arrSize = bCount*pCount;
-        for(int i=0; i<arrSize; ++i)
-        {
-            singleAxisHists[i] = 0;
-        }
-        //set the parameter bounds to their initial positions
-        for(int i=0; i<pCount; ++i)
-        {
-            paramBounds[2*i] = std::numeric_limits<ParamType>::max();
-            paramBounds[2*i+1] = std::numeric_limits<ParamType>::min();
-        }
-    }
+    void zeroStorage();
     
     /*!
      * \brief Returns the sign of val, -1 for negative numbers 1 for positive, 0 for zeros
      * \param val The value whose sign is to be determined
      * \return -1 if val is negative, 1 if val is positive, 0 if val is 0
      */
-    int sign(ParamType val)
-    {
-        return (ParamType(0) < val) - (val < ParamType(0));
-    }
+    int sign(ParamType val);
     
     const ParamType expandFraction = static_cast<ParamType>(1.001); ///<Holds the margin for expanding negative bounds downward and positive bounds upward
     const ParamType contractFraction = static_cast<ParamType>(0.999);///<Holds the margin for expanding negative bounds *upward* and positive bounds downward
@@ -395,6 +169,254 @@ private:
     int bCount;///<Holds the number of bins per axis
     int numTwoAxis = 0;///<Holds the number of two-axis histograms
 };
+
+template<class ParamType>
+CornerHistograms<ParamType>::CornerHistograms(int numParams, int numWalkers, int binsPerAxis=100):
+    pCount(numParams), wCount(numWalkers), bCount(binsPerAxis)
+{
+    assert(pCount > 0);
+    assert(wCount > 0);
+    assert(bCount > 1);
+    numTwoAxis = ((pCount*(pCount-1))/2);
+    //allocate the array of pointers two the 2d hists
+    twoAxisHists = new int*[numTwoAxis];
+    //allocate each of the 2D hists
+    for(int i=0; i<numTwoAxis; ++i)
+    {
+        twoAxisHists[i] = new int[bCount*bCount];
+    }
+    //allocate the array of 1D hists
+    singleAxisHists = new int[bCount*pCount];
+    //allocate the set of parameter bounds and set them to extreme values
+    paramBounds = new ParamType[2*pCount];
+}
+
+template<class ParamType>
+CornerHistograms<ParamType>::~CornerHistograms()
+{
+    delete[] singleAxisHists;
+    for(int i=0; i<numTwoAxis; ++i)
+    {
+        delete[] twoAxisHists[i];
+    }
+    delete[] twoAxisHists;
+}
+
+template<class ParamType>
+void CornerHistograms<ParamType>::calculateHistograms(IttType start, IttType end, int sliceInterval=1)
+{
+    //reset our storage
+    zeroStorage();
+    //find the binning parameters
+    findBinning(start, end, sliceInterval);
+    //iterate through the chain steps
+    int index = 0;
+    for(IttType itt(start); itt!=end; ++itt)
+    {
+        if((index % sliceInterval) != 0)
+        {
+            ++index;
+            continue; //skip samples that are not the sliceInterval'th sample
+        }
+        //now iterate through every point
+        for(int i=0; i<wCount; ++i)
+        {
+            handlePoint( ((*itt)+(i*pCount)) );
+        }
+        ++index;
+    }
+}
+
+template<class ParamType>
+void CornerHistograms<ParamType>::saveHistsCsvFormat(const std::string& fileNameBase)
+{
+    //iterate through the parameter pair combinations
+    for(int i=0; i<pCount; ++i)
+    {//first write the 1D histogram
+        write1dCsv(i, fileNameBase);
+        //then handle the dual parameter histograms
+        for(int j=0; j<i; ++j)
+        {
+            write2dCsv(i, j, fileNameBase);
+        }
+    }
+}
+
+template<class ParamType>
+void CornerHistograms<ParamType>::write2dCsv(int p1, int p2, const std::string& fileNameBase)
+{
+    std::ostringstream namer;
+    namer<<fileNameBase<<"_p"<<p1<<"_p"<<p2<<".csv";
+    std::ofstream out;
+    out.open(namer.str().c_str());
+    out<<"# Lines starting with a '#' in the first column are ignored\n";
+    out<<"# X-axis: nbins, first bin low edge, last bin high edge\n";
+    //write the x-axis parameters
+    out<<bCount<<", "<<paramBounds[2*p1]<<", "<<(paramBounds[2*p1] + (bCount*paramBounds[2*p1+1]))<<"\n";
+    out<<"# Y-axis: nbins, first bin low edge, last bin high edge\n";
+    //write the y-axis parameters
+    out<<bCount<<", "<<paramBounds[2*p2]<<", "<<(paramBounds[2*p2] + (bCount*paramBounds[2*p2+1]))<<"\n";
+    out<<"# x-bin number, y-bin number, value\n";
+    int cornerOffset = ((p1*(p1-1))/2);
+    int* hist = twoAxisHists[cornerOffset+p2];
+    for(int i=0; i<bCount; ++i)
+    {
+        int offset = i*bCount;
+        for(int j=0; j<bCount; ++j)
+        {
+            out<<i<<", "<<j<<", "<<hist[offset+j]<<std::endl;
+        }
+    }
+    out<<std::flush;
+    out.close();
+}
+
+template<class ParamType>
+void CornerHistograms<ParamType>::write1dCsv(int histNum, const std::string& fileNameBase)
+{
+    std::ostringstream namer;
+    namer<<fileNameBase<<"_p"<<histNum<<".csv";
+    std::ofstream out;
+    out.open(namer.str().c_str());
+    out<<"# Lines starting with a '#' in the first column are ignored\n";
+    out<<"# X-axis: nbins, first bin low edge, last bin high edge\n";
+    //write the axis parameters
+    out<<bCount<<", "<<paramBounds[2*histNum]<<", "<<(paramBounds[2*histNum] + (bCount*paramBounds[2*histNum+1]))<<"\n";
+    int offset = histNum*bCount;
+    out<<"# bin number, value\n";
+    //write the bin data
+    for(int i=0; i<bCount; ++i)
+    {
+        out<<i<<", "<<singleAxisHists[offset+i]<<"\n";
+    }
+    out<<std::flush;
+    out.close();
+}
+
+template<class ParamType>
+void CornerHistograms<ParamType>::handlePoint(ParamType* pt)
+{
+    //iterate through the parameter pair combinations
+    for(int i=0; i<pCount; ++i)
+    {
+        //first handle the single parameter histogram
+        int iBin = ((pt[i] - paramBounds[2*i])/paramBounds[2*i+1]);
+        ++(singleAxisHists[i*bCount+iBin]);
+        //then handle the dual parameter histograms
+        int cornerOffset = ((i*(i-1))/2);
+        for(int j=0; j<i; ++j)
+        {
+            int jBin = ((pt[j]-paramBounds[2*j])/paramBounds[2*j+1]);
+            ++(twoAxisHists[cornerOffset+j][iBin*bCount+jBin]);
+        }
+    }
+}
+
+template<class ParamType>
+void CornerHistograms<ParamType>::findBinning(IttType start, IttType end, int sliceInterval)
+{
+    //first find the extrema of the points to use
+    int index = 0;
+    int numPts = 0;
+    for(IttType itt(start); itt!=end; ++itt)
+    {
+        if((index % sliceInterval) != 0)
+        {
+            ++index;
+            continue; //skip samples that are not the sliceInterval'th sample
+        }
+        for(int i=0; i<wCount; ++i)
+        {
+            testPtExtremes( ((*itt)+(i*pCount)) );
+        }
+        ++index;
+        ++numPts;
+    }
+    //now tweak the parameter bounds slightly, preventing identical values etc
+    for(int i=0; i<pCount; ++i)
+    {
+        //check for degeneracy
+        if(paramBounds[2*i] == paramBounds[2*i+1])
+        {
+            if(paramBounds[2*i] != static_cast<ParamType>(0))
+            {
+                if(sign(paramBounds[2*i]) == 1)//positive value
+                {paramBounds[2*i] *= contractFraction; paramBounds[2*i+1] *= expandFraction;}
+                else
+                {paramBounds[2*i] *= expandFraction; paramBounds[2*i+1] *= contractFraction;}
+            }
+            else
+            {
+                paramBounds[2*i] = -minSize;
+                paramBounds[2*i+1] = minSize;
+            }
+        }
+        else
+        {//now tweak the bounds slightly so they are inclusive
+            int ans = sign(paramBounds[2*i]);
+            if(ans == -1){paramBounds[2*i] *= expandFraction;}
+            else if(ans == 0){paramBounds[2*i] = -minSize;}
+            else{paramBounds[2*i] *= contractFraction;}
+            ans = sign(paramBounds[2*i+1]);
+            if(ans == -1){paramBounds[2*i+1] *= expandFraction;}
+            else if(ans == 0){paramBounds[2*i+1] = minSize;}
+            else{paramBounds[2*i+1] *= contractFraction;}
+        }
+    }
+    //now use those parameter bounds to calculate the width per bin storing it in the no longer needed upper bound
+    for(int i=0; i<pCount; ++i)
+    {
+        paramBounds[2*i+1] = ((paramBounds[2*i+1]-paramBounds[2*i])/static_cast<ParamType>(bCount));
+    }
+}
+
+template<class ParamType>
+void CornerHistograms<ParamType>::testPtExtremes(ParamType* pt)
+{
+    for(int i=0; i<pCount; ++i)
+    {
+        if(pt[i] < paramBounds[2*i])
+        {
+            paramBounds[2*i] = pt[i];
+        }
+        if(pt[i] > paramBounds[2*i+1])
+        {
+            paramBounds[2*i+1] = pt[i];
+        }
+    }
+}
+
+template<class ParamType>
+void CornerHistograms<ParamType>::zeroStorage()
+{
+    int histSize = (bCount*bCount);
+    //zero each of the 2D hists
+    for(int i=0; i<numTwoAxis; ++i)
+    {
+        for(int j=0; j<histSize; ++j)
+        {
+            twoAxisHists[i][j] = 0;
+        }
+    }
+    //zero all the 1D hists
+    int arrSize = bCount*pCount;
+    for(int i=0; i<arrSize; ++i)
+    {
+        singleAxisHists[i] = 0;
+    }
+    //set the parameter bounds to their initial positions
+    for(int i=0; i<pCount; ++i)
+    {
+        paramBounds[2*i] = std::numeric_limits<ParamType>::max();
+        paramBounds[2*i+1] = std::numeric_limits<ParamType>::min();
+    }
+}
+
+template<class ParamType>
+int CornerHistograms<ParamType>::sign(ParamType val)
+{
+    return (ParamType(0) < val) - (val < ParamType(0));
+}
 
 }
 }

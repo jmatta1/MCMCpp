@@ -51,25 +51,12 @@ public:
      * \param numParams The number of parameters in the matrix
      * \param numWalkers The number of walkers that are in ensemble
      */
-    CovarianceMatrix(int numParams, int numWalkers):
-        covarMat(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
-        corrMat(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
-        pProducts(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
-        pProductsComp(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
-        pAvgs(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
-        pAvgsComp(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
-        pCount(numParams), wCount(numWalkers)
-    {assert(pCount > 0);assert(wCount > 0);}
+    CovarianceMatrix(int numParams, int numWalkers);
     
-    ~CovarianceMatrix()
-    {
-        Utility::delAAA(covarMat);
-        Utility::delAAA(corrMat);
-        Utility::delAAA(pProducts);
-        Utility::delAAA(pProductsComp);
-        Utility::delAAA(pAvgs);
-        Utility::delAAA(pAvgsComp);
-    }
+    /*!
+     * \brief Destructor which uses the deleteAAA function to free all allocated arrays
+     */
+    ~CovarianceMatrix();
     
     /*!
      * \brief Uses every sliceInterval'th sample to calculate the covariance of the markov chains
@@ -77,27 +64,7 @@ public:
      * \param end The end chain step iterator
      * \param sliceInterval The relative index of sample to use, must be >= 1. a value of 1 uses every sample, 2 uses every other sample, so on and so forth
      */
-    void calculateCovarSlicing(IttType start, IttType end, int sliceInterval=1)
-    {
-        zeroStorage();
-        int index = 0;
-        int numPts = 0;
-        for(IttType itt(start); itt!=end; ++itt)
-        {
-            if((index % sliceInterval) != 0)
-            {
-                ++index;
-                continue; //skip samples that are not the sliceInterval'th sample
-            }
-            for(int i=0; i<wCount; ++i)
-            {
-                processPoint( ((*itt)+(i*pCount)) );
-            }
-            ++index;
-            ++numPts;
-        }
-        finalizeMatrix(numPts);
-    }
+    void calculateCovar(IttType start, IttType end, int sliceInterval=1);
     
     /*!
      * \brief Gets the specified element of the covariance matrix
@@ -120,63 +87,13 @@ private:
      * \brief Takes the completed calculation of pProducts and makes the averages and covariance matrix
      * \param numUsedSteps The number of steps that were used in the calculation of the averages and the parameter products
      */
-    void finalizeMatrix(int numUsedSteps)
-    {
-        //first get the actual n used
-        ParamType ptCount = static_cast<ParamType>(numUsedSteps*wCount);
-        //then divide out the averages
-        for(int i=0; i<pCount; ++i)
-        {
-            pAvgs[i] /= ptCount;
-        }
-        //then calculate the elements of the covaraiance matrix
-        for(int i=0; i<pCount; ++i)
-        {
-            for(int j=0; j<=i; ++j)
-            {
-                ParamType temp = ((pProducts[i*pCount+j]/ptCount) - (pAvgs[i]*pAvgs[j]));
-                covarMat[i*pCount+j] = temp;
-                covarMat[j*pCount+i] = temp;
-            }
-        }
-        //then calculate the elements of the correlation matrix
-        //first iterate row by row, get the sqrt(variance) of the diagonal of that row and divide everything in the row by it
-        for(int i=0; i<pCount; ++i)
-        {
-            ParamType sqrtVariance = std::sqrt(covarMat[i*pCount+i]);
-            for(int j=0; j<pCount; ++j)
-            {
-                corrMat[i*pCount+j] = (covarMat[i*pCount+j]/sqrtVariance);
-            }
-        }
-        //then iterate column by colum, get the sqrt(variance) of the diagonal of that column and divide everyint in the column by it
-        for(int j=0; j<pCount; ++j)
-        {
-            ParamType sqrtVariance = std::sqrt(covarMat[j*pCount+j]);
-            for(int i=0; i<pCount; ++i)
-            {
-                corrMat[i*pCount+j] /= sqrtVariance;
-            }
-        }
-    }
+    void finalizeMatrix(int numUsedSteps);
     
     /*!
      * \brief Takes a point from a markov chain to process into the covariance matrix
      * \param pt A pointer to the start of the point in question
      */
-    void processPoint(ParamType* pt)
-    {
-        //cycle through value pairs
-        for(int i=0; i<pCount; ++i)
-        {
-            //before handling the full pair, add the value to the averages
-            addAverage(i, pt[i]);
-            for(int j=0; j<=i; ++j)
-            {//handle the full pair
-                addProduct(i,j, (pt[i]*pt[j]));
-            }
-        }
-    }
+    void processPoint(ParamType* pt);
     
     /*!
      * \brief Adds a product to the appropriate slots of the covariance matrix
@@ -184,59 +101,19 @@ private:
      * \param j Index of the second parameter in the product
      * \param val The product of the two parameters
      */
-    void addProduct(int i, int j, ParamType val)
-    {
-        //first handle the 'natural' order
-        int offset = i*pCount;
-        ParamType y = (val - pProductsComp[offset+j]);
-        ParamType t = (pProducts[offset+j] + y);
-        pProductsComp[offset+j] = ((t-pProducts[offset+j])-y);
-        pProducts[offset+j] = t;
-        
-        //then, if not on a diagonal handle the opposite order
-        if(i!=j)
-        {
-            offset = j*pCount;
-            y = (val - pProductsComp[offset+i]);
-            t = (pProducts[offset+i] + y);
-            pProductsComp[offset+i] = ((t-pProducts[offset+i])-y);
-            pProducts[offset+i] = t;
-        }
-    }
+    void addProduct(int i, int j, ParamType val);
     
     /*!
      * \brief Accumulates val in the i'th index of pAvgs array using kahan summation
      * \param i The index of the parameter
      * \param val The value of the parameter in the chain
      */
-    void addAverage(int i, ParamType val)
-    {
-        ParamType y = (val - pAvgsComp[i]);
-        ParamType t = (pAvgs[i] + y);
-        pAvgsComp[i] = ((t-pAvgs[i])-y);
-        pAvgs[i] = t;
-    }
+    void addAverage(int i, ParamType val);
     
     /*!
      * \brief Zeros the arrays and their compensation values
      */
-    void zeroStorage()
-    {
-        ParamType zero = static_cast<ParamType>(0);
-        for(int i=0; i<pCount; ++i)
-        {
-            pAvgs[i] = zero;
-            pAvgsComp[i] = zero;
-            int offset = i*pCount;
-            for(int j=0; j<pCount; ++j)
-            {
-                covarMat[offset + j] = zero;
-                corrMat[offset + j] = zero;
-                pProducts[offset + j] = zero;
-                pProductsComp[offset + j] = zero;
-            }
-        }
-    }
+    void zeroStorage();
     
     ParamType* covarMat = nullptr; ///<Holds the final version of the covariance matrix
     ParamType* corrMat = nullptr; ///<Holds the correlation matrix (a normalized version of the covariance matrix)
@@ -247,6 +124,182 @@ private:
     int pCount = 0; ///<Holds the parameter count
     int wCount = 0; ///<Holds the walker count
 };
+
+template<class ParamType>
+CovarianceMatrix<ParamType>::CovarianceMatrix(int numParams, int numWalkers):
+    covarMat(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
+    corrMat(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
+    pProducts(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
+    pProductsComp(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
+    pAvgs(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
+    pAvgsComp(Utility::autoAlignedAlloc<ParamType>(numParams*numParams)),
+    pCount(numParams), wCount(numWalkers)
+{
+    assert(pCount > 0);
+    assert(wCount > 0);
+}
+
+template<class ParamType>
+CovarianceMatrix<ParamType>::~CovarianceMatrix()
+{
+    Utility::delAAA(covarMat);
+    Utility::delAAA(corrMat);
+    Utility::delAAA(pProducts);
+    Utility::delAAA(pProductsComp);
+    Utility::delAAA(pAvgs);
+    Utility::delAAA(pAvgsComp);
+}
+
+template<class ParamType>
+void CovarianceMatrix<ParamType>::calculateCovar(IttType start, IttType end, int sliceInterval=1)
+{
+    zeroStorage();
+    int index = 0;
+    int numPts = 0;
+    for(IttType itt(start); itt!=end; ++itt)
+    {
+        if((index % sliceInterval) != 0)
+        {
+            ++index;
+            continue; //skip samples that are not the sliceInterval'th sample
+        }
+        for(int i=0; i<wCount; ++i)
+        {
+            processPoint( ((*itt)+(i*pCount)) );
+        }
+        ++index;
+        ++numPts;
+    }
+    finalizeMatrix(numPts);
+}
+
+template<class ParamType>
+void CovarianceMatrix<ParamType>::calculateCovarSlicing(IttType start, IttType end, int sliceInterval=1)
+{
+    zeroStorage();
+    int index = 0;
+    int numPts = 0;
+    for(IttType itt(start); itt!=end; ++itt)
+    {
+        if((index % sliceInterval) != 0)
+        {
+            ++index;
+            continue; //skip samples that are not the sliceInterval'th sample
+        }
+        for(int i=0; i<wCount; ++i)
+        {
+            processPoint( ((*itt)+(i*pCount)) );
+        }
+        ++index;
+        ++numPts;
+    }
+    finalizeMatrix(numPts);
+}
+
+template<class ParamType>
+void CovarianceMatrix<ParamType>::finalizeMatrix(int numUsedSteps)
+{
+    //first get the actual n used
+    ParamType ptCount = static_cast<ParamType>(numUsedSteps*wCount);
+    //then divide out the averages
+    for(int i=0; i<pCount; ++i)
+    {
+        pAvgs[i] /= ptCount;
+    }
+    //then calculate the elements of the covaraiance matrix
+    for(int i=0; i<pCount; ++i)
+    {
+        for(int j=0; j<=i; ++j)
+        {
+            ParamType temp = ((pProducts[i*pCount+j]/ptCount) - (pAvgs[i]*pAvgs[j]));
+            covarMat[i*pCount+j] = temp;
+            covarMat[j*pCount+i] = temp;
+        }
+    }
+    //then calculate the elements of the correlation matrix
+    //first iterate row by row, get the sqrt(variance) of the diagonal of that row and divide everything in the row by it
+    for(int i=0; i<pCount; ++i)
+    {
+        ParamType sqrtVariance = std::sqrt(covarMat[i*pCount+i]);
+        for(int j=0; j<pCount; ++j)
+        {
+            corrMat[i*pCount+j] = (covarMat[i*pCount+j]/sqrtVariance);
+        }
+    }
+    //then iterate column by colum, get the sqrt(variance) of the diagonal of that column and divide everyint in the column by it
+    for(int j=0; j<pCount; ++j)
+    {
+        ParamType sqrtVariance = std::sqrt(covarMat[j*pCount+j]);
+        for(int i=0; i<pCount; ++i)
+        {
+            corrMat[i*pCount+j] /= sqrtVariance;
+        }
+    }
+}
+
+template<class ParamType>
+void CovarianceMatrix<ParamType>::processPoint(ParamType* pt)
+{
+    //cycle through value pairs
+    for(int i=0; i<pCount; ++i)
+    {
+        //before handling the full pair, add the value to the averages
+        addAverage(i, pt[i]);
+        for(int j=0; j<=i; ++j)
+        {//handle the full pair
+            addProduct(i,j, (pt[i]*pt[j]));
+        }
+    }
+}
+
+template<class ParamType>
+void CovarianceMatrix<ParamType>::addProduct(int i, int j, ParamType val)
+{
+    //first handle the 'natural' order
+    int offset = i*pCount;
+    ParamType y = (val - pProductsComp[offset+j]);
+    ParamType t = (pProducts[offset+j] + y);
+    pProductsComp[offset+j] = ((t-pProducts[offset+j])-y);
+    pProducts[offset+j] = t;
+    
+    //then, if not on a diagonal handle the opposite order
+    if(i!=j)
+    {
+        offset = j*pCount;
+        y = (val - pProductsComp[offset+i]);
+        t = (pProducts[offset+i] + y);
+        pProductsComp[offset+i] = ((t-pProducts[offset+i])-y);
+        pProducts[offset+i] = t;
+    }
+}
+
+template<class ParamType>
+void CovarianceMatrix<ParamType>::addAverage(int i, ParamType val)
+{
+    ParamType y = (val - pAvgsComp[i]);
+    ParamType t = (pAvgs[i] + y);
+    pAvgsComp[i] = ((t-pAvgs[i])-y);
+    pAvgs[i] = t;
+}
+
+template<class ParamType>
+void CovarianceMatrix<ParamType>::zeroStorage()
+{
+    ParamType zero = static_cast<ParamType>(0);
+    for(int i=0; i<pCount; ++i)
+    {
+        pAvgs[i] = zero;
+        pAvgsComp[i] = zero;
+        int offset = i*pCount;
+        for(int j=0; j<pCount; ++j)
+        {
+            covarMat[offset + j] = zero;
+            corrMat[offset + j] = zero;
+            pProducts[offset + j] = zero;
+            pProductsComp[offset + j] = zero;
+        }
+    }
+}
 
 }
 }

@@ -61,7 +61,10 @@ public:
      */
     PercentileAndMaximumFinder(int numParams, int numWalkers, int binsPerAxis=1000);
 
-    ~PercentileAndMaximumFinder(){delete[] hists; delete[] cumSum; delete[] paramBounds;}
+    /*!
+     * \brief Destructor
+     */
+    ~PercentileAndMaximumFinder();
     
     /*!
      * \brief Histograms the points in the chain into 1D histograms to use for finding percentiles
@@ -164,12 +167,7 @@ private:
      * \param val The value whose sign is to be determined
      * \return -1 if val is negative, 1 if val is positive, 0 if val is 0
      */
-    int sign(ParamType val)
-    {
-        return (ParamType(0) < val) - (val < ParamType(0));
-    }
-    
-    
+    int sign(ParamType val);
     
     const ParamType expandFraction = static_cast<ParamType>(1.001); ///<Holds the margin for expanding negative bounds downward and positive bounds upward
     const ParamType contractFraction = static_cast<ParamType>(0.999);///<Holds the margin for expanding negative bounds *upward* and positive bounds downward
@@ -201,6 +199,14 @@ PercentileAndMaximumFinder<ParamType>::PercentileAndMaximumFinder(int numParams,
     paramBounds = new ParamType[2*pCount];
     //preemptively zero everything
     zeroStorage();
+}
+
+template<class ParamType>
+PercentileAndMaximumFinder<ParamType>::~PercentileAndMaximumFinder()
+{
+    delete[] hists;
+    delete[] cumSum;
+    delete[] paramBounds;
 }
 
 template<class ParamType>
@@ -520,6 +526,12 @@ void PercentileAndMaximumFinder<ParamType>::zeroStorage()
         paramBounds[2*i+1] = std::numeric_limits<ParamType>::min();
     }
     binned = false;
+}
+
+template<class ParamType>
+int PercentileAndMaximumFinder<ParamType>::sign(ParamType val)
+{
+    return (ParamType(0) < val) - (val < ParamType(0));
 }
 
 }
