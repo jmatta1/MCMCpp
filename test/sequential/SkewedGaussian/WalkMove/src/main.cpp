@@ -5,6 +5,8 @@
 #include"Common/SkewedGaussian.h"
 #include"Analysis/AutoCorrCalc.h"
 #include"Analysis/CovarianceMatrix.h"
+#include"Analysis/CornerHistograms.h"
+#include"Analysis/PercentileAndMaximumFinder.h"
 #include"Movers/WalkMove.h"
 #include"EnsembleSampler.h"
 using MCMC::EnsembleSampler;
@@ -23,6 +25,7 @@ int main()
     const int numWalkers = 320;
     const int numParams = 2;
     const int numSteps = 40019;
+    const int cornerBinning = 100;
     const double eps = 0.13;
     
     std::cout<<"Building Custom Distribution"<<std::endl;
@@ -82,19 +85,10 @@ int main()
     std::cout<<"P0 Calculated AutoCorrelation Time: "<<p0Ac<<std::endl;
     std::cout<<"P1 Calculated AutoCorrelation Time: "<<p1Ac<<std::endl;
     
-    std::cout<<"Calculating the covariance matrix without slicing"<<std::endl;
-    Analysis::CovarianceMatrixCalc<double> cmCalc(numParams, numWalkers);
-    cmCalc.calculateCovar(startItt, endItt);
-    std::cout<<"Covariance matrix without slicing"<<std::endl;
-    std::cout<<cmCalc.getCovarianceMatrixElement(0, 0)<<", "<<cmCalc.getCovarianceMatrixElement(0, 1)<<"\n";
-    std::cout<<cmCalc.getCovarianceMatrixElement(1, 0)<<", "<<cmCalc.getCovarianceMatrixElement(1, 1)<<"\n";
-    std::cout<<"Correlation matrix without slicing"<<std::endl;
-    std::cout<<cmCalc.getCorrelationMatrixElement(0, 0)<<", "<<cmCalc.getCorrelationMatrixElement(0, 1)<<"\n";
-    std::cout<<cmCalc.getCorrelationMatrixElement(1, 0)<<", "<<cmCalc.getCorrelationMatrixElement(1, 1)<<"\n";
-    
     std::cout<<"Calculating the covariance matrix with slicing"<<std::endl;
+    Analysis::CovarianceMatrix<double> cmCalc(numParams, numWalkers);
     int sliceInterval = static_cast<int>((p0Ac<p1Ac)?std::ceil(p0Ac):std::ceil(p1Ac));
-    cmCalc.calculateCovarSlicing(startItt, endItt, sliceInterval);
+    cmCalc.calculateCovar(startItt, endItt, sliceInterval);
     std::cout<<"Covariance matrix with slicing"<<std::endl;
     std::cout<<cmCalc.getCovarianceMatrixElement(0, 0)<<", "<<cmCalc.getCovarianceMatrixElement(0, 1)<<"\n";
     std::cout<<cmCalc.getCovarianceMatrixElement(1, 0)<<", "<<cmCalc.getCovarianceMatrixElement(1, 1)<<"\n";
@@ -102,7 +96,46 @@ int main()
     std::cout<<cmCalc.getCorrelationMatrixElement(0, 0)<<", "<<cmCalc.getCorrelationMatrixElement(0, 1)<<"\n";
     std::cout<<cmCalc.getCorrelationMatrixElement(1, 0)<<", "<<cmCalc.getCorrelationMatrixElement(1, 1)<<"\n";
     
+    std::cout<<"Generating Corner Histograms"<<std::endl;
+    Analysis::CornerHistograms<double> cornerHists(numParams, numWalkers, cornerBinning);
+    cornerHists.calculateHistograms(startItt, endItt);
+    std::cout<<"Writing Corner Histograms"<<std::endl;
+    cornerHists.saveHistsCsvFormat("chainHist");
+    
+    std::cout<<"\nGenerating Percentile and Peak Finding Histograms"<<std::endl;
+    Analysis::PercentileAndMaximumFinder<double> pamf(numParams, numWalkers, 100*cornerBinning);
+    pamf.processChainData(startItt, endItt, 1);
+    std::cout<<"Writing High-Res Histograms"<<std::endl;
+    pamf.writeHistogramsInCsvFormat("percentileHistograms");
+    
+    std::cout<<"Finding peaks and errors"<<std::endl;
+    double peak0 = pamf.getValueOfPeak(0);
+    double percentile0 = pamf.getPercentileFromValue(0, peak0);
+    double loPeak0 = pamf.getValueFromPercentile(0, percentile0-34.1);
+    double hiPeak0 = pamf.getValueFromPercentile(0, percentile0+34.1);
+    double peak1 = pamf.getValueOfPeak(1);
+    double percentile1 = pamf.getPercentileFromValue(1, peak1);
+    double loPeak1 = pamf.getValueFromPercentile(1, percentile1-34.1);
+    double hiPeak1 = pamf.getValueFromPercentile(1, percentile1+34.1);
+    std::cout<<"The percentiles, values and errors of the peaks are:\n"
+             <<"Parameter, Peak Percentile, Peak Value, 34.1% down, 34.1% up"<<std::endl;
+    std::cout<<"P0: "<<percentile0<<", "<<peak0<<", "<<loPeak0<<", "<<hiPeak0<<std::endl;
+    std::cout<<"P1: "<<percentile1<<", "<<peak1<<", "<<loPeak1<<", "<<hiPeak1<<std::endl;
+    
+    std::cout<<"Finding percentiles"<<std::endl;
+    double cv0 = pamf.getValueFromPercentile(0, 50);
+    double lv0 = pamf.getValueFromPercentile(0, 15.9);
+    double hv0 = pamf.getValueFromPercentile(0, 84.1);
+    double cv1 = pamf.getValueFromPercentile(1, 50);
+    double lv1 = pamf.getValueFromPercentile(1, 15.9);
+    double hv1 = pamf.getValueFromPercentile(1, 84.1);
+    std::cout<<"The 15.9, 50, 84.1 percentiles are:"<<std::endl;
+    std::cout<<"P0: "<<lv0<<", "<<cv0<<", "<<hv0<<std::endl;
+    std::cout<<"P1: "<<lv1<<", "<<cv1<<", "<<hv1<<std::endl;
+    
     std::cout<<"Shutting down"<<std::endl;
+    
+    return 0;
 }
 
 template<class ParamType>

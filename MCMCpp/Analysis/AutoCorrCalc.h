@@ -46,17 +46,9 @@ public:
      * \param numParams The number of parameters in each sample
      * \param numWalkers The number of walkers in the ensemble
      */
-    AutoCorrCalc(int numParams, int numWalkers) :
-        engine(std::random_device()()), normDist(static_cast<ParamType>(0),static_cast<ParamType>(1)),
-        autoCovCalc(), paramCount(numParams), walkerCount(numWalkers)
-    {   acorrTimeList = new ParamType[paramCount]; randomWalkerIndices = new int[walkerCount];
-        chainAverages = new ParamType[paramCount*numWalkers]; chainAvgComps = new ParamType[paramCount*numWalkers];
-        std::fill_n(acorrTimeList, paramCount, static_cast<ParamType>(0));}
+    AutoCorrCalc(int numParams, int numWalkers);
     
-    ~AutoCorrCalc()
-    {delete[] acorrTimeList; delete[] randomWalkerIndices; delete[] chainAverages; 
-        delete[] chainAvgComps; if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
-        if(acovFuncArray!=nullptr) delete[] acovFuncArray;}
+    ~AutoCorrCalc();
 
     /*!
      * \brief Deleted copy constructor
@@ -129,6 +121,31 @@ private:
     int paramCount; ///<stores the number of parameters per sample
     int walkerCount; ///<stores the number of walkers in the chain
 };
+
+template<class ParamType>
+AutoCorrCalc<ParamType>::AutoCorrCalc(int numParams, int numWalkers) :
+    engine(std::random_device()()), normDist(static_cast<ParamType>(0),static_cast<ParamType>(1)),
+    autoCovCalc(), paramCount(numParams), walkerCount(numWalkers)
+{
+    assert(paramCount > 0);
+    assert(walkerCount > 0);
+    acorrTimeList = new ParamType[paramCount];
+    randomWalkerIndices = new int[walkerCount];
+    chainAverages = new ParamType[paramCount*numWalkers];
+    chainAvgComps = new ParamType[paramCount*numWalkers];
+    std::fill_n(acorrTimeList, paramCount, static_cast<ParamType>(0));
+}
+
+template<class ParamType>
+AutoCorrCalc<ParamType>::~AutoCorrCalc()
+{
+    delete[] acorrTimeList;
+    delete[] randomWalkerIndices;
+    delete[] chainAverages; 
+    delete[] chainAvgComps;
+    if(acovFuncAvgArray!=nullptr) delete[] acovFuncAvgArray;
+    if(acovFuncArray!=nullptr) delete[] acovFuncArray;
+}
 
 template<class ParamType>
 void AutoCorrCalc<ParamType>::calcAutoCorrTimes(const IttType& start, const IttType& end, int numSamples, int numWalkersToUse)

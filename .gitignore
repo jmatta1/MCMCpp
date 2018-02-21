@@ -13,9 +13,16 @@ CMakeLists.txt.user
 # ignore executables built in the testing and example codes
 acTest
 benchmark
+walkGauss
+stretchGauss
+diffEvGauss
+metHast
 
 # ignore build directories
 build
+
+# ignore data file detritus
+*.root
 
 # ignore valgrind related stuff
 callgrind.out.*
@@ -25,8 +32,3 @@ test.cfg
 callgrind.txt
 posOptOpp.txt
 
-# ignore testing executables
-walkGauss
-stretchGauss
-diffEvGauss
-metHast

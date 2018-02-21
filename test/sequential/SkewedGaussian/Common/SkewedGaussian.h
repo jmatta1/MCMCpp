@@ -51,9 +51,9 @@ public:
      */
     ParamType calcLogPostProb(ParamType* paramSet)
     {
-        ParamType temp1 = (paramSet[0] - paramSet[1]);
-        ParamType temp2 = (paramSet[0] + paramSet[1]);
-        return (((temp1*temp1)/epsilon + (temp2*temp2))/static_cast<ParamType>(-2));
+        ParamType temp1 = (paramSet[0]/static_cast<ParamType>(2) - paramSet[1]);
+        ParamType temp2 = (paramSet[0]/static_cast<ParamType>(2) + paramSet[1]);
+        return ((((temp1*temp1)/epsilon) + (temp2*temp2))/static_cast<ParamType>(-2));
     }
 
 private:
