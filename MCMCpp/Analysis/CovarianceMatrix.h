@@ -151,30 +151,7 @@ CovarianceMatrix<ParamType>::~CovarianceMatrix()
 }
 
 template<class ParamType>
-void CovarianceMatrix<ParamType>::calculateCovar(IttType start, IttType end, int sliceInterval=1)
-{
-    zeroStorage();
-    int index = 0;
-    int numPts = 0;
-    for(IttType itt(start); itt!=end; ++itt)
-    {
-        if((index % sliceInterval) != 0)
-        {
-            ++index;
-            continue; //skip samples that are not the sliceInterval'th sample
-        }
-        for(int i=0; i<wCount; ++i)
-        {
-            processPoint( ((*itt)+(i*pCount)) );
-        }
-        ++index;
-        ++numPts;
-    }
-    finalizeMatrix(numPts);
-}
-
-template<class ParamType>
-void CovarianceMatrix<ParamType>::calculateCovarSlicing(IttType start, IttType end, int sliceInterval=1)
+void CovarianceMatrix<ParamType>::calculateCovar(IttType start, IttType end, int sliceInterval)
 {
     zeroStorage();
     int index = 0;

@@ -171,7 +171,7 @@ private:
 };
 
 template<class ParamType>
-CornerHistograms<ParamType>::CornerHistograms(int numParams, int numWalkers, int binsPerAxis=100):
+CornerHistograms<ParamType>::CornerHistograms(int numParams, int numWalkers, int binsPerAxis):
     pCount(numParams), wCount(numWalkers), bCount(binsPerAxis)
 {
     assert(pCount > 0);
@@ -203,7 +203,7 @@ CornerHistograms<ParamType>::~CornerHistograms()
 }
 
 template<class ParamType>
-void CornerHistograms<ParamType>::calculateHistograms(IttType start, IttType end, int sliceInterval=1)
+void CornerHistograms<ParamType>::calculateHistograms(IttType start, IttType end, int sliceInterval)
 {
     //reset our storage
     zeroStorage();
