@@ -117,6 +117,22 @@ public:
      */
     void writeHistogramsInCsvFormat(const std::string& fileNameBase);
 
+    /*!
+     * \brief Returns the low edge for the bin number specified for a given parameter number
+     * \param pNum The parameter number whose binning is to be examined
+     * \param binNum The bin number to get the low edge for
+     * \return The low edge of bin number binNum for parameter pNum
+     */
+    ParamType getHistBinLowEdge(int pNum, int binNum){return (paramBounds[2*pNum] + (binNum*paramBounds[2*pNum+1]));}
+    
+    /*!
+     * \brief Returns the low edge for the bin number specified for a given parameter number
+     * \param pNum The parameter number whose binning is to be examined
+     * \param binNum The bin number to get the low edge for
+     * \return The low edge of bin number binNum for parameter pNum
+     */
+    ParamType getHistBinHighEdge(int pNum, int binNum){return (paramBounds[2*pNum] + ((binNum+1)*paramBounds[2*pNum+1]));}
+    
 private:
     /*!
      * \brief Writes the specified histogram into csv format
