@@ -48,6 +48,15 @@ namespace MCMC
  * chain start and end at the end of every step, it need not be concurrent or
  * reentrant, it is only ever called by a single thread, though the thread 
  * making the call may be different between calls
+ * @tparam UseSpinLocks A boolean parameter that controls the specialization of
+ * the Threading::RedBlackCtrler class, if set to false the specialization of the
+ * class modifies its operation to use traditional locks and condition variables
+ * instead of spin-locks. This in turn allows more threads than hardware supports
+ * to be used, it also allows threaded operation while in an interlocked environment
+ * like valgrind. Finally, for some long running logPostProbability functions,
+ * it may result in more efficient operation. If UseSpinLocks is true then
+ * Threading::RedBlackCtrler will use spinlocks to wait for the other threads to
+ * finish updating their data.
  * 
  * **Recommendation**: numWalkers should be chosen such that
  * (numWalkers/(2*numThreads))*numParam*sizeof(ParamType) is an integer
@@ -66,17 +75,17 @@ namespace MCMC
  * to can change from run to run depending on processor load, schedule and all
  * manner of other things.
  */
-template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType> >
+template<class ParamType, class Mover, class PostStepAction=Utility::NoAction<ParamType>, bool UseSpinLocks=true >
 class ParallelEnsembleSampler
 {
 public:
     //define some useful typenames
     typedef Chain::Chain<ParamType> ChainType;
     typedef Walker::Walker<ParamType> WalkerType;
-    typedef Threading::RedBlackCtrler<ParamType, PostStepAction> CtrlType;
+    typedef Threading::RedBlackCtrler<ParamType, PostStepAction, UseSpinLocks> CtrlType;
     typedef Chain::ChainPsetIterator<ParamType> PsetItt;
     typedef Chain::ChainStepIterator<ParamType> StepItt;
-    typedef Threading::RedBlkUpdater<ParamType, Mover, PostStepAction> ThreadObjectType;
+    typedef Threading::RedBlkUpdater<ParamType, Mover, PostStepAction, UseSpinLocks> ThreadObjectType;
 
     //perform static checks of the users classes to ensure that they have the needed member functions for their role
     static_assert(Utility::CheckCalcUpdateWalker<Mover, void, WalkerType&, WalkerType*, int, bool>(),
@@ -216,8 +225,8 @@ private:
     int subSamplingInterval=1; ///<The interval to store samples on if we are subsampling
 };
 
-template<class ParamType, class Mover, class PostStepAction>
-ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::ParallelEnsembleSampler(
+template<class ParamType, class Mover, class PostStepAction, bool UseSpinLocks>
+ParallelEnsembleSampler<ParamType, Mover, PostStepAction, UseSpinLocks>::ParallelEnsembleSampler(
         int randSeed, int threadCount, int numWalker, int numParameter, const Mover& move,
         unsigned long long maxChainSizeBytes, PostStepAction* stepAct):
     markovChain(numWalker, numParameter, maxChainSizeBytes),
@@ -252,8 +261,8 @@ ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::ParallelEnsembleSampl
     }
 }
 
-template<class ParamType, class Mover, class PostStepAction>
-ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::~ParallelEnsembleSampler()
+template<class ParamType, class Mover, class PostStepAction, bool UseSpinLocks>
+ParallelEnsembleSampler<ParamType, Mover, PostStepAction, UseSpinLocks>::~ParallelEnsembleSampler()
 {
     std::unique_lock<std::mutex> lock(samplerMutex);
     //terminate the workers and wait until they all acknowledge the terminate
@@ -273,16 +282,16 @@ ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::~ParallelEnsembleSamp
     delete[] walkerBlkSet;
 }
 
-template<class ParamType, class Mover, class PostStepAction>
-bool ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::runMCMC(int numSteps)
+template<class ParamType, class Mover, class PostStepAction, bool UseSpinLocks>
+bool ParallelEnsembleSampler<ParamType, Mover, PostStepAction, UseSpinLocks>::runMCMC(int numSteps)
 {
     std::unique_lock<std::mutex> lock(samplerMutex);
     controller.runSampling(numSteps, subSamplingInterval-1);
     return controller.samplingComplete();
 }
 
-template<class ParamType, class Mover, class PostStepAction>
-ParamType ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptanceFraction()
+template<class ParamType, class Mover, class PostStepAction, bool UseSpinLocks>
+ParamType ParallelEnsembleSampler<ParamType, Mover, PostStepAction, UseSpinLocks>::getAcceptanceFraction()
 {
     std::unique_lock<std::mutex> lock(samplerMutex);
     unsigned long long accepted = 0ULL;
@@ -298,8 +307,8 @@ ParamType ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::getAcceptan
     return fraction;
 }
 
-template<class ParamType, class Mover, class PostStepAction>
-void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::reset()
+template<class ParamType, class Mover, class PostStepAction, bool UseSpinLocks>
+void ParallelEnsembleSampler<ParamType, Mover, PostStepAction, UseSpinLocks>::reset()
 {
     std::unique_lock<std::mutex> lock(samplerMutex); 
     markovChain.resetChain();
@@ -310,8 +319,8 @@ void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::reset()
     }
 }
 
-template<class ParamType, class Mover, class PostStepAction>
-void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(int subSamplingInt, int burnIn)
+template<class ParamType, class Mover, class PostStepAction, bool UseSpinLocks>
+void ParallelEnsembleSampler<ParamType, Mover, PostStepAction, UseSpinLocks>::setSamplingMode(int subSamplingInt, int burnIn)
 {
     assert(subSamplingInt>0);
     assert(burnIn>=0);
@@ -320,8 +329,8 @@ void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::setSamplingMode(
     markovChain.resetChainForSubSampling(burnIn, subSamplingInt);
 }
 
-template<class ParamType, class Mover, class PostStepAction>
-void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalkerPos(ParamType* positions, ParamType* auxValues)
+template<class ParamType, class Mover, class PostStepAction, bool UseSpinLocks>
+void ParallelEnsembleSampler<ParamType, Mover, PostStepAction, UseSpinLocks>::setInitialWalkerPos(ParamType* positions, ParamType* auxValues)
 {
     std::unique_lock<std::mutex> lock(samplerMutex);
     for(int i=0; i<walkersPerSet; ++i)
@@ -332,8 +341,8 @@ void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::setInitialWalker
     markovChain.incrementChainStep();
 }
 
-template<class ParamType, class Mover, class PostStepAction>
-void ParallelEnsembleSampler<ParamType, Mover, PostStepAction>::storeCurrentWalkerPositions()
+template<class ParamType, class Mover, class PostStepAction, bool UseSpinLocks>
+void ParallelEnsembleSampler<ParamType, Mover, PostStepAction, UseSpinLocks>::storeCurrentWalkerPositions()
 {
     std::unique_lock<std::mutex> lock(samplerMutex);
     for(int i=0; i<walkersPerSet; ++i)

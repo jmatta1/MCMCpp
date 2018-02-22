@@ -31,13 +31,13 @@ namespace Threading
  * @author James Till Matta
  * 
  */
-template<class ParamType, class MoverType, class EndOfStepAction>
+template<class ParamType, class MoverType, class EndOfStepAction, bool UseSpinLocks>
 class RedBlkUpdater
 {
 public:
     typedef std::tuple<Walker::Walker<ParamType>*, Walker::Walker<ParamType>*, int, int> WalkerInfo;
     typedef Walker::Walker<ParamType> WalkerType;
-    typedef RedBlackCtrler<ParamType, EndOfStepAction> ControllerType;
+    typedef RedBlackCtrler<ParamType, EndOfStepAction, UseSpinLocks> ControllerType;
     
     /*!
      * \brief RedBlkUpdater Constructor for the Red Black updater thread
@@ -77,8 +77,8 @@ private:
     bool writeChain = true;///<A variable that stores if the points need to be written for a given step
 };
 
-template<class ParamType, class MoverType, class EndOfStepAction>
-RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::
+template<class ParamType, class MoverType, class EndOfStepAction, bool UseSpinLocks>
+RedBlkUpdater<ParamType, MoverType, EndOfStepAction, UseSpinLocks>::
 RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, const MoverType& mvr, ControllerType& ctrl):
     mover(mvr), controller(ctrl), trdNum(threadNum)
 {
@@ -86,8 +86,8 @@ RedBlkUpdater(int rndSeed, int threadNum, WalkerInfo& walkerSets, const MoverTyp
     mover.setPrng(rndSeed, threadNum);
 }
 
-template<class ParamType, class MoverType, class EndOfStepAction>
-void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::operator()()
+template<class ParamType, class MoverType, class EndOfStepAction, bool UseSpinLocks>
+void RedBlkUpdater<ParamType, MoverType, EndOfStepAction, UseSpinLocks>::operator()()
 {
     bool notTerminated = true;
     while(notTerminated)
@@ -122,8 +122,8 @@ void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::operator()()
     controller.workerAckTerminate();
 }
 
-template<class ParamType, class MoverType, class EndOfStepAction>
-void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::doRedUpdates()
+template<class ParamType, class MoverType, class EndOfStepAction, bool UseSpinLocks>
+void RedBlkUpdater<ParamType, MoverType, EndOfStepAction, UseSpinLocks>::doRedUpdates()
 {
     int index = controller.workerGetWorkIndex();
     //std::cout<<"RT"<<trdNum<<", "<<index<<std::endl;
@@ -134,8 +134,8 @@ void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::doRedUpdates()
     }
 }
 
-template<class ParamType, class MoverType, class EndOfStepAction>
-void RedBlkUpdater<ParamType, MoverType, EndOfStepAction>::doBlackUpdates()
+template<class ParamType, class MoverType, class EndOfStepAction, bool UseSpinLocks>
+void RedBlkUpdater<ParamType, MoverType, EndOfStepAction, UseSpinLocks>::doBlackUpdates()
 {
     int index = controller.workerGetWorkIndex();
     //std::cout<<"BT"<<trdNum<<", "<<index<<std::endl;
