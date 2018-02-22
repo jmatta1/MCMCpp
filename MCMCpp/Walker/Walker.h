@@ -66,32 +66,19 @@ public:
      * \param numParam The number of parameters in the spaces to be walked
      * \param numCell The number of cells to be stored per walker in the chain
      */
-    void init(Chain::Chain<ParamType>* chain, int walkerIndex, int numParam)
-    {
-        markovChain = chain;
-        walkerNumber = walkerIndex; 
-        numParams = numParam;
-        sizeInBytes = numParams*sizeof(ParamType);
-        currState = Utility::autoAlignedAlloc<ParamType>(numParams);
-    }
+    void init(Chain::Chain<ParamType>* chain, int walkerIndex, int numParam);
     
     /*!
      * \brief setFirstPoint Initializes the walker with its very first point (which is counted as an accepted step (and a normal step))
      * \param init The parameter set for the initial value
      * \param calc The log post prob calculator, see Walker::proposePoint for why it is passed and not stored
      */
-    void setFirstPoint(ParamType* init, const ParamType& auxVal, bool storePoint=true)
-    {
-        jumpToNewPoint(init, auxVal, storePoint);
-    }
+    void setFirstPoint(ParamType* init, const ParamType& auxVal, bool storePoint=true){jumpToNewPoint(init, auxVal, storePoint);}
     
     /*!
      * \brief storeCurrentPoint Stores the walker's current position into the chain, no questions asked
      */
-    void storeCurrentPoint()
-    {
-        markovChain->storeWalker(walkerNumber, currState);
-    }
+    void storeCurrentPoint(){markovChain->storeWalker(walkerNumber, currState);}
     
     /*!
      * \brief jumpToNewPoint Tells the walker there has been a new point accepted and that it should jump to it, this version copies values
@@ -146,6 +133,10 @@ public:
      */
     const ParamType getCurrAuxData(){return auxData;}
     
+    /*!
+     * \brief Tells the index this walker was initialized with
+     * \return The index this walker was initialized with
+     */
     int getWalkerNum(){return walkerNumber;}
 private:
     Chain::Chain<ParamType>* markovChain = nullptr; ///<Holds a reference to the chain that stores the points of the walker
@@ -157,6 +148,16 @@ private:
     int diffSteps = 0; ///< holds the number of times that a new parameter set was proposed and not accepted
     int sizeInBytes = 0; ///< holds the number of bytes to copy using memcopy
 };
+
+template <class ParamType>
+void Walker<ParamType>::init(Chain::Chain<ParamType>* chain, int walkerIndex, int numParam)
+{
+    markovChain = chain;
+    walkerNumber = walkerIndex; 
+    numParams = numParam;
+    sizeInBytes = numParams*sizeof(ParamType);
+    currState = Utility::autoAlignedAlloc<ParamType>(numParams);
+}
 
 template <class ParamType>
 void Walker<ParamType>::jumpToNewPoint(ParamType* newPos, const ParamType& auxVal, bool storePoint)
