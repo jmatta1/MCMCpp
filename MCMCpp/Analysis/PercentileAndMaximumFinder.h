@@ -408,7 +408,7 @@ void PercentileAndMaximumFinder<ParamType>::write1dCumSumCsv(int histNum, const 
     out<<"# Lines starting with a '#' in the first column are ignored\n";
     out<<"# X-axis: nbins, first bin low edge, last bin high edge\n";
     //write the axis parameters
-    out<<bCount<<", "<<(paramBounds[2*histNum]-paramBounds[2*histNum+1])<<", "<<(paramBounds[2*histNum] + (bCount*paramBounds[2*histNum+1]))<<"\n";
+    out<<cbCount<<", "<<(paramBounds[2*histNum]-paramBounds[2*histNum+1])<<", "<<(paramBounds[2*histNum] + (bCount*paramBounds[2*histNum+1]))<<"\n";
     int offset = histNum*cbCount;
     out<<"# bin number, value\n";
     //write the bin data
