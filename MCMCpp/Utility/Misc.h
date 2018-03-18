@@ -81,7 +81,14 @@ ParamType* autoAlignedAlloc(size_t numCells)
     size_t arrayBlockCount = (numCells/arrayBlockSize);
     if((arrayBlockCount*arrayBlockSize) != numCells){++arrayBlockCount;}
     size_t allocSize = (arrayBlockCount*arrayBlockSize*sizeof(ParamType));
+    //for some reason OSX's clang++ does not support the C11 standard aligned_alloc... wtf
+#ifdef OSX_IS_ANNOYING
+    ParamType* retVal;
+    posix_memalign(reinterpret_cast<void**>(&retVal), AlignmentLength, allocSize);
+    return retVal;
+#else
     return reinterpret_cast<ParamType*>(aligned_alloc(AlignmentLength, allocSize));
+#endif
 }
 
 /*!

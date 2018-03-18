@@ -41,11 +41,19 @@ template <class ParamType, int AlphaNum, int AlphaDenom>
 class GwDistribution
 {
 public:
-    //These will all be dumped into compile time constants
+    //GCC seems to support some major mojo where it can use standard math functions in constexpr for c++11, not so much clang
+#ifdef GCC_SUPPORTS_FANCYNESS
     constexpr static ParamType Alpha = (static_cast<ParamType>(AlphaNum)/static_cast<ParamType>(AlphaDenom));
     constexpr static ParamType SqrtAlpha = (std::sqrt(Alpha));
     constexpr static ParamType InvSqrtAlpha = (static_cast<ParamType>(1)/std::sqrt(Alpha));
     constexpr static ParamType Term1 = (SqrtAlpha - InvSqrtAlpha);
+#else
+    const ParamType Alpha = (static_cast<ParamType>(AlphaNum)/static_cast<ParamType>(AlphaDenom));
+    const ParamType SqrtAlpha = (std::sqrt(Alpha));
+    const ParamType InvSqrtAlpha = (static_cast<ParamType>(1)/std::sqrt(Alpha));
+    const ParamType Term1 = (SqrtAlpha - InvSqrtAlpha);
+#endif
+
 
     inline ParamType operator()(ParamType in){ParamType temp = (Term1*in + InvSqrtAlpha); return (temp*temp);}
 private:
