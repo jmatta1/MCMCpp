@@ -32,3 +32,5 @@ test.cfg
 callgrind.txt
 posOptOpp.txt
 
+# ignore mac system stuff
+.DS_Store
