@@ -2,7 +2,7 @@
 OBJ_DIR=build
 EXE_FILE=metHast
 #get the number of cores
-NUM_CORES=$(shell cat /proc/cpuinfo | grep processor | wc --lines)
+NUM_CORES=4 #$(shell cat /proc/cpuinfo | grep processor | wc --lines)
 
 #this builds the project with no flags but those absolutely necessary
 .PHONY: plain

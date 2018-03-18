@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
     cornerHists.saveHistsCsvFormat("chainHist");
     
     std::cout<<"\nGenerating Percentile and Peak Finding Histograms"<<std::endl;
-    Analysis::PercentileAndMaximumFinder<double> pamf(numParams, numWalkers, 100*cornerBinning);
+    Analysis::PercentileAndMaximumFinder<double> pamf(numParams, numWalkers, 5*cornerBinning);
     pamf.processChainData(startItt, endItt, 1);
     std::cout<<"Writing High-Res Histograms"<<std::endl;
     pamf.writeHistogramsInCsvFormat("percentileHistograms");
