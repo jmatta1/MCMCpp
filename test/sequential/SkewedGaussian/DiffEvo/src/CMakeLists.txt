@@ -4,14 +4,15 @@ project (SeqSkewedGaussDiffEv)
 # include the file where I define a couple of compiler flags, including the long
 # lists of warning flags for the compiler
 include(./CMakeFlagDefs.txt)
+include("../../../../../MCMCpp/CMakeMCMCppFlags.txt")
 
 # add our default g++ flags
 #add_definitions(-m64 -std=c++14 -D_FILE_OFFSET_BITS=64 -lpthread -I/usr/local/include/root)
-add_definitions(-m64 -march=native -mtune=native -std=c++11 -D_FILE_OFFSET_BITS=64)
+#add_definitions(-std=c++14 -stdlib=libc++ -m64 -march=native -mtune=native -D_FILE_OFFSET_BITS=64)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -march=native -mtune=native -D_FILE_OFFSET_BITS=64")
 
 # a little hack to make Qt Creator a little happier when it runs cmake to get
 # the project files
-
 # check for each supported build type and add the appropriate g++ flags
 if(BUILD_TYPE STREQUAL "Release")
     add_definitions(${GCC_OPT_FLAG})
