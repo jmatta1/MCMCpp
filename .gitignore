@@ -34,3 +34,6 @@ posOptOpp.txt
 
 # ignore mac system stuff
 .DS_Store
+
+# Cmake build stuff
+test/sequential/SkewedGaussian/MH/src/CMakeFiles

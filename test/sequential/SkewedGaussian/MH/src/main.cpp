@@ -4,8 +4,8 @@
 #include<string>
 #include<sstream>
 #include<fstream>
-#include<Utility/pcg-cpp/include/pcg_random.hpp>
 #include"Common/SkewedGaussian.h"
+#include"Utility/pcg-cpp/include/pcg_random.hpp"
 #include"Analysis/AutoCorrCalc.h"
 #include"Analysis/CovarianceMatrix.h"
 #include"Analysis/CornerHistograms.h"
@@ -16,25 +16,54 @@ using MCMC::EnsembleSampler;
 namespace Mover=MCMC::Mover;
 namespace Analysis=MCMC::Analysis;
 
+const char* HelpStr=" <0|1|2> [no_write]\n  Where 0 means use the ideal "
+              "covariance matrix\n        1 means use the identity covariance "
+              "matrix\n    and 2 means use the bad covariance matrix\n        "
+              "Using [no_write] prevents writing the chains";
+
 template<class ParamType>
 void generateInitialValues(ParamType* initVals, ParamType* auxVals, SkewedGaussianTwoDim<ParamType>& likelihood,
                            int numWalkers, int numParams, int extraRunNumber);
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2)
+    typedef Mover::MetropolisHastings<double, SkewedGaussianTwoDim<double> > Walker;
+    int option=0;
+    bool writeChains = true;
+
+    // check to make sure that the user entered the correct number of arguments
+    if(argc != 2 && argc != 3)
     {
-        std::cout<<"Usage:\n    "<<argv[0]
-                 <<" <0|1|2>\n  Where 0 means use the ideal covariance matrix"
-                 <<"\n        1 means use the identity covariance matrix"
-                 <<"\n    and 2 means use the bad covariance matrix"<<std::endl;
+        std::cout<<"Usage:\n    "<<argv[0]<<HelpStr<<std::endl;
+        return 1;
+    }
+
+    std::string argOne(argv[1]);
+
+    // check to make sure that the second argument is 0, 1, or 2
+    if(argOne != "0" && argOne != "1" && argOne != "2")
+    {
+        std::cout<<"Bad first argument: \""<<argv[1]<<"\""<<std::endl;
+        std::cout<<"Usage:\n    "<<argv[0]<<HelpStr<<std::endl;
         return 1;
     }
     std::istringstream converter;
     converter.str(argv[1]);
-    int option=0;
     converter >> option;
-    typedef Mover::MetropolisHastings<double, SkewedGaussianTwoDim<double> > Walker;
+
+    // if we got three arguments then check if the third one is correct
+    if(argc == 3)
+    {
+        std::string argTwo(argv[2]);
+        if(argTwo != "no_write")
+        {
+            std::cout<<"Bad second argument: \""<<argv[2]<<"\""<<std::endl;
+            std::cout<<"Usage:\n    "<<argv[0]<<HelpStr<<std::endl;
+            return 1;
+        }
+        writeChains = false;
+    }
+
     const int runNumber = 0;
     const int extraRunNumber = 53;
     const int numWalkers = 320;
@@ -65,11 +94,6 @@ int main(int argc, char* argv[])
     {
         std::cout<<"Setting Metropolis Hastings sample covariance matrix to bad case"<<std::endl;
         mover.setCovarMat(badCovar);
-    }
-    else
-    {
-        std::cout<<"Invalid option setting, exitting"<<std::endl;
-        return 1;
     }
     
     std::cout<<"Building sampler"<<std::endl;
@@ -102,27 +126,32 @@ int main(int argc, char* argv[])
     }
     std::cout<<"Discarding 20 points for burn in."<<std::endl;
     sampler.sliceAndBurnChain(1, 20);
-    std::cout<<"\nAcceptance Fraction: "<<sampler.getAcceptedSteps()<<"/"<<sampler.getTotalSteps()<<" | "<<sampler.getAcceptanceFraction()<<std::endl;
-    std::cout<<"\nWriting out chains"<<std::endl;
-    std::ofstream output;
-    if(option==0)
+    std::cout<<"\nAcceptance Fraction: "<<sampler.getAcceptedSteps()<<"/"
+             <<sampler.getTotalSteps()<<" | "<<sampler.getAcceptanceFraction()
+             <<std::endl;
+    if(writeChains)
     {
-        output.open("linearChainsIdeal.csv");
+        std::cout<<"\nWriting out chains"<<std::endl;
+        std::ofstream output;
+        if(option==0)
+        {
+            output.open("linearChainsIdeal.csv");
+        }
+        else if(option==1)
+        {
+            output.open("linearChainsIdentity.csv");
+        }
+        else if(option==2)
+        {
+            output.open("linearChainsBad.csv");
+        }
+        auto end = sampler.getParamSetIttEnd();
+        for(auto itt = sampler.getParamSetIttBegin(); itt != end; ++itt)
+        {
+            output<<(*itt)[0]<<", "<<(*itt)[1]<<std::endl;
+        }
+        output.close();
     }
-    else if(option==1)
-    {
-        output.open("linearChainsIdentity.csv");
-    }
-    else if(option==2)
-    {
-        output.open("linearChainsBad.csv");
-    }
-    auto end = sampler.getParamSetIttEnd();
-    for(auto itt = sampler.getParamSetIttBegin(); itt != end; ++itt)
-    {
-        output<<(*itt)[0]<<", "<<(*itt)[1]<<std::endl;
-    }
-    output.close();
     std::cout<<"\nCalculating integrated autocorrelation times"<<std::endl;
     Analysis::AutoCorrCalc<double> acCalc(numParams, numWalkers);
     auto startItt = sampler.getStepIttBegin();
