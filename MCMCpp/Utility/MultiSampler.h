@@ -117,7 +117,7 @@ public:
     inline long long getOffSetLongLong(long long offset, long long max){return (engine(max-offset)+offset);}
 private:
     //std::mt19937_64 engine;///<The base random number generator engine that is used for everything
-    pcg32 engine;///<The base random number generator engine that is used for everything
+    pcg64 engine;///<The base random number generator engine that is used for everything
     std::uniform_real_distribution<ParamType> realDist;///<The adapter that gives uniform real numbers between 0 and 1
     std::exponential_distribution<ParamType> expDist;///<This adapter gives an exponential distribution with form e^-x, which is the shape of -log(x) when x is a uniform distribution
     std::normal_distribution<ParamType> normDist;///<The adapter that gives normally distributed real numbers with mean 0 and variance 1
